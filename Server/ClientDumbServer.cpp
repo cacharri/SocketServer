@@ -3,43 +3,63 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <poll.h>
+#include <arpa/inet.h>
 //#include <cstring>
 
-ClientDumbServer::ClientDumbServer(): SimpleServer(AF_INET,
-    SOCK_STREAM, 0, 8000, INADDR_ANY, 10)
-{
+ClientDumbServer::ClientDumbServer(): SimpleServer(AF_INET, SOCK_STREAM, 0, 8000, INADDR_ANY, 10) {
+    memset(client_sockets, -1, sizeof(client_sockets));
     launch();   
 }
 
-ClientDumbServer::~ClientDumbServer()
-{
+ClientDumbServer::~ClientDumbServer() {
 
 }
 
-// ListeningSocket *ClientDumbServer::get_listening_socket()
-// {
-//     return (socket);
-// }
+void ClientDumbServer::accepter() {
+    struct sockaddr_in address;
+    socklen_t addrlen = sizeof(address);
+    int client_socket = accept(get_listening_socket()->get_socket(), (struct sockaddr *)&address, &addrlen);
+    if (client_socket < 0) {
+        perror("accept");
+        close(get_listening_socket()->get_socket());
+        exit(EXIT_FAILURE);
+    }
+    char ip_address[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(address.sin_addr), ip_address, INET_ADDRSTRLEN);
+    std::cout << "Received connection at: " << client_socket << " from IP: " << ip_address << std::endl;
 
-void    ClientDumbServer::accepter()
-{
-    struct sockaddr_in address = get_listening_socket()->get_address(); // get_listening_socket is inherited from SimpleServer and returns a ListeningSocket pointer object.
-    int addrlen = sizeof(address);
-    socket = accept(get_listening_socket()->get_socket(), (struct sockaddr *)&address, (socklen_t *)&addrlen);
-
-
-    read(socket, buffer, sizeof(buffer));
-    std::cout << "Recieved connection at: " << address.sin_addr.s_addr << std::endl;
-    //printf("%s", buffer);
+    for (int i = 0; i < 10; ++i) {
+        if (client_sockets[i] == -1) {
+            client_sockets[i] = client_socket;
+            break;
+        }
+    }
 }
 
-void    ClientDumbServer::handler()
-{
-    std::cout << buffer << std::endl;
+void ClientDumbServer::reader(int client_socket) {
+    char buffer[1024] = {0};
+    ssize_t bytes = read(client_socket, buffer, sizeof(buffer));
+    if (bytes < 0) {
+        perror("Failed to read from client");
+    } else if (bytes == 0) {
+        std::cout << "Client disconnected: " << client_socket << std::endl;
+        close(client_socket);
+        for (int i = 0; i < 10; ++i) {
+            if (client_sockets[i] == client_socket) {
+                client_sockets[i] = -1;
+                break;
+            }
+        }
+    } else {
+        std::cout << "Received from client " << client_socket << ": " << buffer << std::endl;
+        // Implement logic to process the client's request
+        writer(client_socket);
+    }
 }
 
-void ClientDumbServer::responder()
-{
+
+void ClientDumbServer::writer(int client_socket) {
     std::string body = "<!DOCTYPE html>"
         "<html lang=\"en\">"
         "<head>"
@@ -75,12 +95,10 @@ void ClientDumbServer::responder()
         "    textElement.style.top = `${randomY}px`;"
         "    textElement.style.color = randomColor;"
         "}"
-        "setInterval(randomizeTextPosition, 2000); // Change position and color every 2 seconds"
+        "setInterval(randomizeTextPosition, 2000);"
         "</script>"
         "</body>"
         "</html>";
-
-    
 
     std::ostringstream response;
     response << "HTTP/1.1 200 OK\r\n"
@@ -89,23 +107,48 @@ void ClientDumbServer::responder()
              << "\r\n"
              << body;
 
-    ssize_t bytes = write(socket, response.str().c_str(), response.str().size());
-    if (bytes < 0)
+    ssize_t bytes = write(client_socket, response.str().c_str(), response.str().size());
+    if (bytes < 0) {
         perror("Failed to send response");
-    else if (static_cast<size_t>(bytes) < response.str().size())
+    } else if (static_cast<size_t>(bytes) < response.str().size()) {
         std::cerr << "Warning: Not all bytes sent, sent only " << bytes << " bytes.\n";
-    close(socket);
-}
-
-
-void    ClientDumbServer::launch()
-{
-    while (42)
-    {
-        std::cout << "=======   WAITING  ========" << std::endl;
-        accepter();
-        handler();
-        responder();
-        std::cout << "=======   DONE  ========" << std::endl;
     }
 }
+
+void ClientDumbServer::launch() {
+    struct pollfd fds[10 + 1]; 
+    memset(client_sockets, -1, sizeof(client_sockets));
+
+    while (true) {
+        memset(fds, 0, sizeof(fds));
+        fds[0].fd = get_listening_socket()->get_socket();
+        fds[0].events = POLLIN; 
+        int nfds = 1;
+
+        for (int i = 0; i < 10; ++i) {
+            if (client_sockets[i] != -1) {
+                fds[nfds].fd = client_sockets[i];
+                fds[nfds].events = POLLIN; 
+                ++nfds;
+            }
+        }
+
+        int poll_result = poll(fds, nfds, -1); 
+
+        if (poll_result == -1) {
+            perror("poll");
+            break;
+        }
+
+        if (fds[0].revents & POLLIN) {
+            accepter();
+        }
+
+        for (int i = 1; i < nfds; ++i) {
+            if (fds[i].revents & POLLIN) {
+                reader(fds[i].fd);
+            }
+        }
+    }
+}
+
