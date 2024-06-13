@@ -1,20 +1,16 @@
 
 #COMP
-COMP = c++ -std=c++98 -fsanitize=address
+COMP = c++ -std=c++98 #-fsanitize=address
 
 RM = rm -f
 
 # FILE MANAGEMENT
 NAME = Webserv
+
 SRC = main.cpp \
 	\
-	Server/SimpleServer.cpp \
-	Server/ClientDumbServer.cpp \
-	\
-	Sockets/BindingSocket.cpp \
-	Sockets/ListeningSocket.cpp \
-	\
-	Sockets/SimpleSocket.cpp \
+	Sockets/MotherSocket.cpp \
+	Server/Server.cpp
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 
