@@ -6,17 +6,16 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/13 00:28:18 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/13 12:10:11 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/06/13 13:09:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-#include <poll.h>
-#include <cerrno>
-#include <cstring>
-
+# include <poll.h>
+# include <cerrno>
+# include <cstring>
 # include "MotherSocket.hpp"
 
 class Server: public MotherSocket
