@@ -1,11 +1,10 @@
 
-#include "includes/serverlib.hpp"
+#include "Server/Server.hpp"
 
 
 int main()
 {
-	ClientDumbServer t;
-
+    Server  instance;
 	// std::cout << "Starting server..." << std::endl;
 	// std::cout << "Binding socket..." << std::endl;
 	// BindingSocket	bs(AF_INET, SOCK_STREAM, 0, 8000, INADDR_ANY);
