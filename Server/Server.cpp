@@ -3,26 +3,28 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/13 00:28:54 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/13 12:09:51 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/06/17 18:11:34 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
-
+#include "../includes/ServerConfig.hpp"
 
 Server::Server():
     //CHANGE THIS VALUES FOR SOCKET CONFIGURATION THROUGH CONSTRUCTOR
-    MotherSocket(AF_INET, SOCK_STREAM, 0, 8000, INADDR_ANY) 
+    MotherSocket(AF_INET, SOCK_STREAM, 0, 8000, INADDR_ANY) //0.0.0.0 -> localhost -> 127.0.0.1
 {
+    _reader = new ConfigReader("server.config");
     MotherSocket::to_passive_socket(10); // make created socket a passive with bind and listen funcs (vs connect for socket client)
     launch();
 }
 
 Server::~Server()
 {
+    delete _reader;
 }
 
 void Server::accepter()

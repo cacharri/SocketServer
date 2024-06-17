@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/13 00:28:18 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/13 13:09:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/06/17 17:44:42 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,12 @@
 # include <cerrno>
 # include <cstring>
 # include "MotherSocket.hpp"
+# include "ServerConfig.hpp"
 
 class Server: public MotherSocket
 {
     private:
+        ConfigReader    *_reader;
 		std::vector<struct pollfd> fds;  // Dynamic array of pollfd structures
         char    buffer[20000];
 
