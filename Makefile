@@ -10,7 +10,8 @@ NAME = Webserv
 SRC = main.cpp \
 	\
 	Sockets/MotherSocket.cpp \
-	Server/Server.cpp
+	Server/Server.cpp \
+	Server/ServerConfig.cpp
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 

@@ -16,13 +16,13 @@
 # include <poll.h>
 # include <cerrno>
 # include <cstring>
+# include <map>
 # include "MotherSocket.hpp"
 # include "ServerConfig.hpp"
 
 class Server: public MotherSocket
 {
     private:
-        ConfigReader    *_reader;
 		std::vector<struct pollfd> fds;  // Dynamic array of pollfd structures
         char    buffer[20000];
 
@@ -32,9 +32,11 @@ class Server: public MotherSocket
 
     public:
         Server();
+        Server(const ServerConfig& serverConfig);
         ~Server();
 
         void    launch();
+        void    handleRequest(int client_socket, const std::string& request);
 };
 
 #endif

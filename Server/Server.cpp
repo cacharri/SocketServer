@@ -13,18 +13,16 @@
 #include "../includes/Server.hpp"
 #include "../includes/ServerConfig.hpp"
 
-Server::Server():
-    //CHANGE THIS VALUES FOR SOCKET CONFIGURATION THROUGH CONSTRUCTOR
-    MotherSocket(AF_INET, SOCK_STREAM, 0, 8000, INADDR_ANY) //0.0.0.0 -> localhost -> 127.0.0.1
+Server::Server(const ServerConfig& serverConfig) :
+    MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, INADDR_ANY) // Utilizar el puerto desde la configuración
 {
-    _reader = new ConfigReader("server.config");
-    MotherSocket::to_passive_socket(10); // make created socket a passive with bind and listen funcs (vs connect for socket client)
+    MotherSocket::to_passive_socket(10);
     launch();
 }
 
 Server::~Server()
 {
-    delete _reader;
+
 }
 
 void Server::accepter()
@@ -194,4 +192,9 @@ void Server::launch()
                 //close(fds[i].fd);
         }
     }
+}
+
+void Server::handleRequest(int client_socket, const std::string& request) {
+    std::cout << "Received data: \n" << request << std::endl;
+    writer(client_socket); // For now, just send a simple response
 }

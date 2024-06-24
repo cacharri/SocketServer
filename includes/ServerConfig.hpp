@@ -14,45 +14,46 @@
 # define SERVERCONFIG_HPP
 
 #include <string>
-#include <fstream>
 #include <vector>
+#include <map>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <cstdlib>
 
 
-
-struct Location
-{
-	std::string	method_on_location;
-	std::string	uri;
-	std::string http_version;
-	int			autoindex;
-	//...
+struct LocationConfig {
+    std::string					root;  //directorio raiz 
+    std::string					index; // archivo predeterminado si se solicita un directorio
+    bool						autoindex;		
+    std::vector<std::string>	limit_except; //para los metodos https permitidos en la ubicacion
+    bool						allow_upload; //booleano para indicar si se permite o no la carga de archivos
+    std::string					upload_store; // directorio donde se almacenan los archivos cargados si se acepta la carga
+    std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
 };
 
-
-struct ServerConfig
-{
-    std::string				host;
-	int						port;
-	std::string				server_name;
-	size_t					bodylimitforclient;
-	std::vector<Location>	location;
-	//...
+struct ServerConfig {
+    std::string								host; //direccion ip o del host donde el servidor escucha
+    int										port; 
+    std::string								server_name;
+    std::map<int, std::string>				error_pages; //paginas personalizadas segun el codigo de error
+    size_t									client_max_body_size; // 
+    std::map<std::string, LocationConfig>	locations; // map de rutas a confi instead ofvector para asociar cada ruta 
 };
 
-class ConfigReader
-{
-	private:
-		std::ifstream	_input_file;
-		ServerConfig	_config;
+class ConfigParser {
 	public:
-		ConfigReader(const std::string &path_to_file);
+		ConfigParser();
+		~ConfigParser();
 
-		//getters
-		std::string	getHost()const ;
-		//setters
-		void		setHost(std::string &hostdomain);
-		
-		~ConfigReader();
+		ConfigParser(const ConfigParser& other);
+
+		ConfigParser& operator=(const ConfigParser& other);
+
+		std::vector<ServerConfig> parseConfigFile(const std::string& filename) const;
+
+	private:
+		size_t parseSize(const std::string& sizeStr) const;
 };
 
 #endif

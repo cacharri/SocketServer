@@ -15,6 +15,7 @@
 # include <sstream>
 # include <unistd.h>
 # include <fcntl.h>
+# include <map>
 
 # include <vector>
 
