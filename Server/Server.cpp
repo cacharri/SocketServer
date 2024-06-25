@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/13 00:28:54 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/17 18:11:34 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/06/25 12:40:53 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,19 @@ void Server::reader(int client_socket)
     std::cout << "reader output: "<< std::strerror(errno) << std::endl;
     if (bytes > 0)
     {
-        std::cout << "Received data: \n" << std::string(buffer, bytes) << std::endl;
+        std::string data = std::string(buffer, bytes);
+        
+        std::vector<std::string> headers = split(data, '\n');
+
+        std::vector<std::string>::const_iterator iter;
+		for (iter = headers.begin(); iter != headers.end(); ++iter)
+		{
+			std::string foundedline = *iter;
+			if (foundedline.find("GET") != std::string::npos)
+				std::cout << "Status line found: " << foundedline << std::endl;
+		}
+
+    	std::cout << "Received data found:\n" << data << std::endl;
         writer(client_socket); // IMPORTANT esta funcion va a ser un objeto que va a manejar todo lo que es respuestas (see RFC error responses,status line creation, header creation, body creation)
     }
     else if (bytes == 0)

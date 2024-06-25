@@ -6,17 +6,16 @@
 # include <sys/socket.h> // socket func
 # include <netinet/in.h> // sockaddr_in structs 
 # include <arpa/inet.h>
+# include <netdb.h>
 
 # include <stdio.h>
-# include <netdb.h>
 # include <stdlib.h>
-
 # include <iostream>
 # include <sstream>
 # include <unistd.h>
 # include <fcntl.h>
-# include <map>
 
+# include <map>
 # include <vector>
 
 class MotherSocket

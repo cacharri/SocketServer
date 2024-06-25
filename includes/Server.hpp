@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/13 00:28:18 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/17 17:44:42 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/06/25 12:42:43 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,5 +38,8 @@ class Server: public MotherSocket
         void    launch();
         void    handleRequest(int client_socket, const std::string& request);
 };
+
+std::vector<std::string> split(std::string text, char delim);
+
 
 #endif
