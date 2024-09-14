@@ -1,27 +1,34 @@
-## SERVER CLASS ##
+WEBSERV DOCUMENTATION
 
-This refactored version of the Server class has several advantages:
-1. It uses poll() to handle multiple client connections efficiently, allowing for non-blocking I/O.
-The launch() method now contains the main event loop, which continuously checks for incoming connections and client activity.
-The acceptClient() method handles new client connections, setting them to non-blocking mode and adding them to the fds vector.
-The handleClient() method processes incoming client requests and sends responses.
-The removeClient() method properly closes and removes disconnected clients from the fds vector.
-Error handling is improved with the use of exceptions and proper cleanup.
-The dynamic buffer resizing approach is maintained for handling varying message sizes.
-This implementation is cleaner and more organized while maintaining the advantages of your original poll-based approach. It allows for efficient handling of multiple client connections without blocking on any single client.
-Some additional improvements you might consider:
-1. Implement a maximum client limit to prevent resource exhaustion.
-2. Add timeout handling for idle connections.
-Implement proper HTTP request parsing and routing.
-Add support for configuration options (e.g., max clients, timeout duration).
-Remember to thoroughly test this implementation, especially under high concurrency scenarios, to ensure it meets your performance and stability requirements.
+## OBJETO SERVER ##
+
+- Mejoras hechas
+1. Clase principal para la gestión de fds pasivos y activos asicomo la gestion de conexiones entrantes.
+    -   Objeto derivado de MotherSocket, clase que se usa para configurar los socket manejados por Server.
+    1.1. MotherSocket tiene un ternario ahora para comprobar que haya una interfaz con la que interactuar.
+2. Ahora se utiliza un buffer dinámico que se expande en función de los bytes entrantes por el fd.
+3. Se utiliza un vector de structuras pollfd junto con poll() para manejar la disponibilidad de los fds.
+4. Renforzado el error management con Excepciones propias a cada objeto y añadido un objeto Logger.
+
+Funcionamiento:
+
+ launch() -> bucle principal que recoje requests nuevas y comprueba el estado de las sessiones 
+ acceptClient() -> Maneja conexiones a traves de un vector y define esta como no bloqueante.
+ handleclient() -> Recoje e procesa el requests entrante y responde.
+ receiveMessage() -> lee del socket de la conexión por chunks de 4096 bytes y los va guardando 
+ sendResponse() -> Envia una página.
+ removeClient() -> Elimina y cierra sockets del vector 
+
+Por hacer ?
+    - Procesar el request en handleclient() tras recibirlo con receiveMessage() y crear un Data structure
+    - Leer el Data Structure y responder con la pagina, la pagina de error, o una ejecución cgi.
+        - Como se gestiona POST ?
+    - Poner un limite de sessiones para prevenir vectores<Server> enormes.
+    - Poner un timeout en las sessiones para no agotar recursos.
+
+## OBJETO CONFIG ##
+
+Funcionamiento:
+    parseconfigFIle(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
 
 
-# SocketServer
-C++ objects for socket programming enabling us to build custom Servers
-
-- Mejorar el objecto Server
-    - hacer reader un nuevo objeto lexer
-    - hacer writer un nuevo objeto Writer implementando (RF, error responses, status line creation, header creation, body creation)
-    - Gestionar bien los buffer de comunicacion
-    - Mirar CGI
