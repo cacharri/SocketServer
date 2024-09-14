@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/06/17 18:02:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/14 20:44:07 by Smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVERCONFIG_HPP
 # define SERVERCONFIG_HPP
 
+
+#include "../Logger/Logger.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -21,15 +23,15 @@
 #include <sstream>
 #include <cstdlib>
 
-
 struct LocationConfig {
     std::string					root;  //directorio raiz 
     std::string					index; // archivo predeterminado si se solicita un directorio
-    bool						autoindex;		
+    bool						autoindex;
     std::vector<std::string>	limit_except; //para los metodos https permitidos en la ubicacion
     bool						allow_upload; //booleano para indicar si se permite o no la carga de archivos
     std::string					upload_store; // directorio donde se almacenan los archivos cargados si se acepta la carga
     std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
+    std::string                 redirect;
 };
 
 struct ServerConfig {
@@ -51,6 +53,15 @@ class ConfigParser {
 		ConfigParser& operator=(const ConfigParser& other);
 
 		std::vector<ServerConfig> parseConfigFile(const std::string& filename) const;
+
+        class ConfigError: public std::exception {
+        private:
+            std::string error_string;
+        public:
+            ConfigError(const std::string& error);
+            virtual const char* what() const throw();
+            virtual ~ConfigError() throw();
+    };
 
 	private:
 		size_t parseSize(const std::string& sizeStr) const;

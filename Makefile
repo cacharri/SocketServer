@@ -7,12 +7,11 @@ RM = rm -f
 # FILE MANAGEMENT
 NAME = Webserv
 
-SRC = main.cpp \
-	\
+SRC = Webserv.cpp \
 	Sockets/MotherSocket.cpp \
-	src/utils.cpp \
 	Server/Server.cpp \
-	Server/ServerConfig.cpp \
+	Config/ServerConfig.cpp \
+	Logger/Logger.cpp 
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 
