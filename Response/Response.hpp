@@ -6,7 +6,7 @@
 /*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:29:58 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 22:30:26 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/15 01:03:57 by Smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define RESPONSE_HPP
 
 #include <string>
+#include <sstream>
 #include <map>
 
 class Response {

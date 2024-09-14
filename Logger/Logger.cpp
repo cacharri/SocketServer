@@ -6,7 +6,7 @@
 /*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 15:57:54 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 21:02:45 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/14 23:56:45 by Smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,20 +14,22 @@
 
 Logger* Logger::instance = NULL;
 
-Logger* Logger::getInstance() {
-    if (instance == NULL) {
+Logger* Logger::getInstance()
+{
+    if (instance == NULL)
         instance = new Logger();
-    }
     return instance;
 }
 
-Logger::Logger() {
+Logger::Logger()
+{
     logFileName = "webserver.log";
     logFile.open(logFileName.c_str(), std::ios::app);
     
 }
 
-Logger::~Logger() {
+Logger::~Logger()
+{
     if (logFile.is_open())
     {
         logFile.close();
@@ -40,7 +42,8 @@ Logger::~Logger() {
 }
 
 
-void Logger::log(const std::string& message, const char* file, int line) {
+void Logger::log(const std::string& message, const char* file, int line)
+{
     time_t now = time(0);
     char* dt = ctime(&now);
     std::string timestamp(dt);

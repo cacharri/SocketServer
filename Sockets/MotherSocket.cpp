@@ -6,7 +6,7 @@
 /*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:44 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 16:30:54 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/14 23:42:22 by Smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ MotherSocket::MotherSocket(int domain, int service, int protocol, int port, cons
     : socketFd(-1) {
     std::memset(&socketStruct, 0, sizeof(socketStruct));
     socketStruct.sin_family = domain;
-    socketStruct.sin_addr.s_addr = (interface.empty()? INADDR_ANY : inet_addr(interface.c_str()));//inet_addr(interface.c_str());
+    socketStruct.sin_addr.s_addr = (interface.empty()? INADDR_ANY : inet_addr(interface.c_str()));
     socketStruct.sin_port = htons(port);
 
     socketFd = socket(domain, service, protocol);
