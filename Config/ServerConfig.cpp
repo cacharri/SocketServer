@@ -1,4 +1,4 @@
-#include "../includes/ServerConfig.hpp"
+#include "ServerConfig.hpp"
 
 ConfigParser::ConfigParser() {
 }
@@ -11,17 +11,23 @@ ConfigParser::ConfigParser(const ConfigParser& other) {
 }
 
 ConfigParser& ConfigParser::operator=(const ConfigParser& other) {
-	if (this != &other) {
+	if (this != &other)
+	{
+
 	}
 	return *this;
 }
 
 std::vector<ServerConfig> ConfigParser::parseConfigFile(const std::string& filename) const {
 	std::ifstream configFile(filename.c_str());
-	if (!configFile.is_open()) {
-		std::cerr << "Error: Could not open configuration file " << filename << std::endl;
-		return std::vector<ServerConfig>();
-	}
+	if (!configFile.is_open())
+	{
+			std::string msg("Could not open configuration file ! ");
+			msg += filename;
+            ConfigError error(msg);
+            LOG(error.what());
+			return std::vector<ServerConfig>();
+    }
 
 	std::string line;
 	ServerConfig currentServer;
@@ -112,3 +118,16 @@ size_t ConfigParser::parseSize(const std::string& sizeStr) const {
     return size;
 }
 
+//Exceptions handling
+ConfigParser::ConfigError::ConfigError(const std::string& error): error_string(error)
+{
+}
+
+ConfigParser::ConfigError::~ConfigError() throw()
+{
+}
+
+const char * ConfigParser::ConfigError::what() const throw()
+{
+	return error_string.c_str();
+}
