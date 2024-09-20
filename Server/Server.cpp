@@ -94,7 +94,7 @@ void Server::handleClient(size_t index) {
             return;
         }
         Request request(request_str);
-
+        request.print();
         // Process the request and generate a response
         std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
         sendResponse(clientFd, response);

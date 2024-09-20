@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/15 01:09:28 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/20 18:40:48 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,10 +27,11 @@ private:
 public:
     Request(const std::string& rawRequest);
     void parse(const std::string& rawRequest);
-    
-    // Getters
+    void print(void) const;
+    // Getters1
     std::string getMethod() const;
     std::string getUri() const;
+    std::string getHttpVersion() const;
     std::string getHeader(const std::string& key) const;
     std::string getBody() const;
 };

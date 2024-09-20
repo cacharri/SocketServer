@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/15 01:09:23 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/20 19:16:48 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ void Request::parse(const std::string& rawRequest)
     {
         std::istringstream lineStream(line);
         lineStream >> method >> uri >> httpVersion;
-        if (!(lineStream >> method >> uri >> httpVersion))
+        if (method.empty() || uri.empty() || httpVersion.empty())
             LOG("Error parsing request line: invalid format");
     } else
     {
@@ -61,8 +61,8 @@ void Request::parse(const std::string& rawRequest)
     std::string bodyLine;
     while (std::getline(requestStream, bodyLine))
         body += bodyLine + "\n";
-    if (!body.empty())
-        body.pop_back(); // Remove last newline
+    //if (!body.empty())
+    //    body.pop_back(); // Remove last newline
 }
 
 std::string Request::getMethod() const
@@ -83,4 +83,22 @@ std::string Request::getHeader(const std::string& key) const
 
 std::string Request::getBody() const {
     return body;
+}
+
+std::string Request::getHttpVersion() const {
+    return httpVersion;
+}
+
+
+//https://stackoverflow.com/questions/31950470/what-is-the-upgrade-insecure-requests-http-header/32003517#32003517
+void    Request::print(void)const
+{
+    std::cout << "-----------STATUS LINE-----------" << std::endl;
+    std::cout << getMethod() << " " << getUri() << " " << getHttpVersion() << std::endl;
+    std::map<std::string, std::string>::const_iterator it = headers.begin();
+    std::cout << "-----------HEADERS-----------" << std::endl;
+    for (it ; it != headers.end(); it++)
+        std::cout << it->first << " " << it->second << std::endl; // key
+    std::cout << "-----------BODY-----------" << std::endl;
+    std::cout << getBody() << std::endl; 
 }

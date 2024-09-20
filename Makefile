@@ -10,6 +10,7 @@ NAME = Webserv
 SRC = Webserv.cpp \
 	Sockets/MotherSocket.cpp \
 	Server/Server.cpp \
+	Request/Request.cpp \
 	Config/ServerConfig.cpp \
 	Logger/Logger.cpp 
 
