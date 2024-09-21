@@ -20,7 +20,7 @@ Server::Server(const ServerConfig& serverConfig)
         std::set<std::string> allowedMethods(locConfig.limit_except.begin(), locConfig.limit_except.end());
         // Anadimos el enpoint path ('route' en) al mapa routes de router con los methodos allowedMethods y la funcion que gestiona ese endpoint
         if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "GET") <= locConfig.limit_except.end())
-            router.addRoute(endpoint, allowedMethods, setBodyWithFile);
+            router.addRoute(endpoint, locConfig, setBodyWithFile);
         }
 }
 
@@ -117,6 +117,7 @@ void Server::handleClient(size_t index) {
         std::cout << clientFd << " requested -> " << request.getUri() << std::endl;
 
         router.route(request, response);
+        response.setStatus(200, "OK");
         response.setHeader("Content-Type", "text/html");
         response.setContentLength();
         sendResponse(clientFd, response.toString());
@@ -183,6 +184,9 @@ void Server::removeClient(size_t index)
     close(fds[index].fd);
     fds.erase(fds.begin() + index);
 }
+
+
+
 
 //Exceptions handling
 Server::ServerError::ServerError(const std::string& error): error_string(error)

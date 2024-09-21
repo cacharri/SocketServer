@@ -88,10 +88,13 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 		if (token == "server") {
 			inServerBlock = true;
 			currentServer = ServerConfig();
+			std::cout << "[CONF]: Found New Server" << std::endl;
+
 		} else if (token == "location") {
 			inLocationBlock = true;
 			iss >> currentLocationPath;
 			currentLocation = LocationConfig();
+			std::cout << "[CONF]: Found New Endpoint" << std::endl;
 		} else if (token == "}") {
 			if (inLocationBlock) {
 				inLocationBlock = false;

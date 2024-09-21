@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 16:27:19 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 22:15:10 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
-
+#include <sys/stat.h> // For file existence check
 #include <vector>
 #include <poll.h>
 
@@ -56,8 +56,8 @@ public:
     explicit Server(const ServerConfig& serverConfig);
     ~Server();
 
-    void    launch();
-    void    init();
+    void        launch();
+    void        init();
     class ServerError: public std::exception {
         private:
             std::string error_string;
@@ -75,12 +75,14 @@ private:
     char* buffer;
     size_t bufferSize;
 
-    void acceptClient();
-    void handleClient(size_t index);
-    void sendResponse(int clientSocket, const std::string& response);
+    // Core functions
+    void        acceptClient();
+    void        handleClient(size_t index);
+    void        sendResponse(int clientSocket, const std::string& response);
     std::string receiveMessage(int clientSocket);
-    void removeClient(size_t index);
+    void        removeClient(size_t index);
 
+    
     // Disable copy constructor and assignment operator
     Server(const Server&);
     Server& operator=(const Server&);

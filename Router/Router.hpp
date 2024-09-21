@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 16:43:01 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 22:18:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,18 +18,28 @@
 #include "../Response/Response.hpp"
 #include "../Request/Request.hpp"
 #include "../Logger/Logger.hpp"
+#include "../Config/ConfigParser.hpp"
 #include <set>
+
+    // std::string					root;  //directorio raiz 
+    // std::string					index; // archivo predeterminado si se solicita un directorio
+    // bool						autoindex;
+    // std::vector<std::string>	limit_except; //para los metodos https permitidos en la ubicacion
+    // bool						allow_upload; //booleano para indicar si se permite o no la carga de archivos
+    // std::string					upload_store; // directorio donde se almacenan los archivos cargados si se acepta la carga
+    // std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
+    // std::string                 redirect;
 
 class Router {
 public:
     Router();
     ~Router();
     struct RouteConfig {
-        std::set<std::string> allowedMethods; // Set of allowed methods
+        LocationConfig      endpointdata;
         void (*handler)(const std::string&, Response&); // Handler function
     };
     
-    void    addRoute(const std::string& path, const std::set<std::string>& methods, void (*handler)(const std::string& path, Response& res));
+    void    addRoute(const std::string& path, const LocationConfig& locationconfig, void (*handler)(const std::string& path, Response& res));
     void    route(const Request& request, Response& response);
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }

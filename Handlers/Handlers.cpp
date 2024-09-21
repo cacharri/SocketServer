@@ -6,22 +6,33 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 21:28:04 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 20:34:04 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 22:36:59 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Handlers.hpp"
 
-std::string readFile(const std::string &filePath) {
-    std::ifstream file(filePath.c_str());
+
+#include <sys/stat.h> // For file existence check
+std::string readFile(const std::string &fullPath)
+{
+
+    // Check if the file exists
+    struct stat buffer;
+    if (stat(fullPath.c_str(), &buffer) != 0) {
+        return "Error: File does not exist.";
+    }
+
+    std::ifstream file(fullPath.c_str());
     
     if (!file.is_open()) {
-        return "";
+        return "Error: Unable to open file: " + fullPath;
     }
     
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
+    std::stringstream bufferStream;
+    bufferStream << file.rdbuf();
+    std::cout << "File content: " << bufferStream.str() << std::endl;
+    return bufferStream.str();
 }
 
 
@@ -29,6 +40,7 @@ void    setBodyWithFile(const std::string& filestr, Response& response)
 {
     std::cout << "Construyendo body a partir de " << filestr << std::endl;
     response.setStatus(200, "OK");
+    
     std::cout << readFile(filestr) << std::endl;
     
     response.setBody(readFile(filestr));

@@ -8,14 +8,22 @@ Router::~Router()
 {
 }
 
-void Router::addRoute(const std::string& path, const std::set<std::string>& methods, void (*handler)(const std::string& path, Response& res)) {
+void    Router::addRoute(const std::string& path, const LocationConfig& locationconfig, void (*handler)(const std::string& path, Response& res))
+{
     RouteConfig config;
-    config.allowedMethods = methods;
+    config.endpointdata.root = locationconfig.root;
+    config.endpointdata.index = locationconfig.index;
+    config.endpointdata.autoindex = locationconfig.autoindex;
+    config.endpointdata.limit_except = locationconfig.limit_except; // shallow copy
+    config.endpointdata.allow_upload = locationconfig.allow_upload;
+    config.endpointdata.upload_store = locationconfig.upload_store;
+    config.endpointdata.cgi_pass = locationconfig.cgi_pass;
+    config.endpointdata.redirect = locationconfig.redirect;
     config.handler = handler;
 
     std::cout << "Added route: " << path << " with allowed methods: ";
-    std::set<std::string>::const_iterator it;
-    for (it = methods.begin(); it != methods.end(); ++it)
+    std::vector<std::string>::const_iterator it;
+    for (it = config.endpointdata.limit_except.begin(); it != config.endpointdata.limit_except.end(); ++it)
         std::cout << *it << " ";
 
     std::cout << std::endl;
@@ -23,17 +31,28 @@ void Router::addRoute(const std::string& path, const std::set<std::string>& meth
     routes[path] = config;
 }
 
+
 void Router::route(const Request& request, Response& response) {
     std::map<std::string, RouteConfig>::iterator it = routes.find(request.getUri());
     if (it != routes.end()) {
-        // {'GET','POST'}.find('GET') == True && iterator is not end
-        if (it->second.allowedMethods.find(request.getMethod()) != it->second.allowedMethods.end()) 
-        {
-            if (request.getMethod() == "GET")
-                it->second.handler(request.getUri(), response);// llamada al puntero de la funcion handler de this->routes[URI]{{'GET'}, (*func)}
-            else if (request.getMethod() == "POST")
-                it->second.handler(request.getUri(), response); 
-        
+
+        bool methodAllowed = false;
+        for (std::vector<std::string>::iterator vecIt = it->second.endpointdata.limit_except.begin(); 
+             vecIt != it->second.endpointdata.limit_except.end(); ++vecIt) {
+            if (*vecIt == request.getMethod()) {
+                methodAllowed = true;
+                break;
+            }
+        }
+
+        if (methodAllowed) {
+            std::string fullPath = ".." + it->second.endpointdata.root + "/" + it->second.endpointdata.index; // Construct full path
+            std::cout << "Routes builds paths of endpoint; " << request.getUri() << "   -->  " << fullPath << std::endl;
+            if (request.getMethod() == "GET") {
+                it->second.handler(fullPath, response); 
+            } else if (request.getMethod() == "POST") {
+                it->second.handler(fullPath, response); 
+            }
         } else {
             response.setStatus(405, "Method Not Allowed");
             response.setBody("405 Method Not Allowed");
