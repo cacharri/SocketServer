@@ -3,37 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/15 01:09:43 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 20:33:10 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-class Response {
-private:
-    int statusCode;
-    std::string statusMessage;
-    std::map<std::string, std::string> headers;
-    std::string body;
+std::string getDefaultStatusMessage(int code) {
+    switch (code) {
+        case 200: return "OK";
+        case 404: return "Not Found";
 
-public:
-    Response(int code = 200);
-    void setStatus(int code, const std::string& message);
-    void setHeader(const std::string& key, const std::string& value);
-    void setBody(const std::string& content);
-    std::string toString() const;
-
-    // Helper methods
-    void setContentType(const std::string& type);
-    void setContentLength();
-};
-
-Response::Response(int code) : statusCode(code)
-{
-    setStatus(code, getDefaultStatusMessage(code));
+        default: return "Unknown";
+    }
 }
 
 void Response::setStatus(int code, const std::string& message)
@@ -41,6 +26,11 @@ void Response::setStatus(int code, const std::string& message)
     statusCode = code;
     statusMessage = message;
 }
+Response::Response(int code) : statusCode(code)
+{
+    setStatus(code, getDefaultStatusMessage(code));
+}
+
 
 void Response::setHeader(const std::string& key, const std::string& value)
 {
@@ -60,13 +50,16 @@ void Response::setContentType(const std::string& type)
 
 void Response::setContentLength()
 {
-    setHeader("Content-Length", std::to_string(body.length()));
+    std::ostringstream oss;
+    oss << body.length(); 
+    std::string value = oss.str();
+    setHeader("Content-Length", value); // Set the header
 }
 
 std::string Response::toString() const
 {
     std::ostringstream res;
-    res << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
+    res << "HTTP/1.1 " << statusCode << " "<< statusMessage << "\r\n";
     
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
         res << it->first << ": " << it->second << "\r\n";
@@ -77,13 +70,17 @@ std::string Response::toString() const
 }
 
 
-std::string getDefaultStatusMessage(int code) {
-    switch (code) {
-        case 200: return "OK";
-        case 404: return "Not Found";
+// Getters implementation
+int Response::getStatusCode() const {
+    return statusCode;
+}
 
-        default: return "Unknown";
-    }
+std::string Response::getStatusMessage() const {
+    return statusMessage;
+}
+
+std::string Response::getBody() const {
+    return body;
 }
 
 

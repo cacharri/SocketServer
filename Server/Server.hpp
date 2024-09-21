@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 20:04:55 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 16:27:19 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,21 @@
 #define SERVER_HPP
 
 #include "../Sockets/MotherSocket.hpp"
-#include "../Config/ServerConfig.hpp"
+#include "../Config/ConfigParser.hpp"
+
+#include "../Response/Response.hpp"
+#include "../Request/Request.hpp"
+#include "../Router/Router.hpp"
+#include "../Handlers/Handlers.hpp"
+
 #include <vector>
 #include <poll.h>
+
+#include <algorithm>
+#include <stdexcept>
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
 
 /*
 
@@ -56,6 +68,8 @@ public:
     };
 
 private:
+    Router              router;
+    ServerConfig        config;
     std::vector<pollfd> fds;
     static const size_t INITIAL_BUFFER_SIZE = 4096;
     char* buffer;

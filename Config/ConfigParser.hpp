@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ServerConfig.hpp                                   :+:      :+:    :+:   */
+/*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 20:44:07 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 19:49:32 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,27 +44,28 @@ struct ServerConfig {
 };
 
 class ConfigParser {
-	public:
-		ConfigParser();
-		~ConfigParser();
-
-		ConfigParser(const ConfigParser& other);
-
-		ConfigParser& operator=(const ConfigParser& other);
-
-		std::vector<ServerConfig> parseConfigFile(const std::string& filename) const;
-
-        class ConfigError: public std::exception {
-        private:
-            std::string error_string;
-        public:
-            ConfigError(const std::string& error);
-            virtual const char* what() const throw();
-            virtual ~ConfigError() throw();
-    };
-
 	private:
-		size_t parseSize(const std::string& sizeStr) const;
+        ConfigParser();
+        ~ConfigParser();
+        
+        static void printLocationConfig(const ServerConfig& serverConfig);
+
+	public:
+		static  std::vector<ServerConfig>   parseServerConfigFile(const std::string& filename);
+        static  void                        copyServerConfig(const ServerConfig& source, ServerConfig& destination);
+		static                   size_t     parseSize(const std::string& sizeStr);
+
+        class ConfigError: public std::exception
+        {
+            private:
+            std::string error_string;
+            public:
+                ConfigError(const std::string& error);
+                virtual const char* what() const throw();
+                virtual ~ConfigError() throw();
+        };
+
 };
+
 
 #endif
