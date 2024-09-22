@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MotherSocket.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:44 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 23:42:22 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/21 19:21:24 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,16 +15,15 @@
 #include <cstring>
 #include <unistd.h>
 
-MotherSocket::MotherSocket(int domain, int service, int protocol, int port, const std::string& interface)
-    : socketFd(-1) {
+MotherSocket::MotherSocket(int domain, int service, int protocol, int port, const std::string& interface){
     std::memset(&socketStruct, 0, sizeof(socketStruct));
     socketStruct.sin_family = domain;
-    socketStruct.sin_addr.s_addr = (interface.empty()? INADDR_ANY : inet_addr(interface.c_str()));
+    socketStruct.sin_addr.s_addr = INADDR_ANY;//inet_addr(interface.c_str()); //INADDR_ANY
     socketStruct.sin_port = htons(port);
 
     socketFd = socket(domain, service, protocol);
-    testConnection();
     setSocketOption(SOL_SOCKET, SO_REUSEADDR);
+    testConnection();
 }
 
 MotherSocket::~MotherSocket() {
@@ -54,13 +53,15 @@ void MotherSocket::toPassiveSocket(int queueLimit) {
         SocketError error("Failed to bind socket");
         LOG_EXCEPTION(error);
         throw error;
-    }
+    } else
+        std::cout << "PassiveSocket: " << socketFd << " bound successfully to " << inet_ntoa(socketStruct.sin_addr) << ":" << ntohs(socketStruct.sin_port) << std::endl;
 
-    if (listen(socketFd, queueLimit) != 0) {
+    if (listen(socketFd, queueLimit) == -1) {
         SocketError error("Failed to set passive socket");
         LOG_EXCEPTION(error);
         throw error;
-    }
+    } else
+        std::cout << "Server is now listening." << std::endl;
 }
 
 void MotherSocket::toActiveSocket() {
@@ -82,7 +83,7 @@ void MotherSocket::setSocketOption(int optionLevel, int option) {
 
 void MotherSocket::testConnection() {
     if (socketFd < 0) {
-        SocketError error("Failed to create socket");
+        SocketError error("Invalid socket");
         LOG_EXCEPTION(error);
         throw error;
     }

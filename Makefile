@@ -8,11 +8,14 @@ RM = rm -f
 NAME = Webserv
 
 SRC = Webserv.cpp \
+	Logger/Logger.cpp \
 	Sockets/MotherSocket.cpp \
 	Server/Server.cpp \
+	Config/ConfigParser.cpp \
 	Request/Request.cpp \
-	Config/ServerConfig.cpp \
-	Logger/Logger.cpp 
+	Response/Response.cpp \
+	Router/Router.cpp \
+	Handlers/Handlers.cpp
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 

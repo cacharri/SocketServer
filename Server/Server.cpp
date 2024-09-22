@@ -1,17 +1,27 @@
 #include "Server.hpp"
-#include "../Request/Request.hpp"
-#include <algorithm>
-#include <stdexcept>
-#include <iostream>
-#include <cstring>
-#include <unistd.h>
 
 Server::Server(const ServerConfig& serverConfig)
-    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, "127.0.0.1"),
+    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, serverConfig.host),
       buffer(new char[INITIAL_BUFFER_SIZE]),
       bufferSize(INITIAL_BUFFER_SIZE)
 {
+    std::cout << "<Server>:\n\t- " << serverConfig.host << "\n\t- " << serverConfig.port << std::endl;
+    // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
+    ConfigParser::copyServerConfig(serverConfig, Server::config);
 
+    // Iteramos en el map de endpoints de struct serverConfig
+    std::map<std::string, LocationConfig>::const_iterator it;
+    for (it = config.locations.begin(); it != config.locations.end(); ++it) {
+        const std::string& endpoint = it->first; // obtenemos ruta
+        const LocationConfig& locConfig = it->second; // Obtenemos struct LocationConfig
+
+        // Anadimos las reglas para un nuevo endpoint.
+        // Construimos con el constructor por iterator de set() para formar un set de string de methods disponibles allowMethods
+        std::set<std::string> allowedMethods(locConfig.limit_except.begin(), locConfig.limit_except.end());
+        // Anadimos el enpoint path ('route' en) al mapa routes de router con los methodos allowedMethods y la funcion que gestiona ese endpoint
+        if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "GET") <= locConfig.limit_except.end())
+            router.addRoute(endpoint, locConfig, setBodyWithFile);
+        }
 }
 
 Server::~Server()
@@ -32,11 +42,13 @@ void Server::launch()
 
     while (42)
     {
-        int pollCount = poll(&fds[0], fds.size(), -1);
+        std::cout << "Waiting for events... Current clients: "<< (fds.size() - 1) << std::endl;
+        int pollCount = poll(&fds[0], fds.size(), -1); // -1 se puede cambiar a un numero que seria el tiempo de espera en ms
         if (pollCount == -1)
         {
             ServerError error("Poll failed");
             LOG_EXCEPTION(error);
+            continue;
         }
 
         for (size_t i = 0; i < fds.size(); ++i)
@@ -44,9 +56,15 @@ void Server::launch()
             if (fds[i].revents & POLLIN)
             {
                 if (fds[i].fd == getSocketFd())
+                {
+                    //LOG("New client !");
                     acceptClient();
+                }
                 else
+                {
+                    //LOG("Handling client");
                     handleClient(i);
+                }
             }
             else if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
                 removeClient(i);
@@ -85,6 +103,7 @@ void Server::acceptClient() {
 
 void Server::handleClient(size_t index) {
     int         clientFd = fds[index].fd;
+    Response    response;
     try {
         
         std::string request_str = receiveMessage(clientFd);
@@ -93,18 +112,25 @@ void Server::handleClient(size_t index) {
             removeClient(index);
             return;
         }
+
         Request request(request_str);
-        request.print();
-        // Process the request and generate a response
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-        sendResponse(clientFd, response);
+
+        router.route(request, response);
+        response.setStatus(200, "OK");
+        response.setHeader("Content-Type", "text/html");
+        response.setContentLength();
+        
+        sendResponse(clientFd, response.toString());
     }
     catch (const std::exception& e)
     {
+        response.setStatus(500, "Internal Server Error"); // Internal Server Error
+        response.setBody("500 Internal Server Error");
+        sendResponse(clientFd, response.toString());
+        removeClient(index);
         std::string error("Error handling client: ");
         error += e.what();
         LOG(error);
-        removeClient(index);
     }
 }
 
@@ -158,6 +184,9 @@ void Server::removeClient(size_t index)
     close(fds[index].fd);
     fds.erase(fds.begin() + index);
 }
+
+
+
 
 //Exceptions handling
 Server::ServerError::ServerError(const std::string& error): error_string(error)
