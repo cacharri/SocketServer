@@ -8,6 +8,14 @@ Router::~Router()
 {
 }
 
+std::string printCurrentWorkingDirectory() {
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+        return (cwd);
+    else
+        return "";
+}
+
 void    Router::addRoute(const std::string& path, const LocationConfig& locationconfig, void (*handler)(const std::string& path, Response& res))
 {
     RouteConfig config;
@@ -46,8 +54,9 @@ void Router::route(const Request& request, Response& response) {
         }
 
         if (methodAllowed) {
-            std::string fullPath = ".." + it->second.endpointdata.root + "/" + it->second.endpointdata.index; // Construct full path
-            std::cout << "Routes builds paths of endpoint; " << request.getUri() << "   -->  " << fullPath << std::endl;
+            std::string fullPath =  printCurrentWorkingDirectory();
+            fullPath = fullPath + it->second.endpointdata.root + "/" + it->second.endpointdata.index; // Construct full path
+            std::cout << "[Endpoint] --> " << request.getUri() << "  -->  " << fullPath << std::endl;
             if (request.getMethod() == "GET") {
                 it->second.handler(fullPath, response); 
             } else if (request.getMethod() == "POST") {

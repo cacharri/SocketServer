@@ -114,12 +114,12 @@ void Server::handleClient(size_t index) {
         }
 
         Request request(request_str);
-        std::cout << clientFd << " requested -> " << request.getUri() << std::endl;
 
         router.route(request, response);
         response.setStatus(200, "OK");
         response.setHeader("Content-Type", "text/html");
         response.setContentLength();
+        
         sendResponse(clientFd, response.toString());
     }
     catch (const std::exception& e)

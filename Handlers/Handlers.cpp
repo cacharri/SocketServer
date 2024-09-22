@@ -6,18 +6,17 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 21:28:04 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 22:36:59 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/22 11:46:29 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Handlers.hpp"
 
 
-#include <sys/stat.h> // For file existence check
+#include <sys/stat.h>
 std::string readFile(const std::string &fullPath)
 {
-
-    // Check if the file exists
+    
     struct stat buffer;
     if (stat(fullPath.c_str(), &buffer) != 0) {
         return "Error: File does not exist.";
@@ -39,7 +38,6 @@ std::string readFile(const std::string &fullPath)
 void    setBodyWithFile(const std::string& filestr, Response& response)
 {
     std::cout << "Construyendo body a partir de " << filestr << std::endl;
-    response.setStatus(200, "OK");
     
     std::cout << readFile(filestr) << std::endl;
     

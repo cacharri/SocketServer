@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 22:18:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/09/22 11:39:48 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@
 #include "../Config/ConfigParser.hpp"
 #include <set>
 
+
+#include <limits.h>
+#include <unistd.h>
+#include <iostream>
     // std::string					root;  //directorio raiz 
     // std::string					index; // archivo predeterminado si se solicita un directorio
     // bool						autoindex;
