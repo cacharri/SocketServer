@@ -47,7 +47,7 @@ void Request::parse(const std::string& rawRequest)
             std::string key = line.substr(0, colonPos);
             std::string value = line.substr(colonPos + 1);
             
-            // Trim whitespace
+            // Trim whiteSpace
             key.erase(0, key.find_first_not_of(" \t"));
             key.erase(key.find_last_not_of(" \t") + 1);
             value.erase(0, value.find_first_not_of(" \t"));
