@@ -18,7 +18,7 @@
 MotherSocket::MotherSocket(int domain, int service, int protocol, int port, const std::string& interface){
     std::memset(&socketStruct, 0, sizeof(socketStruct));
     socketStruct.sin_family = domain;
-    socketStruct.sin_addr.s_addr = INADDR_ANY;//inet_addr(interface.c_str()); //INADDR_ANY
+    socketStruct.sin_addr.s_addr = inet_addr(interface.c_str()); //INADDR_ANY
     socketStruct.sin_port = htons(port);
 
     socketFd = socket(domain, service, protocol);

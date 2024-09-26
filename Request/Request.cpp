@@ -97,7 +97,7 @@ void    Request::print(void)const
     std::cout << getMethod() << " " << getUri() << " " << getHttpVersion() << std::endl;
     std::map<std::string, std::string>::const_iterator it = headers.begin();
     std::cout << "-----------HEADERS-----------" << std::endl;
-    for (it ; it != headers.end(); it++)
+    for (it = headers.begin(); it != headers.end(); it++)
         std::cout << it->first << " " << it->second << std::endl; // key
     std::cout << "-----------BODY-----------" << std::endl;
     std::cout << getBody() << std::endl; 
