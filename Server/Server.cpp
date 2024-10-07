@@ -19,9 +19,17 @@ Server::Server(const ServerConfig& serverConfig)
         // Construimos con el constructor por iterator de set() para formar un set de string de methods disponibles allowMethods
         std::set<std::string> allowedMethods(locConfig.limit_except.begin(), locConfig.limit_except.end());
         // Anadimos el enpoint path ('route' en) al mapa routes de router con los methodos allowedMethods y la funcion que gestiona ese endpoint
-        if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "GET") <= locConfig.limit_except.end())
+          // Verificar si GET está permitido y asociarlo a la función adecuada
+        if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "GET") != locConfig.limit_except.end()) {
             router.addRoute(endpoint, locConfig, setBodyWithFile);
         }
+
+        // Verificar si POST está permitido y asociarlo a la función de manejar POST
+        // Acceder como un método de instancia nos permite acceder a los datos de la instancia, organicacion,
+        /*if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "POST") != locConfig.limit_except.end()) {
+            router.addRoute(endpoint, locConfig, handlePostRequest);
+        }*/
+    }
 }
 
 Server::~Server()
@@ -72,6 +80,24 @@ void Server::launch()
     }
 }
 
+// Función para parsear el cuerpo de la solicitud en pares clave-valor
+std::map<std::string, std::string> parseFormData(const std::string& body) {
+    std::map<std::string, std::string> formData;
+    std::stringstream ss(body);
+    std::string pair;
+
+    while (std::getline(ss, pair, '&')) {  // Divide las parejas clave=valor separadas por '&'
+        size_t pos = pair.find('=');
+        if (pos != std::string::npos) {
+            std::string key = pair.substr(0, pos);
+            std::string value = pair.substr(pos + 1);
+            formData[key] = value;  // Guardamos el par clave-valor en el mapa
+        }
+    }
+
+    return formData;
+}
+
 void Server::acceptClient() {
     sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -101,38 +127,6 @@ void Server::acceptClient() {
     std::cout << "New client connected: " << inet_ntoa(clientAddr.sin_addr) << std::endl;
 }
 
-void Server::handleClient(size_t index) {
-    int         clientFd = fds[index].fd;
-    Response    response;
-    try {
-        
-        std::string request_str = receiveMessage(clientFd);
-        if (request_str.empty())
-        {
-            removeClient(index);
-            return;
-        }
-
-        Request request(request_str);
-
-        router.route(request, response);
-        response.setStatus(200, "OK");
-        response.setHeader("Content-Type", "text/html");
-        response.setContentLength();
-        
-        sendResponse(clientFd, response.toString());
-    }
-    catch (const std::exception& e)
-    {
-        response.setStatus(500, "Internal Server Error"); // Internal Server Error
-        response.setBody("500 Internal Server Error");
-        sendResponse(clientFd, response.toString());
-        removeClient(index);
-        std::string error("Error handling client: ");
-        error += e.what();
-        LOG(error);
-    }
-}
 
 std::string Server::receiveMessage(int clientSocket) {
     std::string message;
@@ -169,6 +163,28 @@ std::string Server::receiveMessage(int clientSocket) {
     return message;
 }
 
+std::string Server::receiveMessage(int clientSocket, size_t contentLength) {
+    std::string message;
+    ssize_t bytesRead;
+    size_t totalBytesRead = 0;
+
+    while (totalBytesRead < contentLength) {
+        bytesRead = recv(clientSocket, buffer + totalBytesRead, contentLength - totalBytesRead, 0);
+        if (bytesRead > 0) {
+            totalBytesRead += bytesRead;
+        } else if (bytesRead == 0) {
+            break;  // Conexión cerrada
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            ServerError error("Error reading from socket!");
+            LOG_EXCEPTION(error);
+            break;
+        }
+    }
+
+    message.assign(buffer, totalBytesRead);
+    return message;
+}
+
 void Server::sendResponse(int clientSocket, const std::string& response)
 {
     ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
@@ -185,8 +201,74 @@ void Server::removeClient(size_t index)
     fds.erase(fds.begin() + index);
 }
 
+void Server::handlePostRequest(Request& request, int clientFd, Response& response) {
+    std::cout << "Received POST request" << std::endl;
+    std::string contentType = request.getHeader("Content-Type");
+    if (contentType == "application/x-www-form-urlencoded") {
+        std::string requestBody = request.getBody();
+        
+        // Parsear el cuerpo del formulario
+        std::map<std::string, std::string> formData = parseFormData(requestBody);
+        
+        // Extraer datos del formulario
+        std::string name = formData["name"];
+        std::string email = formData["email"];
+        std::string age = formData["age"];
+        std::string gender = formData["gender"];
+        std::string comments = formData["comments"];
 
+        // Generar respuesta
+        std::string responseBody = "<html><body>";
+        responseBody += "<h1>Formulario Recibido</h1>";
+        responseBody += "<p>Nombre: " + name + "</p>";
+        responseBody += "<p>Email: " + email + "</p>";
+        responseBody += "<p>Edad: " + age + "</p>";
+        responseBody += "<p>Género: " + gender + "</p>";
+        responseBody += "<p>Comentarios: " + comments + "</p>";
+        responseBody += "</body></html>";
 
+        response.setStatus(200, "OK");
+        response.setBody(responseBody);
+    } else {
+        response.setStatus(400, "Bad Request");
+        response.setBody("Unsupported Content-Type");
+    }
+}
+
+void Server::handleClient(size_t index) {
+    int         clientFd = fds[index].fd;
+    Response    response;
+    try { 
+        std::string request_str = receiveMessage(clientFd);
+        if (request_str.empty())
+        {
+            removeClient(index);
+            return;
+        }
+
+        Request request(request_str);
+        if (request.getMethod() == "POST") {
+            std::cout << "Handling POST request" << std::endl;
+            handlePostRequest(request, clientFd, response);
+        }
+        else {
+            router.route(request, response);
+        }
+        response.setStatus(200, "OK");
+        response.setHeader("Content-Type", "text/html");
+        response.setContentLength();
+        
+        sendResponse(clientFd, response.toString());
+    }
+    catch (const std::exception& e)
+    {
+        response.setStatus(500, "Internal Server Error"); // Internal Server Error
+        response.setBody("500 Internal Server Error");
+        sendResponse(clientFd, response.toString());
+        removeClient(index);
+        LOG("Error handling client: " + std::string(e.what()));
+    }
+}
 
 //Exceptions handling
 Server::ServerError::ServerError(const std::string& error): error_string(error)

@@ -29,6 +29,7 @@
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
+#include <functional>
 
 /*
 
@@ -80,7 +81,9 @@ private:
     void        handleClient(size_t index);
     void        sendResponse(int clientSocket, const std::string& response);
     std::string receiveMessage(int clientSocket);
+    std::string receiveMessage(int clientSocket, size_t content_length);
     void        removeClient(size_t index);
+    void        handlePostRequest(Request& request, int clientFd, Response& response);
 
     
     // Disable copy constructor and assignment operator

@@ -34,5 +34,7 @@ public:
     std::string getHttpVersion() const;
     std::string getHeader(const std::string& key) const;
     std::string getBody() const;
+    // Setter
+    void setBody(const std::string& request_body);
 };
 #endif

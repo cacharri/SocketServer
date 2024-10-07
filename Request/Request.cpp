@@ -89,6 +89,9 @@ std::string Request::getHttpVersion() const {
     return httpVersion;
 }
 
+void Request::setBody(const std::string& requestBody) {
+        body = requestBody;
+}
 
 //https://stackoverflow.com/questions/31950470/what-is-the-upgrade-insecure-requests-http-header/32003517#32003517
 void    Request::print(void)const

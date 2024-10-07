@@ -1,4 +1,5 @@
 #include "Router.hpp"
+#include <string>
 
 Router::Router()
 {
@@ -60,7 +61,8 @@ void Router::route(const Request& request, Response& response) {
             if (request.getMethod() == "GET") {
                 it->second.handler(fullPath, response); 
             } else if (request.getMethod() == "POST") {
-                it->second.handler(fullPath, response); 
+                it->second.handler(fullPath, response);
+                std::cout << "hola\n" << std::endl; 
             }
         } else {
             response.setStatus(405, "Method Not Allowed");
