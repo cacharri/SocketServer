@@ -201,30 +201,94 @@ void Server::removeClient(size_t index)
     fds.erase(fds.begin() + index);
 }
 
+/*std::string urlDecode(const std::string &str) {
+    std::string result;
+    char ch;
+    int i, ii;
+    for (i = 0; i < str.length(); i++) {
+        if (str[i] == '%') {
+            sscanf(str.substr(i + 1, 2).c_str(), "%x", &ii);
+            ch = static_cast<char>(ii);
+            result += ch;
+            i = i + 2;
+        } else if (str[i] == '+') {
+            result += ' ';
+        } else {
+            result += str[i];
+        }
+    }
+    return result;
+}*/
+
+std::string escapeHtml(const std::string& data) {
+    std::string result;
+    for (size_t i = 0; i < data.length(); ++i) {
+        unsigned char c = data[i];
+        switch (c) {
+            case '&': result += "&amp;"; break;
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '"': result += "&quot;"; break;
+            case '\'': result += "&#39;"; break;
+            // Acentos y caracteres especiales
+            case 0xC3:  // UTF-8 de dos bytes (á, é, í, ó, ú, ñ, etc.)
+                if (i + 1 < data.length()) {
+                    unsigned char nextChar = data[i + 1];
+                    switch (nextChar) {
+                        case 0xA1: result += "&aacute;"; break;  // á
+                        case 0xA9: result += "&eacute;"; break;  // é
+                        case 0xAD: result += "&iacute;"; break;  // í
+                        case 0xB3: result += "&oacute;"; break;  // ó
+                        case 0xBA: result += "&uacute;"; break;  // ú
+                        case 0xB1: result += "&ntilde;"; break;  // ñ
+                        case 0x91: result += "&Ntilde;"; break;  // Ñ
+                        default: result += c; break;
+                    }
+                    i++;  // Salta el siguiente byte del carácter multibyte
+                } else {
+                    result += c;
+                }
+                break;
+            default: result += c; break;
+        }
+    }
+    return result;
+}
+
+
 void Server::handlePostRequest(Request& request, int clientFd, Response& response) {
     std::cout << "Received POST request" << std::endl;
     std::string contentType = request.getHeader("Content-Type");
+
     if (contentType == "application/x-www-form-urlencoded") {
         std::string requestBody = request.getBody();
-        
+
         // Parsear el cuerpo del formulario
         std::map<std::string, std::string> formData = parseFormData(requestBody);
-        
-        // Extraer datos del formulario
-        std::string name = formData["name"];
-        std::string email = formData["email"];
-        std::string age = formData["age"];
-        std::string gender = formData["gender"];
-        std::string comments = formData["comments"];
 
-        // Generar respuesta
+        // Decodificar campos del formulario
+        std::string name = urlDecode(formData["name"]);
+        std::string email = urlDecode(formData["email"]);
+        std::string age = urlDecode(formData["age"]);
+        std::string gender = urlDecode(formData["gender"]);
+        std::string comments = urlDecode(formData["comments"]);
+        
+        std::cout << "Received request body: " << requestBody << std::endl;
+
+        // Establecer el Content-Type en UTF-8 para la respuesta
+        response.setHeader("Content-Type", "text/html; charset=UTF-8");
+
+        std::cout << "Decoded name: " << name << std::endl;
+
+        // Generar respuesta HTML
         std::string responseBody = "<html><body>";
         responseBody += "<h1>Formulario Recibido</h1>";
-        responseBody += "<p>Nombre: " + name + "</p>";
-        responseBody += "<p>Email: " + email + "</p>";
-        responseBody += "<p>Edad: " + age + "</p>";
-        responseBody += "<p>Género: " + gender + "</p>";
-        responseBody += "<p>Comentarios: " + comments + "</p>";
+        responseBody += "<p>Nombre: " + escapeHtml(name) + "</p>";
+        responseBody += "<p>Email: " + escapeHtml(email) + "</p>";
+        responseBody += "<p>Edad: " + escapeHtml(age) + "</p>";
+        responseBody += "<p>G&eacute;nero:: " + escapeHtml(gender) + "</p>";
+        responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
+
         responseBody += "</body></html>";
 
         response.setStatus(200, "OK");
@@ -234,6 +298,7 @@ void Server::handlePostRequest(Request& request, int clientFd, Response& respons
         response.setBody("Unsupported Content-Type");
     }
 }
+
 
 void Server::handleClient(size_t index) {
     int         clientFd = fds[index].fd;
