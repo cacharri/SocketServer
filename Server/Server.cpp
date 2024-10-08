@@ -201,7 +201,7 @@ void Server::removeClient(size_t index)
     fds.erase(fds.begin() + index);
 }
 
-/*std::string urlDecode(const std::string &str) {
+std::string urlDecode(const std::string &str) {
     std::string result;
     char ch;
     int i, ii;
@@ -218,7 +218,7 @@ void Server::removeClient(size_t index)
         }
     }
     return result;
-}*/
+}
 
 std::string escapeHtml(const std::string& data) {
     std::string result;
@@ -231,7 +231,7 @@ std::string escapeHtml(const std::string& data) {
             case '"': result += "&quot;"; break;
             case '\'': result += "&#39;"; break;
             // Acentos y caracteres especiales
-            case 0xC3:  // UTF-8 de dos bytes (á, é, í, ó, ú, ñ, etc.)
+            case 0xC3:
                 if (i + 1 < data.length()) {
                     unsigned char nextChar = data[i + 1];
                     switch (nextChar) {
@@ -255,7 +255,6 @@ std::string escapeHtml(const std::string& data) {
     return result;
 }
 
-
 void Server::handlePostRequest(Request& request, int clientFd, Response& response) {
     std::cout << "Received POST request" << std::endl;
     std::string contentType = request.getHeader("Content-Type");
@@ -263,7 +262,6 @@ void Server::handlePostRequest(Request& request, int clientFd, Response& respons
     if (contentType == "application/x-www-form-urlencoded") {
         std::string requestBody = request.getBody();
 
-        // Parsear el cuerpo del formulario
         std::map<std::string, std::string> formData = parseFormData(requestBody);
 
         // Decodificar campos del formulario
