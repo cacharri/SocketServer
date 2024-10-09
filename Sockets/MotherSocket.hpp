@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MotherSocket.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:16 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 16:30:32 by Smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/09 12:58:51 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ public:
     MotherSocket(int domain, int service, int protocol, int port, const std::string& interface);
     virtual ~MotherSocket();
 
-    int getSocketFd() const;
+    int getPassiveSocketFd() const;
     const sockaddr_in& getAddress() const;
 
     void setNonBlocking();

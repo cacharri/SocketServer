@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 22:15:10 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/08 14:47:05 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,6 @@ private:
     std::string receiveMessage(int clientSocket);
     std::string receiveMessage(int clientSocket, size_t content_length);
     void        removeClient(size_t index);
-    void        handlePostRequest(Request& request, int clientFd, Response& response);
 
     
     // Disable copy constructor and assignment operator

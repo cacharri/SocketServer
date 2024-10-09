@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/22 11:39:48 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/09 12:24:57 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include "../Request/Request.hpp"
 #include "../Logger/Logger.hpp"
 #include "../Config/ConfigParser.hpp"
+#include "../Handlers/Handlers.hpp"
 #include <set>
 
 
@@ -40,10 +41,11 @@ public:
     ~Router();
     struct RouteConfig {
         LocationConfig      endpointdata;
-        void (*handler)(const std::string&, Response&); // Handler function
+        RequestHandler      *handler; // Handler function
+        
     };
     
-    void    addRoute(const std::string& path, const LocationConfig& locationconfig, void (*handler)(const std::string& path, Response& res));
+    void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler* handler);
     void    route(const Request& request, Response& response);
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }

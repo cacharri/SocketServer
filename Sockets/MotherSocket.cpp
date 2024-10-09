@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:44 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 19:21:24 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/09 12:58:42 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ MotherSocket::~MotherSocket() {
     }
 }
 
-int MotherSocket::getSocketFd() const {
+int MotherSocket::getPassiveSocketFd() const {
     return socketFd;
 }
 

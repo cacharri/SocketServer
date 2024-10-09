@@ -7,17 +7,14 @@ Router::Router()
 
 Router::~Router()
 {
+    std::map<std::string, RouteConfig>::const_iterator it = this->routes.begin();
+
+    while( it != this->routes.end())
+        delete routes[it->first].handler;
+    //delete[] routes[path].handler;
 }
 
-std::string printCurrentWorkingDirectory() {
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL)
-        return (cwd);
-    else
-        return "";
-}
-
-void    Router::addRoute(const std::string& path, const LocationConfig& locationconfig, void (*handler)(const std::string& path, Response& res))
+void    Router::addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler)
 {
     RouteConfig config;
     config.endpointdata.root = locationconfig.root;
@@ -28,7 +25,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config.endpointdata.upload_store = locationconfig.upload_store;
     config.endpointdata.cgi_pass = locationconfig.cgi_pass;
     config.endpointdata.redirect = locationconfig.redirect;
-    config.handler = handler;
+    config.handler = requesthandler;
 
     std::cout << "Added route: " << path << " with allowed methods: ";
     std::vector<std::string>::const_iterator it;
@@ -40,11 +37,12 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     routes[path] = config;
 }
 
-
 void Router::route(const Request& request, Response& response) {
-    std::map<std::string, RouteConfig>::iterator it = routes.find(request.getUri());
-    if (it != routes.end()) {
-
+    if (routes.empty())
+        std::cout << "empty router map" << std::endl;
+    std::map<std::string, RouteConfig>::iterator it = routes.find(request.getUri()) ;
+    if (it != routes.end())
+    {
         bool methodAllowed = false;
         for (std::vector<std::string>::iterator vecIt = it->second.endpointdata.limit_except.begin(); 
              vecIt != it->second.endpointdata.limit_except.end(); ++vecIt) {
@@ -53,17 +51,9 @@ void Router::route(const Request& request, Response& response) {
                 break;
             }
         }
-
         if (methodAllowed) {
-            std::string fullPath =  printCurrentWorkingDirectory();
-            fullPath = fullPath + it->second.endpointdata.root + "/" + it->second.endpointdata.index; // Construct full path
-            std::cout << "[Endpoint] --> " << request.getUri() << "  -->  " << fullPath << std::endl;
-            if (request.getMethod() == "GET") {
-                it->second.handler(fullPath, response); 
-            } else if (request.getMethod() == "POST") {
-                it->second.handler(fullPath, response);
-                std::cout << "hola\n" << std::endl; 
-            }
+                std::cout <<"test:" << it->second.endpointdata.index << std::endl;
+                it->second.handler->handle(request, response, it->second.endpointdata);
         } else {
             response.setStatus(405, "Method Not Allowed");
             response.setBody("405 Method Not Allowed");
