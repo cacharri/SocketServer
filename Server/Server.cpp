@@ -27,7 +27,8 @@ Server::Server(const ServerConfig& serverConfig)
         // Verificar si POST está permitido y asociarlo a la función de manejar POST
         // Acceder como un método de instancia nos permite acceder a los datos de la instancia, organicacion,
         if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "POST") != locConfig.limit_except.end()) {
-            router.addRoute(endpoint, locConfig, handlePostRequest);
+            PostHandler  *post_handler_instance = new PostHandler();
+            router.addRoute(endpoint, locConfig, post_handler_instance);
         }
     }
 
@@ -202,7 +203,7 @@ void Server::handleClient(size_t index) {
         
         router.route(request, response);
 
-        response.setStatus(200, "OK");
+        //response.setStatus(200, "OK");
         response.setHeader("Content-Type", "text/html");
         response.setContentLength();
         

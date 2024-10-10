@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Handlers.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 21:28:04 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/09 13:45:33 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/09 17:00:23 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,12 +51,15 @@ std::string     GetHandler::printCurrentWorkingDirectory()
 
 void        GetHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig)
 {
+    std::cout << "Received GET request" << std::endl;
+
     std::string fullpath =  printCurrentWorkingDirectory();
     //std::cout << "abs path: " << fullpath << std::endl;
     fullpath = fullpath + locationconfig.root + "/" + locationconfig.index; // Construct full path
     //std::cout << "join with file: " << fullpath << std::endl;
 
     response.setBody(readFile(fullpath));
+    response.setStatus(200, "OK");
 }
 
 PostHandler::PostHandler()
@@ -142,10 +145,15 @@ std::string                         PostHandler::escapeHtml(const std::string& d
 void        PostHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig)
 {
     (void) locationconfig;
+    
     std::cout << "Received POST request" << std::endl;
+    request.print();
     std::string contentType = request.getHeader("Content-Type");
-
-    if (contentType == "application/x-www-form-urlencoded") {
+    std::string contentType_without_boundary;
+    
+    std::getline(contentType, contentType_without_boundary, ';');
+    if (contentType == "application/x-www-form-urlencoded")
+    {
         std::string requestBody = request.getBody();
 
         std::map<std::string, std::string> formData = parseFormData(requestBody);
@@ -177,7 +185,11 @@ void        PostHandler::handle(const Request& request, Response& response, cons
 
         response.setStatus(200, "OK");
         response.setBody(responseBody);
-    } else {
+    } 
+    else if ( contentType_without_boundary  == "multipart/form-data"){
+        std::cout << "multipart/form-data encoding " << std::endl;
+    }
+    else {
         response.setStatus(400, "Bad Request");
         response.setBody("Unsupported Content-Type");
     }
