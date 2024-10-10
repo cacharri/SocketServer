@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/09 12:24:57 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/10 17:55:52 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,8 @@
 #include "../Logger/Logger.hpp"
 #include "../Config/ConfigParser.hpp"
 #include "../Handlers/Handlers.hpp"
-#include <set>
 
-
+#include <algorithm>
 #include <limits.h>
 #include <unistd.h>
 #include <iostream>
@@ -45,12 +44,16 @@ public:
         
     };
     
-    void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler* handler);
+    void    loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig);
+    //void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler* handler);
+    void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod);
+
     void    route(const Request& request, Response& response);
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }
     // string es el endpoint.
-    std::map<std::string, RouteConfig>  routes;
+    Router::RouteConfig*    HasValidMethod(std::vector<RouteConfig>& ConfigsAllowed, const std::string& input_method);
+    std::map<std::string, std::vector<RouteConfig> >  routes;
 };
 
 

@@ -20,7 +20,7 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
         std::cout << "    Allowed Methods: ";
         
         std::vector<std::string>::const_iterator methodIt;
-        for (methodIt = locConfig.limit_except.begin(); methodIt != locConfig.limit_except.end(); ++methodIt) {
+        for (methodIt = locConfig.methods.begin(); methodIt != locConfig.methods.end(); ++methodIt) {
             std::cout << *methodIt << " ";
         }
         
@@ -48,7 +48,7 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         newLocConfig.root = locConfig.root;
         newLocConfig.index = locConfig.index;
         newLocConfig.autoindex = locConfig.autoindex;
-        newLocConfig.limit_except = locConfig.limit_except; // shallow copy
+        newLocConfig.methods = locConfig.methods; // shallow copy
         newLocConfig.allow_upload = locConfig.allow_upload;
         newLocConfig.upload_store = locConfig.upload_store;
         newLocConfig.cgi_pass = locConfig.cgi_pass;
@@ -138,7 +138,7 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 				} else if (token == "method") {
 					std::string method;
 					while (iss >> method) {
-						currentLocation.limit_except.push_back(method);
+						currentLocation.methods.push_back(method);
 						std::cout << "[CONF]: Added allowed method " << method << std::endl;
 					}
 				} else if (token == "allow_upload") {

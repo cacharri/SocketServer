@@ -8,31 +8,6 @@ Server::Server(const ServerConfig& serverConfig)
     std::cout << "<Server>:\n\t- " << serverConfig.host << "\n\t- " << serverConfig.port << std::endl;
     // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
     ConfigParser::copyServerConfig(serverConfig, Server::config);
-
-    // Iteramos en el map de endpoints de struct serverConfig
-    std::map<std::string, LocationConfig>::const_iterator it;
-    for (it = config.locations.begin(); it != config.locations.end(); ++it) {
-        const std::string& endpoint = it->first; // obtenemos ruta
-        const LocationConfig& locConfig = it->second; // Obtenemos struct LocationConfig
-
-        // Anadimos las reglas para un nuevo endpoint.
-        // Construimos con el constructor por iterator de set() para formar un set de string de methods disponibles {"GET"} o {"GET","POST", "DELETE"} 
-        std::set<std::string> allowedMethods(locConfig.limit_except.begin(), locConfig.limit_except.end());
-        // Anadimos el enpoint path ('route' en) al mapa routes de router con los methodos allowedMethods y la funcion que gestiona ese endpoint
-          // Verificar si GET está permitido y asociarlo a la función adecuada
-        if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "GET") != locConfig.limit_except.end()) {
-            GetHandler  *get_handler_instance = new GetHandler();
-            router.addRoute(endpoint, locConfig, get_handler_instance);
-        }
-        // Verificar si POST está permitido y asociarlo a la función de manejar POST
-        // Acceder como un método de instancia nos permite acceder a los datos de la instancia, organicacion,
-        if (std::find(locConfig.limit_except.begin(), locConfig.limit_except.end(), "POST") != locConfig.limit_except.end()) {
-            PostHandler  *post_handler_instance = new PostHandler();
-            router.addRoute(endpoint, locConfig, post_handler_instance);
-        }
-    }
-
-
 }
 
 Server::~Server()
@@ -44,6 +19,11 @@ void    Server::init()
 {
     toPassiveSocket(10);
     setNonBlocking();
+
+    // Iteramos en el map de endpoints de struct serverConfig
+    std::map<std::string, LocationConfig>::const_iterator it;
+    for (it = config.locations.begin(); it != config.locations.end(); ++it)
+        router.loadEndpoints(it->first, it->second);
 }
 
 void Server::launch()

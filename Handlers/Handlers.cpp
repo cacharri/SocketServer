@@ -6,11 +6,14 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 21:28:04 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/09 17:00:23 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/10 18:02:42 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Handlers.hpp"
+
+
+
 
 GetHandler::GetHandler()
 {
@@ -143,15 +146,19 @@ std::string                         PostHandler::escapeHtml(const std::string& d
 
 
 void        PostHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig)
-{
-    (void) locationconfig;
-    
+{   
     std::cout << "Received POST request" << std::endl;
     request.print();
+
     std::string contentType = request.getHeader("Content-Type");
-    std::string contentType_without_boundary;
+    std::string contentType_multipart;
+    std::string boundary;
     
-    std::getline(contentType, contentType_without_boundary, ';');
+    if (contentType.find(";") != std::string::npos)
+    {
+        contentType_multipart = contentType.find("multipart/form-data");
+        boundary = contentType.find("-");
+    }
     if (contentType == "application/x-www-form-urlencoded")
     {
         std::string requestBody = request.getBody();
@@ -186,22 +193,11 @@ void        PostHandler::handle(const Request& request, Response& response, cons
         response.setStatus(200, "OK");
         response.setBody(responseBody);
     } 
-    else if ( contentType_without_boundary  == "multipart/form-data"){
-        std::cout << "multipart/form-data encoding " << std::endl;
+    else if ( contentType_multipart  == "multipart/form-data"){
+        std::cout << "multipart/form-data encoding received" << std::endl;
     }
     else {
         response.setStatus(400, "Bad Request");
         response.setBody("Unsupported Content-Type");
     }
 }
-
-
-// void handleHome(const Request& request, Response& response) {
-//     response.setStatus(200);
-//     response.setBody("<html><body><h1>Welcome to the Home Page</h1></body></html>");
-// }
-
-// void handleAbout(const Request& request, Response& response) {
-//     response.setStatus(200);
-//     response.setBody("<html><body><h1>About Us</h1></body></html>");
-// }

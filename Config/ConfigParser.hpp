@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 19:49:32 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/10 16:04:05 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ struct LocationConfig {
     std::string					root;  //directorio raiz 
     std::string					index; // archivo predeterminado si se solicita un directorio
     bool						autoindex;
-    std::vector<std::string>	limit_except; //para los metodos https permitidos en la ubicacion
+    std::vector<std::string>	methods; //para los metodos https permitidos en la ubicacion
     bool						allow_upload; //booleano para indicar si se permite o no la carga de archivos
     std::string					upload_store; // directorio donde se almacenan los archivos cargados si se acepta la carga
     std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
