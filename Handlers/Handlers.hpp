@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Handlers.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/13 13:56:20 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/15 16:25:47 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <limits.h>
+#include <string>
 
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
@@ -29,7 +30,6 @@ class RequestHandler {
         virtual void    handle(const Request& request, Response& response, const LocationConfig& locationconfig) = 0;
         // void            checkHeaders(std::string contentType);
         virtual         ~RequestHandler() {}
-        
 };
 
 class GetHandler : public RequestHandler
@@ -53,12 +53,11 @@ class PostHandler : public RequestHandler
         ~PostHandler();
         void        handle(const Request& request, Response& response, const LocationConfig& locationconfig);
     private:
+            void                                saveFile(const std::string& filename, const std::string& data);
             std::string                         urlDecode(const std::string &str);
             std::string                         escapeHtml(const std::string& data);
-            std::map<std::string, std::string>  parseUrlEncodedData(const std::string& body);
-            std::string                         parseMultipartData(const std::string& body, const std::string& boundary);
-
-
+            std::map<std::string, std::string>  parseUrlFormData(const std::string& body);
+            std::map<std::string, std::string>  parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store);
 };
 
 
