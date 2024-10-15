@@ -1,6 +1,6 @@
 
 #COMP
-COMP = c++ -std=c++98 #-fsanitize=address
+COMP = c++ -std=c++98 -fsanitize=address
 
 RM = rm -f
 
@@ -15,7 +15,9 @@ SRC = Webserv.cpp \
 	Request/Request.cpp \
 	Response/Response.cpp \
 	Router/Router.cpp \
-	Handlers/Handlers.cpp
+	Handlers/GetHandler.cpp \
+	Handlers/PostHandler.cpp
+
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 

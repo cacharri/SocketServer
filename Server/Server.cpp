@@ -39,6 +39,7 @@ void Server::launch()
         {
             ServerError error("Poll failed");
             LOG_EXCEPTION(error);
+
             continue;
         }
 
@@ -188,7 +189,8 @@ void Server::handleClient(size_t index) {
         response.setContentLength();
         
         sendResponse(clientFd, response.toString());
-        removeClient(index);
+        if (request.getHeader("Connection") == "close")
+            removeClient(index);
     }
     catch (const std::exception& e)
     {
