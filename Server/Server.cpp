@@ -13,6 +13,7 @@ Server::Server(const ServerConfig& serverConfig)
 Server::~Server()
 {
     delete[] buffer;
+    fds.clear();
 }
 
 void    Server::init()

@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/10 17:55:52 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/15 17:52:55 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,8 @@ public:
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }
     // string es el endpoint.
-    Router::RouteConfig*    HasValidMethod(std::vector<RouteConfig>& ConfigsAllowed, const std::string& input_method);
-    std::map<std::string, std::vector<RouteConfig> >  routes;
+    Router::RouteConfig*    HasValidMethod(std::vector<RouteConfig *>& ConfigsAllowed, const std::string& input_method);
+    std::map<std::string, std::vector<RouteConfig *> >  routes;
 };
 
 
