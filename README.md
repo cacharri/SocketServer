@@ -20,7 +20,7 @@ WEBSERV DOCUMENTATION
 3. Se utiliza un vector de structuras pollfd junto con poll() para manejar la disponibilidad de los fds.
 4. Renforzado el error management con Excepciones propias a cada objeto y añadido un objeto Logger.
 
-## Funcionamiento ## :
+## Funcionamiento ##
  
    ## OBJETO SERVER ##
  -    launch() -> bucle principal que recoje requests nuevas y comprueba el estado de las sessiones 
@@ -32,9 +32,10 @@ WEBSERV DOCUMENTATION
 
    ## OBJETO CONFIG ##
 - parseconfigFile(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
+   ## OBJETO ROUTER ##
 
 
-Por hacer ?
+##Por hacer: ##
 - CGI
 - Headers
 - improve server.config
