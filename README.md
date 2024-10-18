@@ -20,14 +20,19 @@ WEBSERV DOCUMENTATION
 3. Se utiliza un vector de structuras pollfd junto con poll() para manejar la disponibilidad de los fds.
 4. Renforzado el error management con Excepciones propias a cada objeto y añadido un objeto Logger.
 
-Funcionamiento:
-
+## Funcionamiento ## :
+ 
+   ## OBJETO SERVER ##
  -    launch() -> bucle principal que recoje requests nuevas y comprueba el estado de las sessiones 
  -    acceptClient() -> Maneja conexiones a traves de un vector y define esta como no bloqueante.
  -    handleclient() -> Recoje e procesa el requests entrante y responde.
  -    receiveMessage() -> lee del socket de la conexión por chunks de 4096 bytes y los va guardando 
  -    sendResponse() -> Envia una página.
- -    removeClient() -> Elimina y cierra sockets del vector 
+ -    removeClient() -> Elimina y cierra sockets del vector
+
+   ## OBJETO CONFIG ##
+- parseconfigFile(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
+
 
 Por hacer ?
 - CGI
@@ -35,10 +40,5 @@ Por hacer ?
 - improve server.config
 - Poner un limite de sessiones para prevenir vectores<Server> enormes.
 - Poner un timeout en las sessiones para no agotar recursos.
-
-## OBJETO CONFIG ##
-
-Funcionamiento:
-- parseconfigFile(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
 
 
