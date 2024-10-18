@@ -1,5 +1,15 @@
 WEBSERV DOCUMENTATION
 
+## USAGE ##
+ 
+1. Set nginx configuration through server.config file.
+
+2. Compile with Make from Makefile
+
+3. execute ./Webserver server.config
+ 
+
+
 ## OBJETO SERVER ##
 
 - Mejoras hechas
@@ -20,9 +30,9 @@ Funcionamiento:
  -    removeClient() -> Elimina y cierra sockets del vector 
 
 Por hacer ?
-- Procesar el request en handleclient() tras recibirlo con receiveMessage() y crear un Data structure
-- Leer el Data Structure y responder con la pagina, la pagina de error, o una ejecución cgi.
-- Como se gestiona POST ?
+- CGI
+- Headers
+- improve server.config
 - Poner un limite de sessiones para prevenir vectores<Server> enormes.
 - Poner un timeout en las sessiones para no agotar recursos.
 
