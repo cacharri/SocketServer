@@ -21,8 +21,8 @@ WEBSERV DOCUMENTATION
 4. Renforzado el error management con Excepciones propias a cada objeto y añadido un objeto Logger.
 
 ## Funcionamiento ##
- 
-   ## OBJETO SERVER ##
+## OBJETO MOTHERSOCKET ##
+## OBJETO SERVER ##
  -    launch() -> bucle principal que recoje requests nuevas y comprueba el estado de las sessiones 
  -    acceptClient() -> Maneja conexiones a traves de un vector y define esta como no bloqueante.
  -    handleclient() -> Recoje e procesa el requests entrante y responde.
@@ -30,9 +30,16 @@ WEBSERV DOCUMENTATION
  -    sendResponse() -> Envia una página.
  -    removeClient() -> Elimina y cierra sockets del vector
 
-   ## OBJETO CONFIG ##
+## OBJETO CONFIG ##
 - parseconfigFile(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
-   ## OBJETO ROUTER ##
+
+## OBJETO ROUTER ##
+
+## OBJETO HANDLER ##
+
+## OBJETO REQUEST ##
+
+## OBJETO RESPONSE ##
 
 
 ## Por hacer: ##
