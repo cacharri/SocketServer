@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/08 14:47:05 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/20 22:31:07 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
+#include "../Handlers/HeaderAnalyzer.hpp"
 #include <sys/stat.h> // For file existence check
 #include <vector>
 #include <poll.h>

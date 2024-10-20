@@ -50,3 +50,6 @@ WEBSERV DOCUMENTATION
 - Poner un timeout en las sessiones para no agotar recursos.
 
 
+## SOURCES: ##
+    - https://http.dev/content-negotiation
+

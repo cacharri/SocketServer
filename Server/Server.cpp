@@ -56,7 +56,6 @@ void Server::launch()
                 else
                 {
                     //LOG("Handling client");
-
                     handleClient(i);
                 }
             }
@@ -182,6 +181,8 @@ void Server::handleClient(size_t index) {
         }
 
         Request request(request_str);
+        
+        analyzeBasicHeaders(request, response, config);
         
         router.route(request, response);
 
