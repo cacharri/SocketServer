@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/20 22:31:07 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/22 03:01:19 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
-#include "../Handlers/HeaderAnalyzer.hpp"
 #include <sys/stat.h> // For file existence check
 #include <vector>
 #include <poll.h>
@@ -32,6 +31,7 @@
 #include <unistd.h>
 #include <functional>
 #include <string>
+#include <ctime>
 
 /*
 
@@ -53,6 +53,15 @@
 5. The removeClient() method properly closes and removes disconnected clients from the fds vector.
 */
 
+struct ClientInfo {
+    pollfd          pfd;
+    time_t          lastActivity;
+    bool            keepAlive;
+    unsigned int    timeout;
+    unsigned int    max;
+
+
+};
 
 class Server : public MotherSocket {
 public:
@@ -73,10 +82,14 @@ public:
 private:
     Router              router;
     ServerConfig        config;
-    std::vector<pollfd> fds;
-    static const size_t INITIAL_BUFFER_SIZE = 4096;
+    std::vector<ClientInfo> clients;
     char* buffer;
     size_t bufferSize;
+    static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
+    static const size_t INITIAL_BUFFER_SIZE = 4096;
+
+    // Headers functions
+    void        analyzeBasicHeaders(const Request& request, Response& response, int index);
 
     // Core functions
     void        acceptClient();
@@ -86,10 +99,14 @@ private:
     std::string receiveMessage(int clientSocket, size_t content_length);
     void        removeClient(size_t index);
 
-    
     // Disable copy constructor and assignment operator
     Server(const Server&);
     Server& operator=(const Server&);
+
+    void checkTimeouts();
 };
+
+bool isValidHostHeader(const std::string &hostHeader);
+
 
 #endif
