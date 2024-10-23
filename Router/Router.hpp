@@ -25,6 +25,11 @@
 #include <limits.h>
 #include <unistd.h>
 #include <iostream>
+#include <sys/stat.h>
+#include <cstring>
+#include <cerrno>
+#include <sys/types.h>
+#include <dirent.h>
     // std::string					root;  //directorio raiz 
     // std::string					index; // archivo predeterminado si se solicita un directorio
     // bool						autoindex;
@@ -56,5 +61,7 @@ private:
     std::map<std::string, std::vector<RouteConfig *> >  routes;
 };
 
+bool isDirectory(const std::string& path);
+std::string generateAutoIndex(const std::string& directory);
 
 #endif

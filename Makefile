@@ -17,8 +17,7 @@ SRC = Webserv.cpp \
 	Router/Router.cpp \
 	Handlers/GetHandler.cpp \
 	Handlers/PostHandler.cpp \
-	Handlers/HeaderAnalyzer.cpp \
-	Handlers/HeadersUtils.cpp \
+	Headers/HeadersUtils.cpp \
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 

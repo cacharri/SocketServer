@@ -22,6 +22,11 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <sys/types.h>
+#include <dirent.h>
+#include <vector>
+#include <iostream>
+#include <sstream>
 
 struct LocationConfig {
     std::string					root;  //directorio raiz 

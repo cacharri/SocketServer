@@ -40,6 +40,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config->handler = requesthandler;
 
     routes[path].push_back(config);
+     std::cout << "Ruta añadida: " << path << " con autoindex: " << (locationconfig.autoindex ? "Habilitado" : "Deshabilitado") << std::endl;
 }
 
 void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig)
@@ -70,28 +71,73 @@ Router::RouteConfig* Router::HasValidMethod(std::vector<RouteConfig *>& ConfigsA
     return NULL; 
 }
 
+bool isDirectory(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+        return false; // No se puede acceder a la ruta
+    }
+    return (info.st_mode & S_IFDIR) != 0; // Verifica si es un directorio
+}
+
+std::string generateAutoIndex(const std::string& directory) {
+    std::cout << "Generando autoindex para el directorio: " << directory << std::endl; // Añadir depuración
+    std::string autoindexHtml = "<html><body><h1>Index of " + directory + "</h1><ul>";
+    
+    DIR* dir = opendir(directory.c_str());
+    if (dir != NULL) {
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL) {
+            std::string filename = entry->d_name;
+            if (filename != "." && filename != "..") {
+                autoindexHtml += "<li><a href=\"" + filename + "\">" + filename + "</a></li>";
+            }
+        }
+        closedir(dir);
+    } else {
+        // Error al abrir el directorio
+        autoindexHtml = "<html><body><h1>Error: Cannot open directory</h1></body></html>";
+        std::cerr << "Error al abrir el directorio: " << strerror(errno) << std::endl; // Mostrar error
+    }
+    
+    autoindexHtml += "</ul></body></html>";
+    return autoindexHtml;
+}
+
 void Router::route(const Request& request, Response& response) {
-    if (routes.empty())
-    {
+    if (routes.empty()) {
         std::cout << "empty router map" << std::endl;
-        return ;
+        return;
     }
 
-    std::map<std::string, std::vector<RouteConfig *> >::iterator it = routes.find(request.getUri()) ;
-    if (it != routes.end())
-    {
+    std::map<std::string, std::vector<RouteConfig *> >::iterator it = routes.find(request.getUri());
+    
+    if (it != routes.end()) {
         RouteConfig *ptr = HasValidMethod((*it).second, request.getMethod());
-        if (ptr == NULL)
-        {
+        
+        if (ptr == NULL) {
             response.setStatus(405, "Method Not Allowed");
             response.setBody("405 Method Not Allowed");
+            return;
         }
-        std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
-        ptr->handler->handle(request, response, ptr->endpointdata);
+
+        // Verificar si el autoindex está habilitado y si la ruta es un directorio
+        std::string fullPath = ptr->endpointdata.root + request.getUri();
+        std::cout << "Ruta completa: " << fullPath << std::endl;
+        
+        if (ptr->endpointdata.autoindex && isDirectory(fullPath)) {
+            std::cout << "Generando autoindex para: " << fullPath << std::endl;
+            std::string autoindexHtml = generateAutoIndex(fullPath);
+            response.setStatus(200, "OK");
+            response.setBody(autoindexHtml);
+            response.setHeader("Content-Type", "text/html");
+        } else {
+            // Código existente para servir archivos como index.html
+            std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
+            ptr->handler->handle(request, response, ptr->endpointdata);
+        }
 
     } else {
         response.setStatus(404, "Not found");
         response.setBody("404 Not Found");
     }
 }
-
