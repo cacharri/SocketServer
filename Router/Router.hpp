@@ -54,6 +54,7 @@ public:
     void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod);
 
     void    route(const Request& request, Response& response);
+    bool    isCgiRequest(const std::string& path);
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }
     // string es el endpoint.

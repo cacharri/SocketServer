@@ -17,8 +17,17 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <limits.h>
 #include <string>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <sstream>
+#include <vector>
+#include <map>
+
 
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
@@ -60,6 +69,16 @@ class PostHandler : public RequestHandler
             std::map<std::string, std::string>  parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store);
 };
 
+class CgiHandler : public RequestHandler 
+{
+public:
+    CgiHandler();
+    virtual ~CgiHandler();
+    virtual void handle(const Request& request, Response& response, const LocationConfig& locationconfig);
+    
+private:
+    std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );
+};
 
 
 // void        handleHome(const Request& request, Response& response);

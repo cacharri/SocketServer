@@ -105,3 +105,12 @@ void    Request::print(void)const
     std::cout << "-----------BODY-----------" << std::endl;
     std::cout << getBody() << std::endl; 
 }
+
+
+std::string Request::getPath() const {
+    size_t questionMarkPos = uri.find('?');
+    if (questionMarkPos != std::string::npos) {
+        return uri.substr(0, questionMarkPos); // Devuelve el path antes del '?'
+    }
+    return uri; // Si no hay query string, devuelve la URI completa
+}
