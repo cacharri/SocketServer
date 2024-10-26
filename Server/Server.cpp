@@ -31,10 +31,7 @@ void    Server::init()
     std::map<std::string, LocationConfig>::const_iterator it;
     for (it = config.locations.begin(); it != config.locations.end(); ++it)
         router.loadEndpoints(it->first, it->second);
-}
 
-void Server::launch()
-{
     // Creamos el primer cliente a polear (poll()) que seria nuestro socket passivo.
     ClientInfo serverInfo;
     serverInfo.pfd.fd = getPassiveSocketFd();
@@ -47,12 +44,16 @@ void Server::launch()
 
     // lo anadimos a nuestro vectore para polear
     clients.push_back(serverInfo);
+}
 
-    std::vector<pollfd> pollFds(1, serverInfo.pfd);
+void Server::launch()
+{
+
+    std::vector<pollfd> pollFds(1, clients.back().pfd);
 
     while (42)
     {
-        std::cout << "\nWaiting for events... Current clients: " << (clients.size() - 1) << "\n"<<std::endl;
+        // std::cout << "\nWaiting for events... Current clients: " << (clients.size() - 1) << "\n"<<std::endl;
         
         int pollCount = poll(pollFds.data(), pollFds.size(), 1000);
 
@@ -70,15 +71,9 @@ void Server::launch()
         for (size_t i = 0; i < clients.size(); )
         {
             // sessiones con tiempo de ausencia superior a CONNECTION_TIMEOUT miembro privado server.
-            std::cout <<"Ausencia de Uso de Fd: " << clients[i].pfd.fd << " : " << difftime(time(NULL), clients[i].lastActivity) << std::endl;
-
-            if (i > 0 && (!clients[i].keepAlive || 
-                difftime(time(NULL), clients[i].lastActivity) > CONNECTION_TIMEOUT))
+            if (IsTimeout(i))
             {
-                std::cout << "\nClosed Socket on fd: " << pollFds[i].fd << "[TIMEOUT]\n"<<std::endl;
-                removeClient(i);
                 pollFds.erase(pollFds.begin() + i);
-
                 continue;
             }
 
@@ -257,6 +252,20 @@ void Server::handleClient(size_t index) {
         removeClient(index);
         LOG("Error handling client: " + std::string(e.what()));
     }
+}
+
+
+bool    Server::IsTimeout(size_t i)
+{
+    //std::cout <<"Ausencia de Uso de Fd: " << clients[i].pfd.fd << " : " << difftime(time(NULL), clients[i].lastActivity) << std::endl;
+    if (i > 0 && (!clients[i].keepAlive || 
+        difftime(time(NULL), clients[i].lastActivity) > CONNECTION_TIMEOUT))
+    {
+        //std::cout << "\nClosed Socket on fd: " << clients[i].pfd.fd << "[TIMEOUT]\n"<<std::endl;
+        removeClient(i);
+        return true;
+    }
+    return false;
 }
 
 

@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/22 03:01:19 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/26 13:03:51 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,7 @@ private:
 
     // Headers functions
     void        analyzeBasicHeaders(const Request& request, Response& response, int index);
-
+    
     // Core functions
     void        acceptClient();
     void        handleClient(size_t index);
@@ -98,12 +98,13 @@ private:
     std::string receiveMessage(int clientSocket);
     std::string receiveMessage(int clientSocket, size_t content_length);
     void        removeClient(size_t index);
+    
+    bool        IsTimeout(size_t index);
 
     // Disable copy constructor and assignment operator
     Server(const Server&);
     Server& operator=(const Server&);
 
-    void checkTimeouts();
 };
 
 bool isValidHostHeader(const std::string &hostHeader);
