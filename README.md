@@ -131,11 +131,11 @@ Represents an HTTP response. It constructs and stores response information, incl
 - **getBody() const**: Returns the body of the response.
 
 ## To Do
-- Implement CGI handling.
-- Improve header management.
-- Enhance `server.config` structure.
-- Set a limit on sessions to prevent large `vector<Server>` instances.
-- Implement session timeouts to conserve resources.
+- Implement CGI handling (use execve, GET usage & post usage)
+- Test header management.
+- Append Variables to `server.config` structure.
+- Redirection endpoint
+- Read Subject
 
 ## Sources
 - [HTTP Content Negotiation](https://http.dev/content-negotiation)
