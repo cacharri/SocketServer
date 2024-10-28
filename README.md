@@ -1,55 +1,141 @@
-WEBSERV DOCUMENTATION
+# WEBSERV DOCUMENTATION
 
-## USAGE ##
- 
-1. Set nginx configuration through server.config file.
+## Table of Contents
+1. [Usage](#usage)
+2. [Server Object](#server-object)
+3. [Config Object](#config-object)
+4. [Router Object](#router-object)
+5. [Handlers](#handlers)
+   - [RequestHandler Class](#requesthandler-class)
+   - [GetHandler Class](#gethandler-class)
+   - [PostHandler Class](#posthandler-class)
+   - [CgiHandler Class](#cgihandler-class)
+6. [Request Object](#request-object)
+7. [Response Object](#response-object)
+8. [To Do](#to-do)
+9. [Sources](#sources)
 
-2. Compile with Make from Makefile
+## Usage
+1. Set the Nginx configuration through the `server.config` file.
+2. Compile the project using `Make` from the `Makefile`.
+3. Execute the server with `./Webserver server.config`.
 
-3. execute ./Webserver server.config
- 
+## Server Object
+The main object for managing an HTTP 1.1 server. It inherits from the `MotherSocket` object, which instantiates non-blocking IPv4 sockets, both passive and active.
 
+### Member Variables
+- **Config**: Stores a copy of the server configuration (inspired by Nginx).
+- **Router**: Maps endpoints to their associated data structures and functions.
+- **Vector<ClientsInfo>**: Data structure for session management (timeout, keepAlive) and `pollfd` struct for handling incoming socket (client FD).
+- **Buffer**: For receiving messages from the socket.
+- **Default Configuration Variables**: Timeout and buffer size.
 
-## OBJETO SERVER ##
+### Functions
+- **Init()**: Adds the O_NONBLOCK flag to the server socket and creates the first passive client in the managed clients vector. Puts the passive socket in listening mode for up to 10 incoming connections.
+- **AcceptClient()**: Accepts new connections on the passive socket and registers each connection with a `ClientInfo` structure.
+- **RemoveClient()**: Closes the connection FD and removes the `ClientInfo` structure from the clients vector.
+- **ReceiveMessage()**: Returns a string with bytes from the associated connection FD up to `CLIENT_MAX_BODY_SIZE`.
+- **SendResponse()**: Writes and sends a response on the active connection socket.
+- **AnalyzeBasicHeaders()**: Logic for general headers: HOST, CONNECTION, KEEP-ALIVE.
+- **IsTimeout()**: Checks if the client has been inactive for a sufficient amount of time.
+- **Launch()**: Starts the main server loop, waiting for events on client sockets, accepting new connections, and managing client activity and timeouts.
+- **HandleClient()**: Manages communication with a specific client, receiving messages, analyzing headers, routing requests, and sending responses.
 
-- Mejoras hechas
-1. Clase principal para la gestión de fds pasivos y activos asicomo la gestion de conexiones entrantes.
-    -   1.1 Objeto derivado de MotherSocket, clase que se usa para configurar los socket manejados por Server.
-    -   1.2 MotherSocket tiene un ternario ahora para comprobar que haya una interfaz con la que interactuar.
-2. Ahora se utiliza un buffer dinámico que se expande en función de los bytes entrantes por el fd.
-3. Se utiliza un vector de structuras pollfd junto con poll() para manejar la disponibilidad de los fds.
-4. Renforzado el error management con Excepciones propias a cada objeto y añadido un objeto Logger.
+## Config Object
+- **parseConfigFile(const std::string& filename)**: Parses the `server.config` file and stores parameters in `LocationConfig` and `ServerConfig` structures.
 
-## Funcionamiento ##
-## OBJETO MOTHERSOCKET ##
-## OBJETO SERVER ##
- -    launch() -> bucle principal que recoje requests nuevas y comprueba el estado de las sessiones 
- -    acceptClient() -> Maneja conexiones a traves de un vector y define esta como no bloqueante.
- -    handleclient() -> Recoje e procesa el requests entrante y responde.
- -    receiveMessage() -> lee del socket de la conexión por chunks de 4096 bytes y los va guardando 
- -    sendResponse() -> Envia una página.
- -    removeClient() -> Elimina y cierra sockets del vector
+## Router Object
+Responsible for managing routes and handling HTTP requests. It associates routes with their respective handlers and processes incoming requests.
 
-## OBJETO CONFIG ##
-- parseconfigFile(const std::string& filename) -> Guarda en 2 estructuras de Datos LocationConfig y ServerConfig los párametros de configuration del programa obtenidos a través del archivo "server.config"
+### Member Variables
+- **routes**: A map that associates routes with a vector of route configurations (`RouteConfig`).
 
-## OBJETO ROUTER ##
+### Functions
+- **Router()**: Constructor that initializes the Router object.
+- **~Router()**: Destructor that frees memory for handlers and route configurations.
+- **loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig)**: Loads allowed endpoints (GET, POST, CGI) and associates them with their handlers.
+- **addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod)**: Adds a new route to the routes map with its configuration and corresponding handler.
+- **route(const Request& request, Response& response)**: Processes an incoming request, verifies the route and method, and calls the corresponding handler.
+- **isCgiRequest(const std::string& path)**: Checks if the requested path is a CGI request.
+- **HasValidMethod(std::vector<RouteConfig *>& ConfigsAllowed, const std::string& input_method)**: Checks if the request method is valid for the given route.
 
-## OBJETO HANDLER ##
+## Handlers
+Handlers are responsible for processing specific HTTP requests (GET, POST, CGI) and generating appropriate responses.
 
-## OBJETO REQUEST ##
+### RequestHandler Class
+- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Pure virtual method to be implemented by derived classes for handling requests.
+- **~RequestHandler()**: Virtual destructor.
 
-## OBJETO RESPONSE ##
+### GetHandler Class (inherits from RequestHandler)
+- **GetHandler()**: Constructor that initializes the GET handler.
+- **~GetHandler()**: Destructor that cleans up resources.
+- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles GET requests, reads files, and generates responses.
 
+### PostHandler Class (inherits from RequestHandler)
+- **PostHandler()**: Constructor that initializes the POST handler.
+- **~PostHandler()**: Destructor that cleans up resources.
+- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles POST requests, processes form data, and generates responses.
+- **saveFile(const std::string& filename, const std::string& data)**: Saves a file to the system.
+- **parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store)**: Parses multipart form data.
+- **parseUrlFormData(const std::string& body)**: Parses URL-encoded form data.
+- **urlDecode(const std::string &str)**: Decodes a URL-encoded string.
+- **escapeHtml(const std::string& data)**: Escapes special characters in HTML.
 
-## Por hacer: ##
-- CGI
-- Headers
-- improve server.config
-- Poner un limite de sessiones para prevenir vectores<Server> enormes.
-- Poner un timeout en las sessiones para no agotar recursos.
+### CgiHandler Class (inherits from RequestHandler)
+- **CgiHandler()**: Constructor that initializes the CGI handler.
+- **~CgiHandler()**: Destructor that cleans up resources.
+- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles CGI requests and executes scripts.
+- **executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData)**: Executes a CGI script and returns its output.
 
+## Request Object
+Represents an HTTP request. It analyzes and stores request information, including method, URI, headers, and body.
 
-## SOURCES: ##
-    - https://http.dev/content-negotiation
+### Member Variables
+- **method**: Stores the HTTP method (GET, POST, etc.).
+- **uri**: Stores the requested URI.
+- **httpVersion**: Stores the HTTP protocol version.
+- **headers**: Map that stores request headers.
+- **body**: Stores the request body.
 
+### Functions
+- **Request(const std::string& rawRequest)**: Constructor that initializes the object from a raw request string.
+- **parse(const std::string& rawRequest)**: Parses the raw request and extracts method, URI, headers, and body.
+- **getMethod() const**: Returns the HTTP method of the request.
+- **getUri() const**: Returns the URI of the request.
+- **getHeader(const std::string& key) const**: Returns the value of a specific header.
+- **getBody() const**: Returns the body of the request.
+- **getHttpVersion() const**: Returns the HTTP protocol version.
+- **setBody(const std::string& requestBody)**: Sets the body of the request.
+- **print() const**: Prints request information to the console.
+- **getPath() const**: Returns the path of the URI, excluding any query string.
+
+## Response Object
+Represents an HTTP response. It constructs and stores response information, including status code, headers, and body.
+
+### Member Variables
+- **statusCode**: Stores the HTTP status code.
+- **statusMessage**: Stores the corresponding status message.
+- **headers**: Map that stores response headers.
+- **body**: Stores the response body.
+
+### Functions
+- **Response(int code)**: Constructor that initializes the object with a status code and sets the default status message.
+- **setStatus(int code, const std::string& message)**: Sets the status code and message.
+- **setHeader(const std::string& key, const std::string& value)**: Sets a header in the response.
+- **setBody(const std::string& content)**: Sets the response body and updates the content length.
+- **setContentType(const std::string& type)**: Sets the content type in the header.
+- **setContentLength()**: Sets the content length in the header.
+- **toString() const**: Converts the response to a string in HTTP format.
+- **getStatusCode() const**: Returns the status code of the response.
+- **getStatusMessage() const**: Returns the status message of the response.
+- **getBody() const**: Returns the body of the response.
+
+## To Do
+- Implement CGI handling.
+- Improve header management.
+- Enhance `server.config` structure.
+- Set a limit on sessions to prevent large `vector<Server>` instances.
+- Implement session timeouts to conserve resources.
+
+## Sources
+- [HTTP Content Negotiation](https://http.dev/content-negotiation)
