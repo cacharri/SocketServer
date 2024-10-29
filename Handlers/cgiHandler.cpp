@@ -6,24 +6,42 @@ CgiHandler::CgiHandler() {}
 CgiHandler::~CgiHandler() {}
 
 void CgiHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig) {
-   std::string scriptPath = locationconfig.root + "/" + locationconfig.index; // ruta del archivo
-    // Crear un mapa para las variables de entorno
+    std::string scriptPath = locationconfig.root + "/" + locationconfig.index; // Ruta del archivo
     std::map<std::string, std::string> env;
+
+    // Configurar las variables de entorno comunes
     env["REQUEST_METHOD"] = request.getMethod();
     env["CONTENT_TYPE"] = request.getHeader("Content-Type");
-    std::ostringstream oss;
-    oss << request.getBody().size();
-    env["CONTENT_LENGTH"] = oss.str();
-    env["SCRIPT_FILENAME"] = scriptPath;
+    env["REDIRECT_STATUS"] = "200"; //seguridad php
 
-    // se pueden llenar mas variables de entorno
+    if (request.getMethod() == "POST") {
+        // Para POST, agrega el tamaño del cuerpo
+        std::ostringstream oss;
+        oss << request.getBody().size();
+        env["CONTENT_LENGTH"] = oss.str();
+        env["SCRIPT_FILENAME"] = scriptPath;
 
-    std::string output = executeCgi(scriptPath, env, request.getBody());
+        // Ejecutar el CGI con el contenido del cuerpo
+        std::string output = executeCgi(scriptPath, env, request.getBody());
+        response.setBody(output);
+    } else if (request.getMethod() == "GET") {
+        // Para GET, establece solo el script y ejecuta sin cuerpo
+        env["CONTENT_LENGTH"] = "0"; // No hay cuerpo en GET
+        env["SCRIPT_FILENAME"] = scriptPath;
 
-    response.setBody(output);
+        // Ejecutar el CGI sin cuerpo
+        std::string output = executeCgi(scriptPath, env, "");
+        response.setBody(output);
+    } else {
+        // Manejo de otros métodos (si es necesario)
+        response.setStatus(405, "Method Not Allowed");
+        response.setBody("405 Method Not Allowed");
+    }
+    
+
+    // Establecer el estado de la respuesta
     response.setStatus(200, "OK");
 }
-
 
 std::string CgiHandler::executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData) {
     int pipeIn[2];  // Pipe para entrada
@@ -36,6 +54,7 @@ std::string CgiHandler::executeCgi(const std::string& scriptPath, const std::map
     }
 
     pid_t pid = fork(); // Crear un nuevo proceso
+    std::vector<char*> envp; // Declarar envp aquí para que esté accesible en ambos bloques
 
     if (pid < 0) {
         std::cerr << "Error al hacer fork" << std::endl;
@@ -43,25 +62,36 @@ std::string CgiHandler::executeCgi(const std::string& scriptPath, const std::map
     }
 
     if (pid == 0) { // Proceso hijo
-        // Redirigir la entrada y salida estándar
-        dup2(pipeIn[0], STDIN_FILENO);   // Entrada del script
-        dup2(pipeOut[1], STDOUT_FILENO); // Salida del script
+    // Redirigir la entrada y salida estándar
+    dup2(pipeIn[0], STDIN_FILENO);
+    dup2(pipeOut[1], STDOUT_FILENO);
 
-        // Cerrar los pipes en el hijo
-        close(pipeIn[1]);
-        close(pipeOut[0]);
+    // Cerrar los pipes en el hijo
+    close(pipeIn[1]);
+    close(pipeOut[0]);
 
-        // Establecer las variables de entorno
-        for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); ++it) {
-            setenv(it->first.c_str(), it->second.c_str(), 1);
-        }
-        setenv("REDIRECT_STATUS", "200", 1);
-        // Ejecutar el script PHP
-        execlp("php-cgi", "php-cgi", scriptPath.c_str(), (char*)NULL);
-        // Si execlp falla
-        std::cerr << "Error al ejecutar el script" << std::endl;
-        exit(1);
-    } else { // Proceso padre
+    // Preparar el entorno
+    for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); ++it) {
+        std::string envVar = it->first + "=" + it->second;
+        envp.push_back(strdup(envVar.c_str()));
+    }
+    envp.push_back(NULL); // Terminar el array con NULL
+
+    // Argumentos para execve
+    char* args[] = { const_cast<char*>(scriptPath.c_str()), NULL };
+
+    std::cerr << "Ejecutando: " << scriptPath << std::endl;
+    for (size_t i = 0; i < envp.size(); ++i) {
+        std::cerr << "Variable de entorno: " << envp[i] << std::endl;
+    }
+
+    // Ejecutar el script CGI
+    execve(scriptPath.c_str(), args, &envp[0]);
+    
+    // Si execve falla
+    perror("execve falló");  // Imprimir el error específico
+    exit(1);
+} else { // Proceso padre
         // Cerrar los extremos que no se utilizan
         close(pipeIn[0]);
         close(pipeOut[1]);
@@ -88,6 +118,12 @@ std::string CgiHandler::executeCgi(const std::string& scriptPath, const std::map
             // Eliminar los encabezados
             result = result.substr(pos + 4);  // Mover el puntero al inicio del cuerpo
         }
+
+        // Liberar la memoria de las variables de entorno
+        for (size_t i = 0; i < envp.size(); ++i) {
+            free(envp[i]);
+        }
+
         return result;
     }
 }

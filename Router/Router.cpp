@@ -114,9 +114,7 @@ std::string generateAutoIndex(const std::string& directory) {
     autoindexHtml += "</ul></body></html>";
     return autoindexHtml;
 }
-bool Router::isCgiRequest(const std::string& path) {
-    return path.find("cgi-bin") != std::string::npos; //se pueden añadir otros path o podriamos mandarle como argumento index y comprobar extensiones de archivo
-}
+
 
 void Router::route(const Request& request, Response& response) {
     if (routes.empty()) {
@@ -143,7 +141,7 @@ void Router::route(const Request& request, Response& response) {
             std::string fullPath = ptr->endpointdata.root + request.getUri();
             std::cout << "Ruta completa: " << fullPath << std::endl;
             //Verifica si es una solicitud CGI
-            if (isCgiRequest(request.getUri())) {
+            if (!((ptr->endpointdata.cgi_pass).empty())) {
                 CgiHandler cgiHandler;              // Crea una instancia del CgiHandler
                 cgiHandler.handle(request, response, ptr->endpointdata);
                 }  // Maneja la solicitud CGI

@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/php-cgi
 <?php
 // Ruta al archivo que contendrá el conteo de visitas
 $counter_file = 'visit_count.txt';

@@ -1,4 +1,4 @@
-
+#!/usr/bin/env php-cgi
 <?php
 // Imprimir los encabezados HTTP
 header("Content-Type: text/html");
