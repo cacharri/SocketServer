@@ -2,13 +2,13 @@
 
 // ----------------------------------- Parametric Constructor --------------------------------------------
 Server::Server(const ServerConfig& serverConfig)
-    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, serverConfig.host),
-      buffer(new char[INITIAL_BUFFER_SIZE]),
-      bufferSize(INITIAL_BUFFER_SIZE)
+    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, serverConfig.host)
 {
     std::cout << "<Server>:\n\t- " << serverConfig.host << "\n\t- " << serverConfig.port << std::endl;
     // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
     ConfigParser::copyServerConfig(serverConfig, Server::config);
+    buffer = new char[config.client_max_body_size];
+
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
@@ -22,8 +22,6 @@ Server::~Server()
 
 void    Server::init()
 {
-    toPassiveSocket(10);
-
     setNonBlocking();
 
     // Iteramos en el map de endpoints de struct serverConfig
@@ -44,6 +42,9 @@ void    Server::init()
 
     // lo anadimos a nuestro vectore para polear
     clients.push_back(serverInfo);
+
+    toPassiveSocket(10);
+
 }
 
 void Server::launch()
@@ -135,6 +136,7 @@ void Server::acceptClient() {
     newClient.lastActivity = time(NULL);
     newClient.max = 10;
     newClient.timeout = 10;
+    newClient.client_max_body_size = config.client_max_body_size;
     newClient.keepAlive = true; // Par defecto suponemos keep-alive
     clients.push_back(newClient);
 
@@ -142,59 +144,64 @@ void Server::acceptClient() {
 }
 
 
-std::string Server::receiveMessage(int clientSocket) {
+// std::string Server::receiveMessage(int clientSocket) {
+//     std::string message;
+//     ssize_t bytesRead;
+//     size_t totalBytesRead = 0;
+
+//     do {
+//         if (totalBytesRead >= bufferSize)
+//         {
+//             // Resize buffer if needed
+//             size_t newSize = bufferSize * 2;
+//             char* newBuffer = new char[newSize];
+//             std::copy(buffer, buffer + bufferSize, newBuffer);
+//             delete[] buffer;
+//             buffer = newBuffer;
+//             bufferSize = newSize;
+//         }
+
+//         bytesRead = recv(clientSocket, buffer + totalBytesRead, bufferSize - totalBytesRead, 0);
+//         if (bytesRead > 0)
+//             totalBytesRead += bytesRead;
+
+//         else if (bytesRead == 0)// Connection closed
+//             break;
+
+//         else if (errno != EAGAIN && errno != EWOULDBLOCK)
+//         {
+//             ServerError error("Error reading from socket !");
+//             LOG_EXCEPTION(error);
+//         }
+//     } while (bytesRead > 0);
+
+//     message.assign(buffer, totalBytesRead);
+//     return message;
+// }
+
+std::string Server::receiveMessage(int clientSocket, size_t contentlength)
+{
     std::string message;
     ssize_t bytesRead;
-    size_t totalBytesRead = 0;
 
-    do {
-        if (totalBytesRead >= bufferSize)
-        {
-            // Resize buffer if needed
-            size_t newSize = bufferSize * 2;
-            char* newBuffer = new char[newSize];
-            std::copy(buffer, buffer + bufferSize, newBuffer);
-            delete[] buffer;
-            buffer = newBuffer;
-            bufferSize = newSize;
-        }
+    bytesRead = recv(clientSocket, buffer, contentlength, 0);
+    // if (bytesRead < request.getHeader("Content-length"))
+    //     return ("Error: Invalid buffer is too");
 
-        bytesRead = recv(clientSocket, buffer + totalBytesRead, bufferSize - totalBytesRead, 0);
-        if (bytesRead > 0)
-            totalBytesRead += bytesRead;
+    // if (bytesRead < config.location[request.getUri()].client_max)
 
-        else if (bytesRead == 0)// Connection closed
-            break;
-
-        else if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ServerError error("Error reading from socket !");
-            LOG_EXCEPTION(error);
-        }
-    } while (bytesRead > 0);
-
-    message.assign(buffer, totalBytesRead);
-    return message;
-}
-
-std::string Server::receiveMessage(int clientSocket, size_t contentLength) {
-    std::string message;
-    ssize_t bytesRead;
-    size_t totalBytesRead = 0;
-
-    while (totalBytesRead < contentLength) {
-        bytesRead = recv(clientSocket, buffer + totalBytesRead, contentLength - totalBytesRead, 0);
-        if (bytesRead > 0) {
-            totalBytesRead += bytesRead;
-        } else if (bytesRead == 0) {
-            break;  // Ya no hay nada mas que leer
-        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            ServerError error("Error reading from socket!");
-            LOG_EXCEPTION(error);
-            break;
-        }
+    
+    std::cout << "Read " << bytesRead << " bytes from fd: " << clientSocket << " max is " << contentlength << std::endl;
+    if (bytesRead == -1 || (errno != EAGAIN && errno != EWOULDBLOCK && errno != 0))
+    {
+        std::cout << "errno: " << errno << std::endl;
+        ServerError error("Error reading from socket!");
+        LOG_EXCEPTION(error);
+        message.assign(buffer, bytesRead);
+        return message;
     }
-    message.assign(buffer, totalBytesRead);
+
+    message.assign(buffer, bytesRead);
     return message;
 }
 
@@ -215,23 +222,26 @@ void Server::removeClient(size_t index)
 }
 
 
-void Server::handleClient(size_t index) {
+void Server::handleClient(size_t index)
+{
     int clientFd = clients[index].pfd.fd;
     Response response;
-    try { 
-        std::string request_str = receiveMessage(clientFd);
+    try {
+        //leemos buffer
+        std::string request_str = receiveMessage(clientFd, config.client_max_body_size); //config.client_max_body_size
+
         if (request_str.empty())
         {
             removeClient(index);
             return;
         }
-
+        // Crear objeto a partir de string
         Request request(request_str);
 
+        // comprobar headers
+        analyzeBasicHeaders(request, response, index);
         // actualizar ultimo uso del fd
         clients[index].lastActivity = time(NULL);
-        
-        analyzeBasicHeaders(request, response, index);
         
         router.route(request, response);
 
@@ -239,9 +249,8 @@ void Server::handleClient(size_t index) {
         
         sendResponse(clientFd, response.toString());
         
-        if (!clients[index].keepAlive) {
+        if (!clients[index].keepAlive) 
             removeClient(index);
-        }
     }
     catch (const std::exception& e)
     {
@@ -330,5 +339,8 @@ void     Server::analyzeBasicHeaders(const Request& request, Response& response,
                 clients[index].max = std::atoi(maxValue.c_str());
             }
         }
-        }
+    }
+    std::string contentLength = request.getHeader("Content-length");
+    if (!contentLength.empty())
+        config.locations[request.getUri()].client_max_body_size = ConfigParser::parseSize(contentLength);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/26 13:03:51 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/29 16:22:45 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,11 +56,11 @@
 struct ClientInfo {
     pollfd          pfd;
     time_t          lastActivity;
+    size_t          client_max_body_size;
     bool            keepAlive;
     unsigned int    timeout;
     unsigned int    max;
-
-
+    
 };
 
 class Server : public MotherSocket {
@@ -80,13 +80,11 @@ public:
     };
 
 private:
-    Router              router;
-    ServerConfig        config;
+    Router                  router;
+    ServerConfig            config;
     std::vector<ClientInfo> clients;
-    char* buffer;
-    size_t bufferSize;
+    char                    *buffer;
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
-    static const size_t INITIAL_BUFFER_SIZE = 4096;
 
     // Headers functions
     void        analyzeBasicHeaders(const Request& request, Response& response, int index);

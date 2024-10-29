@@ -115,7 +115,7 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 				std::string errorPage;
 				iss >> errorCode >> errorPage;
 				currentServer.error_pages[errorCode] = errorPage;
-			} else if (token == "client_max_body_size") {
+			} else if (token == "client_max_body_size" && !inLocationBlock) {
 				std::string sizeStr;
 				iss >> sizeStr;
 				if (!(sizeStr.empty()))
@@ -152,6 +152,13 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 				} else if (token == "cgi_pass") {
 					iss >> currentLocation.cgi_pass;
 					std::cout << "[CONF]: cgi-pass " << currentLocation.cgi_pass << std::endl;
+				} else if (token == "client_max_body_size")	{
+					std::string sizeStr;
+					iss >> sizeStr;
+					if (!(sizeStr.empty()))
+						currentLocation.client_max_body_size = parseSize(sizeStr);
+					else
+						currentLocation.client_max_body_size = parseSize("20K");
 				}
 			}
 		}
@@ -172,6 +179,7 @@ size_t ConfigParser::parseSize(const std::string& sizeStr)
         size = atoi(sizeStr.c_str());
     }
 
+	std::cout << "Parsed size; " << size << std::endl;
     return size;
 }
 
