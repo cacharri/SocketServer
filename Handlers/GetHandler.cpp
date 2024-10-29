@@ -70,11 +70,12 @@ std::string getMimeType(const std::string& filename) {
         return "image/png";
     } else if (filename.size() >= 4 && filename.compare(filename.size() - 4, 4, ".gif") == 0) {
         return "image/gif";
+    } else if (filename.size() >= 5 && filename.compare(filename.size() - 5, 5, ".html") == 0) {
+        return ("text/html");
     }
-    // Agrega más tipos de contenido según sea necesario
-    return "application/octet-stream"; // Tipo por defecto
-} // esto es para que se pudieran vver las imagenes de los memes si te metes en el navegador en la pagina que esta el meme1 por ej. pero no la esta convirtiendo
-
+    //"application/octet-stream"
+    return "text/html"; // Tipo por defecto
+}
 
 void GetHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig) {
     std::cout << "Received GET request" << std::endl;
@@ -90,28 +91,30 @@ void GetHandler::handle(const Request& request, Response& response, const Locati
         fullpath += locationconfig.index;
 
         std::cout << "Full path: " << fullpath << std::endl;
-
-        std::string fileContent = readFile(fullpath);
-        if (fileContent.empty()) {
+        if (fullpath[fullpath.size() - 1] == '/')
+        {
             struct stat buffer;
             if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
-                fileContent = generateAutoIndex(fullpath);
-                response.setStatus(200, "OK");
-                response.setBody(fileContent);
-                response.setHeader("Content-Type", "text/html");
-            } else {
-                std::cerr << "Error: No se pudo leer el archivo en " << fullpath << std::endl;
-                response.setStatus(404, "Not Found");
-                response.setBody("<html><body><h1>404 Not Found</h1></body></html>");
+                if (locationconfig.autoindex) { // Asegúrate de que esta verificación es correcta
+                    std::string fileContent = generateAutoIndex(fullpath);
+                    response.setStatus(200, "OK");
+                    response.setBody(fileContent);
+                    response.setHeader("Content-Type", "text/html");
+                } else {
+                    response.setStatus(403, "Forbidden");
+                    response.setBody("<html><body><h1>403 Forbidden</h1></body></html>");
+                }
+                return ;
             }
-        } else {
-            // Determinar el tipo de contenido del archivo
-            std::string mimeType = getMimeType(fullpath);
+        }
+        std::string fileContent = readFile(fullpath);
+        if (!(fileContent.empty())) {
             response.setStatus(200, "OK");
             response.setBody(fileContent);
-            response.setHeader("Content-Type", mimeType);
+            response.setHeader("Content-Type", getMimeType(fullpath));
         }
-    } else {
+    }
+    else {
         std::cerr << "Error al obtener el directorio actual" << std::endl;
         response.setStatus(500, "Internal Server Error");
         response.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");

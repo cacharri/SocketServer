@@ -147,13 +147,7 @@ void Router::route(const Request& request, Response& response) {
                 CgiHandler cgiHandler;              // Crea una instancia del CgiHandler
                 cgiHandler.handle(request, response, ptr->endpointdata);
                 }  // Maneja la solicitud CGI
-            else if ((ptr->endpointdata.autoindex)!= 0 && isDirectory(fullPath)) {
-                std::cout << "Generando autoindex para: " << fullPath << std::endl;
-                std::string autoindexHtml = generateAutoIndex(fullPath);
-                response.setStatus(200, "OK");
-                response.setBody(autoindexHtml);
-                response.setHeader("Content-Type", "text/html");
-            } else {
+            else {
                 // Código existente para servir archivos como index.html
                 std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
                 ptr->handler->handle(request, response, ptr->endpointdata);

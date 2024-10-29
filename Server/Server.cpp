@@ -235,7 +235,6 @@ void Server::handleClient(size_t index) {
         
         router.route(request, response);
 
-        response.setHeader("Content-Type", "text/html");
         response.setContentLength();
         
         sendResponse(clientFd, response.toString());
