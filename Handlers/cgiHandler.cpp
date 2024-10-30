@@ -5,42 +5,42 @@ CgiHandler::CgiHandler() {}
 
 CgiHandler::~CgiHandler() {}
 
-void CgiHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig) {
+void CgiHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
     std::string scriptPath = locationconfig.root + "/" + locationconfig.index; // Ruta del archivo
     std::map<std::string, std::string> env;
 
     // Configurar las variables de entorno comunes
-    env["REQUEST_METHOD"] = request.getMethod();
-    env["CONTENT_TYPE"] = request.getHeader("Content-Type");
+    env["REQUEST_METHOD"] = request->getMethod();
+    env["CONTENT_TYPE"] = request->getHeader("Content-Type");
     env["REDIRECT_STATUS"] = "200"; //seguridad php
 
-    if (request.getMethod() == "POST") {
+    if (request->getMethod() == "POST") {
         // Para POST, agrega el tamaño del cuerpo
         std::ostringstream oss;
-        oss << request.getBody().size();
+        oss << request->getBody().size();
         env["CONTENT_LENGTH"] = oss.str();
         env["SCRIPT_FILENAME"] = scriptPath;
 
         // Ejecutar el CGI con el contenido del cuerpo
-        std::string output = executeCgi(scriptPath, env, request.getBody());
-        response.setBody(output);
-    } else if (request.getMethod() == "GET") {
+        std::string output = executeCgi(scriptPath, env, request->getBody());
+        response->setBody(output);
+    } else if (request->getMethod() == "GET") {
         // Para GET, establece solo el script y ejecuta sin cuerpo
         env["CONTENT_LENGTH"] = "0"; // No hay cuerpo en GET
         env["SCRIPT_FILENAME"] = scriptPath;
 
         // Ejecutar el CGI sin cuerpo
         std::string output = executeCgi(scriptPath, env, "");
-        response.setBody(output);
+        response->setBody(output);
     } else {
         // Manejo de otros métodos (si es necesario)
-        response.setStatus(405, "Method Not Allowed");
-        response.setBody("405 Method Not Allowed");
+        response->setStatus(405, "Method Not Allowed");
+        response->setBody("405 Method Not Allowed");
     }
     
 
     // Establecer el estado de la respuesta
-    response.setStatus(200, "OK");
+    response->setStatus(200, "OK");
 }
 
 std::string CgiHandler::executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData) {

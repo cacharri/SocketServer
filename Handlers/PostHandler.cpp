@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   PostHandler.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/15 16:27:45 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 12:03:04 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,12 @@ PostHandler::~PostHandler()
     
 }
 
-void        PostHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig)
+void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
 {   
     std::cout << "Received POST request" << std::endl;
-    request.print();
+    request->print();
 
-    std::string contentType = request.getHeader("Content-Type");
+    std::string contentType = request->getHeader("Content-Type");
     std::cout << "Content type is " << contentType << std::endl;
 
     if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -39,13 +39,13 @@ void        PostHandler::handle(const Request& request, Response& response, cons
 
             // Now we process the multipart data
             //std::cout << "BODY POST >>> " << requestBody << std::endl;
-            if (request.getBody().empty())
+            if (request->getBody().empty())
                 LOG("EMPTY BODY POST REQUEST");
     
-            std::map<std::string, std::string> formData = parseMultipartFormData(request.getBody(), boundary, locationconfig.upload_store);
+            std::map<std::string, std::string> formData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store);
 
             // Generar respuesta HTML
-            response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            response->setHeader("Content-Type", "text/html; charset=UTF-8");
             std::string responseBody = "<html><body><h1>Archivo Subido correctamente</h1>";
             for (std::map<std::string, std::string>::iterator it = formData.begin(); it != formData.end(); ++it) {
                     responseBody += "<p>" + escapeHtml(it->second) + "</p>";
@@ -53,15 +53,15 @@ void        PostHandler::handle(const Request& request, Response& response, cons
             responseBody += "</body></html>";
 
 
-            response.setStatus(200, "OK");
-            response.setBody(responseBody);
+            response->setStatus(200, "OK");
+            response->setBody(responseBody);
         } else {
-            response.setStatus(400, "Bad Request");
-            response.setBody("Boundary not found in Content-Type");
+            response->setStatus(400, "Bad Request");
+            response->setBody("Boundary not found in Content-Type");
         }
     }
     else if (contentType == "application/x-www-form-urlencoded") {
-        std::string requestBody = request.getBody();
+        std::string requestBody = request->getBody();
         std::map<std::string, std::string> formData = parseUrlFormData(requestBody);
 
         // Process the form data as needed
@@ -99,12 +99,12 @@ void        PostHandler::handle(const Request& request, Response& response, cons
         responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
         responseBody += "</body></html>";
 
-        response.setStatus(200, "OK");
-        response.setBody(responseBody);
+        response->setStatus(200, "OK");
+        response->setBody(responseBody);
     }
     else {
-        response.setStatus(400, "Bad Request");
-        response.setBody("Unsupported Content-Type");
+        response->setStatus(400, "Bad Request");
+        response->setBody("Unsupported Content-Type");
     }
 }
 

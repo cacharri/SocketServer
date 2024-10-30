@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/29 16:56:05 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 02:04:35 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,18 +15,14 @@
 
 
 #include "../Logger/Logger.hpp"
+
 #include <string>
 #include <vector>
 #include <map>
-#include <fstream>
+// #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
-#include <sys/types.h>
-#include <dirent.h>
-#include <vector>
-#include <iostream>
-#include <sstream>
 
 struct LocationConfig {
     std::string					root;  //directorio raiz 

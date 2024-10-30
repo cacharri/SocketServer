@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/13 11:37:40 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 11:47:39 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,9 +55,9 @@ std::string GetHandler::readFile(const std::string &fullPath) {
     {
         std::string fullpath(cwd);
         fullpath = fullpath + locationconfig.root + "/" + locationconfig.index; // Construct full path
-        response.setBody(readFile(fullpath));
+        response->setBody(readFile(fullpath));
     }
-    response.setStatus(200, "OK");
+    response->setStatus(200, "OK");
 }*/
 
 std::string getMimeType(const std::string& filename) {
@@ -77,7 +77,7 @@ std::string getMimeType(const std::string& filename) {
     return "text/html"; // Tipo por defecto
 }
 
-void GetHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig) {
+void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
     std::cout << "Received GET request" << std::endl;
 
     char cwd[PATH_MAX];
@@ -97,26 +97,30 @@ void GetHandler::handle(const Request& request, Response& response, const Locati
             if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
                 if (locationconfig.autoindex) { // Asegúrate de que esta verificación es correcta
                     std::string fileContent = generateAutoIndex(fullpath);
-                    response.setStatus(200, "OK");
-                    response.setBody(fileContent);
-                    response.setHeader("Content-Type", "text/html");
+                    response->setStatus(200, "OK");
+                    response->setBody(fileContent);
+                    response->setHeader("Content-Type", "text/html");
                 } else {
-                    response.setStatus(403, "Forbidden");
-                    response.setBody("<html><body><h1>403 Forbidden</h1></body></html>");
+                    response->setStatus(403, "Forbidden");
+                    response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
                 }
                 return ;
             }
         }
+        //     CgiHandler cgiHandler;              // Crea una instancia del CgiHandler
+        //     cgiHandler.handle(request, response, ptr->endpointdata);
+        //     }  // Maneja la solicitud CGI
         std::string fileContent = readFile(fullpath);
         if (!(fileContent.empty())) {
-            response.setStatus(200, "OK");
-            response.setBody(fileContent);
-            response.setHeader("Content-Type", getMimeType(fullpath));
+            response->setStatus(200, "OK");
+            response->setBody(fileContent);
+            response->setHeader("Content-Type", getMimeType(fullpath));
         }
     }
     else {
         std::cerr << "Error al obtener el directorio actual" << std::endl;
-        response.setStatus(500, "Internal Server Error");
-        response.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+        response->setStatus(500, "Internal Server Error");
+        response->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
     }
 }
+

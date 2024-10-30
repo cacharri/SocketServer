@@ -116,45 +116,32 @@ std::string generateAutoIndex(const std::string& directory) {
 }
 
 
-void Router::route(const Request& request, Response& response) {
+void Router::route(const Request* request, Response* response) {
     if (routes.empty()) {
         std::cout << "empty router map" << std::endl;
         return;
     }
 
-    std::map<std::string, std::vector<RouteConfig *> >::iterator it = routes.find(request.getUri());
+    std::map<std::string, std::vector<RouteConfig *> >::iterator it = routes.find(request->getUri());
     
     if (it != routes.end()) {
-        RouteConfig *ptr = HasValidMethod((*it).second, request.getMethod());
+        RouteConfig *ptr = HasValidMethod((*it).second, request->getMethod());
         
         if (ptr == NULL) {
-            response.setStatus(405, "Method Not Allowed");
-            response.setBody("405 Method Not Allowed");
+            response->setStatus(405, "Method Not Allowed");
+            response->setBody("405 Method Not Allowed");
             return;
         }
-        //
+        std::string fullPath = ptr->endpointdata.root + request->getUri();
+        std::cout << "Ruta completa: " << fullPath << std::endl;
+        std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
+        ptr->handler->handle(request, response, ptr->endpointdata);
         
-    // Lógica existente para manejar otras solicitudes
-    //
-
-            // Verificar si el autoindex está habilitado y si la ruta es un directorio
-            std::string fullPath = ptr->endpointdata.root + request.getUri();
-            std::cout << "Ruta completa: " << fullPath << std::endl;
-            //Verifica si es una solicitud CGI
-            if (!((ptr->endpointdata.cgi_pass).empty())) {
-                CgiHandler cgiHandler;              // Crea una instancia del CgiHandler
-                cgiHandler.handle(request, response, ptr->endpointdata);
-                }  // Maneja la solicitud CGI
-            else {
-                // Código existente para servir archivos como index.html
-                std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
-                ptr->handler->handle(request, response, ptr->endpointdata);
-            }
 
     }
     else {
-        response.setStatus(404, "Not found");
-        response.setBody("404 Not Found");
+        response->setStatus(404, "Not found");
+        response->setBody("404 Not Found");
     }
 }
 

@@ -3,15 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   Handlers.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/15 16:25:47 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 11:43:01 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HANDLERS_HPP
 #define HANDLERS_HPP
+
+// Forward declarations
+class Request;
+class Response;
+class LocationConfig;
 
 #include <fstream>
 #include <unistd.h>
@@ -34,11 +39,9 @@
 #include "../Config/ConfigParser.hpp"
 
 class RequestHandler {
-    public:
-        // RequestHandler();
-        virtual void    handle(const Request& request, Response& response, const LocationConfig& locationconfig) = 0;
-        // void            checkHeaders(std::string contentType);
-        virtual         ~RequestHandler() {}
+public:
+    virtual ~RequestHandler() {}
+    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig) = 0;
 };
 
 class GetHandler : public RequestHandler
@@ -47,7 +50,7 @@ class GetHandler : public RequestHandler
         GetHandler();
         ~GetHandler();
         
-        void        handle(const Request& request, Response& response, const LocationConfig& locationconfig);
+        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
     private:
     
         std::string     printCurrentWorkingDirectory();
@@ -60,7 +63,7 @@ class PostHandler : public RequestHandler
     public:
         PostHandler();
         ~PostHandler();
-        void        handle(const Request& request, Response& response, const LocationConfig& locationconfig);
+        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
     private:
             void                                saveFile(const std::string& filename, const std::string& data);
             std::string                         urlDecode(const std::string &str);
@@ -74,7 +77,7 @@ class CgiHandler : public RequestHandler
 public:
     CgiHandler();
     virtual ~CgiHandler();
-    virtual void handle(const Request& request, Response& response, const LocationConfig& locationconfig);
+    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig);
     
 private:
     std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );

@@ -3,15 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/29 16:22:45 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 11:51:48 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
+
+// Forward declarations
+class Request;
+class Response;
 
 #include "../Sockets/MotherSocket.hpp"
 #include "../Config/ConfigParser.hpp"
@@ -20,6 +24,7 @@
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
+#include "../Client/Client.hpp"
 #include <sys/stat.h> // For file existence check
 #include <vector>
 #include <poll.h>
@@ -53,16 +58,6 @@
 5. The removeClient() method properly closes and removes disconnected clients from the fds vector.
 */
 
-struct ClientInfo {
-    pollfd          pfd;
-    time_t          lastActivity;
-    size_t          client_max_body_size;
-    bool            keepAlive;
-    unsigned int    timeout;
-    unsigned int    max;
-    
-};
-
 class Server : public MotherSocket {
 public:
     explicit Server(const ServerConfig& serverConfig);
@@ -87,14 +82,12 @@ private:
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
 
     // Headers functions
-    void        analyzeBasicHeaders(const Request& request, Response& response, int index);
+    void        analyzeBasicHeaders(const Request* request, Response* response, int index);
     
     // Core functions
     void        acceptClient();
     void        handleClient(size_t index);
     void        sendResponse(int clientSocket, const std::string& response);
-    std::string receiveMessage(int clientSocket);
-    std::string receiveMessage(int clientSocket, size_t content_length);
     void        removeClient(size_t index);
     
     bool        IsTimeout(size_t index);

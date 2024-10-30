@@ -144,67 +144,6 @@ void Server::acceptClient() {
 }
 
 
-// std::string Server::receiveMessage(int clientSocket) {
-//     std::string message;
-//     ssize_t bytesRead;
-//     size_t totalBytesRead = 0;
-
-//     do {
-//         if (totalBytesRead >= bufferSize)
-//         {
-//             // Resize buffer if needed
-//             size_t newSize = bufferSize * 2;
-//             char* newBuffer = new char[newSize];
-//             std::copy(buffer, buffer + bufferSize, newBuffer);
-//             delete[] buffer;
-//             buffer = newBuffer;
-//             bufferSize = newSize;
-//         }
-
-//         bytesRead = recv(clientSocket, buffer + totalBytesRead, bufferSize - totalBytesRead, 0);
-//         if (bytesRead > 0)
-//             totalBytesRead += bytesRead;
-
-//         else if (bytesRead == 0)// Connection closed
-//             break;
-
-//         else if (errno != EAGAIN && errno != EWOULDBLOCK)
-//         {
-//             ServerError error("Error reading from socket !");
-//             LOG_EXCEPTION(error);
-//         }
-//     } while (bytesRead > 0);
-
-//     message.assign(buffer, totalBytesRead);
-//     return message;
-// }
-
-std::string Server::receiveMessage(int clientSocket, size_t contentlength)
-{
-    std::string message;
-    ssize_t bytesRead;
-
-    bytesRead = recv(clientSocket, buffer, contentlength, 0);
-    // if (bytesRead < request.getHeader("Content-length"))
-    //     return ("Error: Invalid buffer is too");
-
-    // if (bytesRead < config.location[request.getUri()].client_max)
-
-    
-    std::cout << "Read " << bytesRead << " bytes from fd: " << clientSocket << " max is " << contentlength << std::endl;
-    if (bytesRead == -1 || (errno != EAGAIN && errno != EWOULDBLOCK && errno != 0))
-    {
-        std::cout << "errno: " << errno << std::endl;
-        ServerError error("Error reading from socket!");
-        LOG_EXCEPTION(error);
-        message.assign(buffer, bytesRead);
-        return message;
-    }
-
-    message.assign(buffer, bytesRead);
-    return message;
-}
-
 void Server::sendResponse(int clientSocket, const std::string& response)
 {
     ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
@@ -224,42 +163,24 @@ void Server::removeClient(size_t index)
 
 void Server::handleClient(size_t index)
 {
-    int clientFd = clients[index].pfd.fd;
-    Response response;
-    try {
-        //leemos buffer
-        std::string request_str = receiveMessage(clientFd, config.client_max_body_size); //config.client_max_body_size
+    /*
+        gestion de una conexion entrante.
+        Client construye la respuesta HTTP correspondiente.
+        -la lectura de bytes del file descriptor se hace en el constructor de Client o Request ?
+        -Construir request (status-line, headers, body)
+        - Controlar Headers
+        - Controlar Variables de sesion de conexion (timeout, buffersize, cookies)
+        - enrutar al handler
+        - Construir headers de respuesta
+        - Manejar codigos de error
+    */
+    Client client(clients[index].pfd.fd, clients[index]);
 
-        if (request_str.empty())
-        {
-            removeClient(index);
-            return;
-        }
-        // Crear objeto a partir de string
-        Request request(request_str);
+    analyzeBasicHeaders(client.getRequest(), client.getResponse(), index);
+    clients[index].lastActivity = time(NULL);
+    router.route(client.getRequest(), client.getResponse());
+    sendResponse(clients[index].pfd.fd, client.getResponse()->toString());
 
-        // comprobar headers
-        analyzeBasicHeaders(request, response, index);
-        // actualizar ultimo uso del fd
-        clients[index].lastActivity = time(NULL);
-        
-        router.route(request, response);
-
-        response.setContentLength();
-        
-        sendResponse(clientFd, response.toString());
-        
-        if (!clients[index].keepAlive) 
-            removeClient(index);
-    }
-    catch (const std::exception& e)
-    {
-        response.setStatus(500, "Internal Server Error");
-        response.setBody("500 Internal Server Error");
-        sendResponse(clientFd, response.toString());
-        removeClient(index);
-        LOG("Error handling client: " + std::string(e.what()));
-    }
 }
 
 
@@ -296,12 +217,12 @@ const char * Server::ServerError::what() const throw()
 
 //-------------------------------- HEADERS HANDLING ------------------------------------
 
-void     Server::analyzeBasicHeaders(const Request& request, Response& response, int index)
+void     Server::analyzeBasicHeaders(const Request* request, Response* response, int index)
 {   
 
     // HOST 
     //std::cout << "\n\t\tHeader Basic Analyzer" << std::endl;
-    std::string host(request.getHeader("Host"));
+    std::string host(request->getHeader("Host"));
 
     if (host.empty() || isValidHostHeader(host) == false)
         return ;
@@ -310,24 +231,29 @@ void     Server::analyzeBasicHeaders(const Request& request, Response& response,
 
 
     // CONNECTION
-    std::string connectionHeader = request.getHeader("Connection");
+    std::string connectionHeader = request->getHeader("Connection");
     if (connectionHeader == "keep-alive")
     {
         clients[index].keepAlive = true;
 
         // KEEP-ALIVE
-        std::string isthere_keepalive_spec(request.getHeader("Keep-alive"));
+        std::string isthere_keepalive_spec(request->getHeader("Keep-alive"));
 
         if (!isthere_keepalive_spec.empty())
         {
             // search for timeout 
             size_t timeoutPos = isthere_keepalive_spec.find("timeout=");
+            std::string header_response_value;
+
             if (timeoutPos != std::string::npos)
             {
                 size_t valueStart = timeoutPos + strlen("timeout=");
                 size_t valueEnd = isthere_keepalive_spec.find_first_of(" ,", valueStart);
                 std::string timeoutValue = isthere_keepalive_spec.substr(valueStart, valueEnd - valueStart);
                 clients[index].timeout = std::atoi(timeoutValue.c_str());
+                header_response_value += std::string(" timeout=");
+                header_response_value += timeoutValue;
+                response->setHeader("Keep-alive", header_response_value);
             }
             // search for max
             size_t maxPos = isthere_keepalive_spec.find("max=");
@@ -337,10 +263,13 @@ void     Server::analyzeBasicHeaders(const Request& request, Response& response,
                 size_t valueEnd = isthere_keepalive_spec.find_first_of(" ,", valueStart);
                 std::string maxValue = isthere_keepalive_spec.substr(valueStart, valueEnd - valueStart);
                 clients[index].max = std::atoi(maxValue.c_str());
+                header_response_value += std::string(" max=");
+                header_response_value += maxValue;
+                response->setHeader("Keep-alive", header_response_value);
             }
         }
     }
-    std::string contentLength = request.getHeader("Content-length");
+    std::string contentLength = request->getHeader("Content-length");
     if (!contentLength.empty())
-        config.locations[request.getUri()].client_max_body_size = ConfigParser::parseSize(contentLength);
+        config.locations[request->getUri()].client_max_body_size = ConfigParser::parseSize(contentLength);
 }

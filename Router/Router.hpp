@@ -3,15 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   Router.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 19:45:30 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/15 17:52:55 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 03:13:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
+
+// Forward declarations
+class Request;
+class Response;
 
 #include <string>
 #include <map>
@@ -30,14 +34,6 @@
 #include <cerrno>
 #include <sys/types.h>
 #include <dirent.h>
-    // std::string					root;  //directorio raiz 
-    // std::string					index; // archivo predeterminado si se solicita un directorio
-    // bool						autoindex;
-    // std::vector<std::string>	limit_except; //para los metodos https permitidos en la ubicacion
-    // bool						allow_upload; //booleano para indicar si se permite o no la carga de archivos
-    // std::string					upload_store; // directorio donde se almacenan los archivos cargados si se acepta la carga
-    // std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
-    // std::string                 redirect;
 
 class Router {
 public:
@@ -53,7 +49,7 @@ public:
     //void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler* handler);
     void    addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod);
 
-    void    route(const Request& request, Response& response);
+    void    route(const Request* request, Response* response);
 private:
     // RouteConfig se refiere a {  {'methodos', 'disponibles'}, (*function) }
     // string es el endpoint.

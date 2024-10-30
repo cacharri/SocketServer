@@ -6,15 +6,21 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/20 18:40:48 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/10/30 02:16:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "../Client/Client.hpp"
+
+#include <sys/socket.h>
 #include <string>
 #include <map>
+#include <sstream>
+#include <algorithm>
+#include <sys/socket.h>
 
 class Request {
 private:
@@ -23,11 +29,25 @@ private:
     std::string httpVersion;
     std::map<std::string, std::string> headers;
     std::string body;
-
+    struct ClientInfo& info;
+    
 public:
-    Request(const std::string& rawRequest);
-    void parse(const std::string& rawRequest);
+    Request(const size_t& ClientFd, ClientInfo& info_ref);
+
+    void readStatusLine(const size_t& ClientFd);
+    void readHeaders(const size_t& ClientFd);
+    bool readBody(const size_t& ClientFd);
+    bool readContentLengthBody(const size_t& ClientFd, size_t length);
+    bool readChunkedBody(const size_t& ClientFd);
+
+    // bool HostHeader();
+    // bool ConnectionHeader();
+    // bool ContentLengthHeader();
+    // void ContentTypeHeader();
+    
+    // void parse(const std::string& rawRequest);
     void print(void) const;
+    
     // Getters1
     std::string getMethod() const;
     std::string getUri() const;
@@ -37,5 +57,14 @@ public:
     std::string getPath() const;
     // Setter
     void setBody(const std::string& request_body);
+
+    class RequestError : public std::exception {
+        private:
+            std::string error_msg;
+        public:
+            RequestError(const std::string& msg): error_msg(msg) {}
+            virtual ~RequestError() throw() {}
+            virtual const char* what() const throw() { return error_msg.c_str(); }
+    };
 };
 #endif

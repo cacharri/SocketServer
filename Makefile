@@ -19,6 +19,7 @@ SRC = Webserv.cpp \
 	Handlers/PostHandler.cpp \
 	Headers/HeadersUtils.cpp \
 	Handlers/cgiHandler.cpp \
+	Client/Client.cpp
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 
