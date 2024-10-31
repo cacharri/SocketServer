@@ -99,11 +99,18 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
          //   delete cgi_handler_instance;
             
         }
+        if (!locationconfig.redirect.empty()) {
+            response->setStatus(301, "Moved Permanently");
+            response->setHeader("Location", locationconfig.redirect);
+            response->setBody("<html><body><h1>301 Moved Permanently</h1></body></html>");
+            return;
+        }
+
         else if (fullpath[fullpath.size() - 1] == '/')
         {
             struct stat buffer;
             if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
-                if (locationconfig.autoindex) { // Asegúrate de que esta verificación es correcta
+                if (locationconfig.autoindex) {
                     std::string fileContent = generateAutoIndex(fullpath);
                     response->setStatus(200, "OK");
                     response->setBody(fileContent);

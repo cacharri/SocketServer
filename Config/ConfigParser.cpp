@@ -159,6 +159,16 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 						currentLocation.client_max_body_size = parseSize(sizeStr);
 					else
 						currentLocation.client_max_body_size = parseSize("20K");
+				} else if (token == "return") {
+						int statusCode;
+						std::string redirectUrl;
+
+						iss >> statusCode;
+						if (statusCode == 301) {
+							iss >> redirectUrl;
+							currentLocation.redirect = redirectUrl;
+							std::cout << "[CONF]: Set redirect " << currentLocation.redirect << std::endl;
+						}
 				}
 			}
 		}
