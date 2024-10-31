@@ -21,6 +21,7 @@ GetHandler::GetHandler()
 GetHandler::~GetHandler()
 {
     
+    
 }
 
 std::string GetHandler::readFile(const std::string &fullPath) {
@@ -84,14 +85,21 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         std::string fullpath(cwd);
         fullpath += locationconfig.root;
-
+        
         if (!fullpath.empty() && fullpath[fullpath.size() - 1] != '/') {
             fullpath += '/';
         }
         fullpath += locationconfig.index;
 
-        std::cout << "Full path: " << fullpath << std::endl;
-        if (fullpath[fullpath.size() - 1] == '/')
+        std::cout << "Full path:: " << fullpath << std::endl;
+        if ((!locationconfig.cgi_pass.empty()))
+        {
+            CgiHandler cgi_handler_instance;
+            cgi_handler_instance.handle(request, response, locationconfig);
+         //   delete cgi_handler_instance;
+            
+        }
+        else if (fullpath[fullpath.size() - 1] == '/')
         {
             struct stat buffer;
             if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
@@ -107,14 +115,14 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                 return ;
             }
         }
-        //     CgiHandler cgiHandler;              // Crea una instancia del CgiHandler
-        //     cgiHandler.handle(request, response, ptr->endpointdata);
-        //     }  // Maneja la solicitud CGI
-        std::string fileContent = readFile(fullpath);
-        if (!(fileContent.empty())) {
-            response->setStatus(200, "OK");
-            response->setBody(fileContent);
-            response->setHeader("Content-Type", getMimeType(fullpath));
+        else{
+
+            std::string fileContent = readFile(fullpath);
+            if (!(fileContent.empty())) {
+                response->setStatus(200, "OK");
+                response->setBody(fileContent);
+                response->setHeader("Content-Type", getMimeType(fullpath));
+            }
         }
     }
     else {
@@ -123,4 +131,5 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         response->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
     }
 }
+
 
