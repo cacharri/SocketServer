@@ -45,19 +45,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
 
 void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig)
 {
-    // Verificar si GET está permitido y asociarlo a la función adecuada
-    if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "GET") != locConfig.methods.end()) {
-        GetHandler  *get_handler_instance = new GetHandler();
-        std::cout << "[ROUTER] Se ha añadido un GET endpoint ! " << endpoint << std::endl;
-        addRoute(endpoint, locConfig, get_handler_instance, "GET");
-    }
-    // Verificar si POST está permitido y asociarlo a la función de manejar POST
-    if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "POST") != locConfig.methods.end()) {
-        PostHandler  *post_handler_instance = new PostHandler();
-        std::cout << "[ROUTER] Se ha añadido un POST endpoint ! " << endpoint << std::endl;
-        addRoute(endpoint, locConfig, post_handler_instance, "POST");
-    }
-    if ((!locConfig.cgi_pass.empty()) && 
+     /* if ((!locConfig.cgi_pass.empty()) && 
         (std::find(locConfig.methods.begin(), locConfig.methods.end(), "GET") != locConfig.methods.end() ||
          std::find(locConfig.methods.begin(), locConfig.methods.end(), "POST") != locConfig.methods.end())) {
         CgiHandler *cgi_handler_instance = new CgiHandler();
@@ -69,6 +57,21 @@ void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig&
             addRoute(endpoint, locConfig, cgi_handler_instance, "POST"); // Maneja ambos métodos si es necesario
         }
     }
+    else{*/
+        // Verificar si GET está permitido y asociarlo a la función adecuada
+        if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "GET") != locConfig.methods.end()) {
+            GetHandler  *get_handler_instance = new GetHandler();
+            std::cout << "[ROUTER] Se ha añadido un GET endpoint ! " << endpoint << std::endl;
+            addRoute(endpoint, locConfig, get_handler_instance, "GET");
+        }
+        // Verificar si POST está permitido y asociarlo a la función de manejar POST
+        if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "POST") != locConfig.methods.end()) {
+            PostHandler  *post_handler_instance = new PostHandler();
+            std::cout << "[ROUTER] Se ha añadido un POST endpoint ! " << endpoint << std::endl;
+            addRoute(endpoint, locConfig, post_handler_instance, "POST");
+        }
+    //}
+  
 }
 
 

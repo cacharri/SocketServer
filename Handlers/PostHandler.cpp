@@ -30,8 +30,14 @@ void        PostHandler::handle(const Request* request, Response* response, cons
 
     std::string contentType = request->getHeader("Content-Type");
     std::cout << "Content type is " << contentType << std::endl;
+    if ((!locationconfig.cgi_pass.empty()))
+        {
+           CgiHandler cgi_handler_instance;
+            cgi_handler_instance.handle(request, response, locationconfig);
+          //  delete cgi_handler_instance;
+        }
 
-    if (contentType.find("multipart/form-data") != std::string::npos) {
+    else if (contentType.find("multipart/form-data") != std::string::npos) {
         size_t boundaryPos = contentType.find("boundary=");
         if (boundaryPos != std::string::npos) {
             std::string boundary = contentType.substr(boundaryPos + 9); // 9 is the length of "boundary="

@@ -1,7 +1,6 @@
 #!/usr/bin/env php-cgi
 <?php
-// Imprimir los encabezados HTTP
-header("Content-Type: text/html");
+
 
 // Verificar si el método es POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
