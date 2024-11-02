@@ -7,7 +7,9 @@ RM = rm -f
 # FILE MANAGEMENT
 NAME = Webserv
 
-SRC = Webserv.cpp \
+SRC = main.cpp \
+	Client/Client.cpp \
+	Http/Http.cpp \
 	Logger/Logger.cpp \
 	Sockets/MotherSocket.cpp \
 	Server/Server.cpp \
@@ -15,11 +17,10 @@ SRC = Webserv.cpp \
 	Request/Request.cpp \
 	Response/Response.cpp \
 	Router/Router.cpp \
+	Headers/HeadersUtils.cpp \
 	Handlers/GetHandler.cpp \
 	Handlers/PostHandler.cpp \
-	Headers/HeadersUtils.cpp \
-	Handlers/cgiHandler.cpp \
-	Client/Client.cpp
+	Handlers/cgiHandler.cpp 
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 

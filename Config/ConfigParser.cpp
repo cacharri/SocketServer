@@ -3,7 +3,19 @@
 ConfigParser::ConfigParser() {
 }
 
-ConfigParser::~ConfigParser() {
+ConfigParser::ConfigParser(const ConfigParser& copy)
+{
+	
+}
+ConfigParser& ConfigParser::operator=(const ConfigParser& assign)
+{
+	(void)assign;
+	return (*this);
+}
+
+ConfigParser::~ConfigParser()
+{
+	
 }
 
 void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
