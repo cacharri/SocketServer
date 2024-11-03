@@ -6,17 +6,17 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/30 01:50:01 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 11:55:42 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/03 02:57:53 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../Client/Client.hpp"
 
 
-Client::Client(size_t fd, ClientInfo& info) 
-    : clientFd(fd)
+Client::Client(ClientInfo* info) 
+    : clientFd(info->pfd.fd)
     , session_info(info)
-    , buffer(info.client_max_body_size)
+    , buffer(info->client_max_body_size)
 {
     ReadFromConexion();
     response = new Response();
@@ -28,10 +28,30 @@ Client::~Client()
     delete response;
 }
 
+Request*    Client::getRequest()
+{ 
+    return request;
+}
+
+Response*   Client::getResponse()
+{ 
+    return response;
+}
+    
+bool        Client::shouldKeepAlive() const 
+{ 
+    return session_info->keepAlive;
+}
+    
+time_t      Client::getLastActivity() const 
+{ 
+    return session_info->lastActivity;
+}
+
 void    Client::ReadFromConexion()
 {
     try {
-        request = new Request(clientFd, session_info);
+        request = new Request(*session_info);
     }
     catch (const std::exception& RequestError){
         throw ClientError(RequestError.what());

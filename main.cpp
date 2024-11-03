@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/02 22:15:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/02 23:42:09 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/02 23:58:38 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,4 @@ int main(int argc, char **argv)
     // } catch (const std::exception& e) {
         
     // }
-
-
 }

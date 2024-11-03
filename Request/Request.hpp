@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 02:16:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/03 02:56:04 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,18 @@ private:
     struct ClientInfo& info;
     
 public:
-    Request(const size_t& ClientFd, ClientInfo& info_ref);
+    Request(ClientInfo& info_ref);
 
-    void readStatusLine(const size_t& ClientFd);
-    void readHeaders(const size_t& ClientFd);
-    bool readBody(const size_t& ClientFd);
-    bool readContentLengthBody(const size_t& ClientFd, size_t length);
-    bool readChunkedBody(const size_t& ClientFd);
+    bool readData(const size_t& ClientFd, size_t maxSize);
+    size_t parseContentLength(const std::string& headers);
+    void    parseRequest();
+
+
+    // void readStatusLine(const size_t& ClientFd);
+    // void readHeaders(const size_t& ClientFd);
+    // bool readBody(const size_t& ClientFd);
+    // bool readContentLengthBody(const size_t& ClientFd, size_t length);
+    // bool readChunkedBody(const size_t& ClientFd);
 
     // bool HostHeader();
     // bool ConnectionHeader();

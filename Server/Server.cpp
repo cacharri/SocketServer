@@ -20,6 +20,12 @@ Server::~Server()
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
 
+int Server::getPassiveSocketFd() const
+{
+    return MotherSocket::getPassiveSocketFd();
+}
+
+
 void    Server::init()
 {
     setNonBlocking();
@@ -138,7 +144,7 @@ void Server::acceptClient() {
     newClient.timeout = 10;
     newClient.client_max_body_size = config.client_max_body_size;
     newClient.keepAlive = true; // Par defecto suponemos keep-alive
-    clients.push_back(newClient);
+    clients.push_back(&newClient);
 
     std::cout << "New Client on Fd: " << newClient.pfd.fd << " " << newClient.lastActivity << std::endl;
 }
@@ -161,7 +167,7 @@ void Server::removeClient(size_t index)
 }
 
 
-void Server::handleClient(size_t index)
+void Server::handleClient(ClientInfo* incoming_client)
 {
     /*
         gestion de una conexion entrante.
@@ -174,12 +180,12 @@ void Server::handleClient(size_t index)
         - Construir headers de respuesta
         - Manejar codigos de error
     */
-    Client client(clients[index].pfd.fd, clients[index]);
+    Client client(incoming_client);
 
     analyzeBasicHeaders(client.getRequest(), client.getResponse(), index);
-    clients[index].lastActivity = time(NULL);
+    client.lastActivity = time(NULL);
     router.route(client.getRequest(), client.getResponse());
-    sendResponse(clients[index].pfd.fd, client.getResponse()->toString());
+    sendResponse(client.pfd.fd, client.getResponse()->toString());
 
 }
 
@@ -272,4 +278,37 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
     std::string contentLength = request->getHeader("Content-length");
     if (!contentLength.empty())
         config.locations[request->getUri()].client_max_body_size = ConfigParser::parseSize(contentLength);
+}
+
+void Server::handleConnections()
+{
+    //logica que habia en launch    
+    for (size_t i = 0; i < clients.size(); )
+    {
+        if (IsTimeout(i))
+        {
+            continue;
+        }
+
+        if (clients[i].pfd.revents & POLLIN)
+        {
+            std::cout << "COmparairing against: " << MotherSocket::getPassiveSocketFd() << std::endl;
+            if (clients[i].pfd.fd == MotherSocket::getPassiveSocketFd())
+            {
+                LOG_INFO("New Client !");
+                acceptClient();
+            }
+            else
+            {
+                LOG_INFO("Handling Client");
+                handleClient(i);
+            }
+        }
+        else if (clients[i].pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+        {
+            removeClient(i);
+            continue;
+        }
+        ++i;
+    }
 }
