@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/03 02:56:47 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/04 23:09:17 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ Request::Request(ClientInfo& info_ref)
 {
     try {
         // leer toda la request de 'golpe' hasta client_max_body_size como limite
-        if (!readData(ClientFd, info.client_max_body_size))
+        if (!readData(info_ref.pfd.fd, info.client_max_body_size))
             throw RequestError("Failed to read request data");
         
         // Parsear la requeste

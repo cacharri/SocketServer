@@ -47,71 +47,71 @@ void    Server::init()
     serverInfo.keepAlive = true;
 
     // lo anadimos a nuestro vectore para polear
-    clients.push_back(serverInfo);
+    clients.push_back(&serverInfo);
 
     toPassiveSocket(10);
 
 }
 
-void Server::launch()
-{
+// void Server::launch()
+// {
 
-    std::vector<pollfd> pollFds(1, clients.back().pfd);
+//     std::vector<pollfd> pollFds(1, clients.back().pfd);
 
-    while (42)
-    {
-        // std::cout << "\nWaiting for events... Current clients: " << (clients.size() - 1) << "\n"<<std::endl;
+//     while (42)
+//     {
+//         // std::cout << "\nWaiting for events... Current clients: " << (clients.size() - 1) << "\n"<<std::endl;
         
-        int pollCount = poll(pollFds.data(), pollFds.size(), 1000);
+//         int pollCount = poll(pollFds.data(), pollFds.size(), 1000);
 
-        if (pollCount == -1)
-        {
-            if (errno != EINTR) // Ignorar interrupciones del sistema
-            {
-                ServerError error("Poll failed");
-                LOG_EXCEPTION(error);
-            }
-            continue;
-        }
+//         if (pollCount == -1)
+//         {
+//             if (errno != EINTR) // Ignorar interrupciones del sistema
+//             {
+//                 ServerError error("Poll failed");
+//                 LOG_EXCEPTION(error);
+//             }
+//             continue;
+//         }
 
-        // Controlar los timeouts y gestionar los eventos em este bucle
-        for (size_t i = 0; i < clients.size(); )
-        {
-            // sessiones con tiempo de ausencia superior a CONNECTION_TIMEOUT miembro privado server.
-            if (IsTimeout(i))
-            {
-                pollFds.erase(pollFds.begin() + i);
-                continue;
-            }
+//         // Controlar los timeouts y gestionar los eventos em este bucle
+//         for (size_t i = 0; i < clients.size(); )
+//         {
+//             // sessiones con tiempo de ausencia superior a CONNECTION_TIMEOUT miembro privado server.
+//             if (IsTimeout(i))
+//             {
+//                 pollFds.erase(pollFds.begin() + i);
+//                 continue;
+//             }
 
-            // disponible para leer/escribir
-            if (pollFds[i].revents & POLLIN)
-            {
-                if (pollFds[i].fd == getPassiveSocketFd())
-                {
-                    clients[0].lastActivity = time(NULL);
-                    acceptClient();
-                    pollFds.push_back(clients.back().pfd);
-                }
-                else
-                {
-                    std::cout << "\nHandling Request of resource demand on Fd: " << pollFds[i].fd << "\n"<<std::endl;
+//             // disponible para leer/escribir
+//             if (pollFds[i].revents & POLLIN)
+//             {
+//                 if (pollFds[i].fd == getPassiveSocketFd())
+//                 {
+//                     clients[0].lastActivity = time(NULL);
+//                     acceptClient();
+//                     pollFds.push_back(clients.back().pfd);
+//                 }
+//                 else
+//                 {
+//                     std::cout << "\nHandling Request of resource demand on Fd: " << pollFds[i].fd << "\n"<<std::endl;
 
-                    handleClient(i);
-                }
-            }
-            else if (pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
-            {
-                std::cout << "Removing Connection FD: " << clients[i].pfd.fd << std::endl;
-                removeClient(i);
-                pollFds.erase(pollFds.begin() + i);
-                continue;
-            }
+//                     handleClient(i);
+//                 }
+//             }
+//             else if (pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+//             {
+//                 std::cout << "Removing Connection FD: " << clients[i].pfd.fd << std::endl;
+//                 removeClient(i);
+//                 pollFds.erase(pollFds.begin() + i);
+//                 continue;
+//             }
 
-            ++i;
-        }
-    }
-}
+//             ++i;
+//         }
+//     }
+// }
 
 void Server::acceptClient() {
     sockaddr_in clientAddr;
@@ -160,46 +160,39 @@ void Server::sendResponse(int clientSocket, const std::string& response)
     }
 }
 
-void Server::removeClient(size_t index)
+void Server::removeClient(ClientInfo* client)
 {
-    close(clients[index].pfd.fd);
-    clients.erase(clients.begin() + index);
+    close(client->pfd.fd);
+    std::vector<ClientInfo*>::iterator it = std::find(clients.begin(), clients.end(), client);
+    if (it != clients.end())
+        clients.erase(it);
 }
 
 
-void Server::handleClient(ClientInfo* incoming_client)
+void Server::handleClient(ClientInfo* client)
 {
-    /*
-        gestion de una conexion entrante.
-        Client construye la respuesta HTTP correspondiente.
-        -la lectura de bytes del file descriptor se hace en el constructor de Client o Request ?
-        -Construir request (status-line, headers, body)
-        - Controlar Headers
-        - Controlar Variables de sesion de conexion (timeout, buffersize, cookies)
-        - enrutar al handler
-        - Construir headers de respuesta
-        - Manejar codigos de error
-    */
-    Client client(incoming_client);
-
-    analyzeBasicHeaders(client.getRequest(), client.getResponse(), index);
-    client.lastActivity = time(NULL);
-    router.route(client.getRequest(), client.getResponse());
-    sendResponse(client.pfd.fd, client.getResponse()->toString());
-
-}
-
-
-bool    Server::IsTimeout(size_t i)
-{
-    //std::cout <<"Ausencia de Uso de Fd: " << clients[i].pfd.fd << " : " << difftime(time(NULL), clients[i].lastActivity) << std::endl;
-    if (i > 0 && (!clients[i].keepAlive || 
-        difftime(time(NULL), clients[i].lastActivity) > CONNECTION_TIMEOUT))
-    {
-        //std::cout << "\nClosed Socket on fd: " << clients[i].pfd.fd << "[TIMEOUT]\n"<<std::endl;
-        removeClient(i);
-        return true;
+    try {
+        Client clientHandler(client);
+        
+        analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
+        router.route(clientHandler.getRequest(), clientHandler.getResponse());
+        sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+        
+        client->keepAlive = clientHandler.shouldKeepAlive();
+        client->lastActivity = clientHandler.getLastActivity();
     }
+    catch (const std::exception& e) {
+        LOG("Error handling client: " + std::string(e.what()));
+        removeClient(client);
+    }
+}
+
+
+bool    Server::IsTimeout(ClientInfo* client)
+{
+    if (!client->keepAlive || 
+        difftime(time(NULL), client->lastActivity) > CONNECTION_TIMEOUT)
+        return true;
     return false;
 }
 
@@ -223,7 +216,7 @@ const char * Server::ServerError::what() const throw()
 
 //-------------------------------- HEADERS HANDLING ------------------------------------
 
-void     Server::analyzeBasicHeaders(const Request* request, Response* response, int index)
+void     Server::analyzeBasicHeaders(const Request* request, Response* response, ClientInfo*    client)
 {   
 
     // HOST 
@@ -240,7 +233,7 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
     std::string connectionHeader = request->getHeader("Connection");
     if (connectionHeader == "keep-alive")
     {
-        clients[index].keepAlive = true;
+        client->keepAlive = true;
 
         // KEEP-ALIVE
         std::string isthere_keepalive_spec(request->getHeader("Keep-alive"));
@@ -256,7 +249,7 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
                 size_t valueStart = timeoutPos + strlen("timeout=");
                 size_t valueEnd = isthere_keepalive_spec.find_first_of(" ,", valueStart);
                 std::string timeoutValue = isthere_keepalive_spec.substr(valueStart, valueEnd - valueStart);
-                clients[index].timeout = std::atoi(timeoutValue.c_str());
+                client->timeout = std::atoi(timeoutValue.c_str());
                 header_response_value += std::string(" timeout=");
                 header_response_value += timeoutValue;
                 response->setHeader("Keep-alive", header_response_value);
@@ -268,7 +261,7 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
                 size_t valueStart = maxPos + strlen("max=");
                 size_t valueEnd = isthere_keepalive_spec.find_first_of(" ,", valueStart);
                 std::string maxValue = isthere_keepalive_spec.substr(valueStart, valueEnd - valueStart);
-                clients[index].max = std::atoi(maxValue.c_str());
+                client->max = std::atoi(maxValue.c_str());
                 header_response_value += std::string(" max=");
                 header_response_value += maxValue;
                 response->setHeader("Keep-alive", header_response_value);
@@ -278,37 +271,4 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
     std::string contentLength = request->getHeader("Content-length");
     if (!contentLength.empty())
         config.locations[request->getUri()].client_max_body_size = ConfigParser::parseSize(contentLength);
-}
-
-void Server::handleConnections()
-{
-    //logica que habia en launch    
-    for (size_t i = 0; i < clients.size(); )
-    {
-        if (IsTimeout(i))
-        {
-            continue;
-        }
-
-        if (clients[i].pfd.revents & POLLIN)
-        {
-            std::cout << "COmparairing against: " << MotherSocket::getPassiveSocketFd() << std::endl;
-            if (clients[i].pfd.fd == MotherSocket::getPassiveSocketFd())
-            {
-                LOG_INFO("New Client !");
-                acceptClient();
-            }
-            else
-            {
-                LOG_INFO("Handling Client");
-                handleClient(i);
-            }
-        }
-        else if (clients[i].pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-        {
-            removeClient(i);
-            continue;
-        }
-        ++i;
-    }
 }

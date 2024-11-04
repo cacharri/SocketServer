@@ -94,44 +94,92 @@ void    Http::launch_all()
     for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
         (*it)->init();
 
-    // Creamos un vector los pollfds de nuestros socket pasivos de nuestros servidores
     std::vector<pollfd> master_fds;
-    // Creamos un vector los pollfds de nuestros socket activos de nuestros servidores
-    // Anadimos el socket de escucha(pasivo) de cada servidor
+    
     for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
     {
         pollfd server_fd;
         server_fd.fd = (*it)->getPassiveSocketFd();
-        std::cout << "Append to master_fds: " << (*it)->getPassiveSocketFd() << std::endl;
         server_fd.events = POLLIN;
         server_fd.revents = 0;
         master_fds.push_back(server_fd);
     }
 
-    // Bucle principale
+    size_t num_servers = servers.size();
+
     while (42)
     {
-        for (std::list<Server*>::iterator it_servers = servers.begin(); it_servers != servers.end(); it_servers++)
+        size_t num_clients = 0;
+        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
-            for (std::vector<ClientInfo*>::iterator it_clients = (*it_servers)->clients.begin(); it_clients != (*it_servers)->clients.end(); it_clients++)
-                master_fds.push_back((*it_clients)->pfd);
+            for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
+                 cli_it != (*srv_it)->clients.end(); cli_it++)
+            {
+                pollfd  active_fd;
+                active_fd.fd = (*cli_it)->pfd.fd;
+                active_fd.events = POLLIN;
+                active_fd.revents = 0;
+                master_fds.push_back(active_fd);
+            }
         }
 
-        int poll_count = poll(master_fds.data(), master_fds.size(), -1);
+        int poll_count = poll(&master_fds[0], master_fds.size(), -1);
         
         if (poll_count < 0)
         {
             if (errno != EINTR)
-                LOG("Poll error in master loop");
+                LOG("Poll error in master loop !!!");
             continue;
         }
-
-        for (std::vector<pollfd>::iterator iter_poll_fd = master_fds.begin(); iter_poll_fd != master_fds.end(); iter_poll_fd++)
+        //  Gestionar eventos 
+        size_t fd_index = 0;
+        for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); it++, fd_index++)
         {
-            // if ((*iter_poll_fd).revents & POLLIN)
-            // {
-            //     (*it)->handleConnections(); 
-            // }
+            // Vérifier le socket passif du serveur
+            // Controlar socket pasivo
+            if (master_fds[fd_index].revents & POLLIN)
+            {
+                (*it)->acceptClient();
+                num_clients++;
+            }
+        }
+
+        // Controlar clientes anadidos (sockets activos) en todos los servidores ( a partir de fd_index(sockets de los servidores, pasivos))
+
+        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
+        {
+            std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin();
+            //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
+            while (cli_it != (*srv_it)->clients.end())
+            {
+                size_t current_fd_index = (num_servers + (fd_index <= num_servers? 1: fd_index)) - 1;
+                if (current_fd_index >= master_fds.size())
+                    break;
+
+                if ((*srv_it)->IsTimeout(*cli_it))
+                {
+                    close((*cli_it)->pfd.fd);
+                    cli_it = (*srv_it)->clients.erase(cli_it);
+                    num_clients--;
+                    continue;
+                }
+                std::cout <<  "Current client index (starting at " << num_servers << "): [" << current_fd_index << "/ "<< num_clients << "]" << std::endl;
+                if (master_fds[current_fd_index].revents & POLLIN)
+                {
+                    std::cout << "Heloo" << std::endl;
+                    (*srv_it)->handleClient(*cli_it);
+                }
+                else if (master_fds[current_fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                {
+                    close((*cli_it)->pfd.fd);
+                    cli_it = (*srv_it)->clients.erase(cli_it);
+                    num_clients--;
+                    continue;
+                }
+
+                cli_it++;
+                fd_index++;
+            }
         }
     }
 }

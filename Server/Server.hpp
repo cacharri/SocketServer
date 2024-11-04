@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/04 15:35:35 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/04 23:08:00 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,9 +67,13 @@ public:
 
     int getPassiveSocketFd() const;
 
-    void        launch();
+    // Core functions
+    //void        launch();
     void        init();
-    void        handleConnections();
+    void        acceptClient();
+    void        handleClient(ClientInfo* incoming_client);
+    void        removeClient(ClientInfo* client);
+    bool        IsTimeout(ClientInfo* client);
     
     class ServerError: public std::exception {
         private:
@@ -87,15 +91,10 @@ private:
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
 
     // Headers functions
-    void        analyzeBasicHeaders(const Request* request, Response* response, int index);
+    void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
     
-    // Core functions
-    void        acceptClient();
-    void        handleClient(ClientInfo* incoming_client);
     void        sendResponse(int clientSocket, const std::string& response);
-    void        removeClient(size_t index);
     
-    bool        IsTimeout(size_t index);
 
     // Disable copy constructor and assignment operator
     Server(const Server&);
