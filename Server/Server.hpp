@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/03 02:52:43 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/04 15:35:35 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,8 @@ class Response;
 
 class Server : public MotherSocket {
 public:
+    std::vector<ClientInfo*> clients;
+    
     explicit Server(const ServerConfig& serverConfig);
     ~Server();
 
@@ -81,7 +83,6 @@ public:
 private:
     Router                  router;
     ServerConfig            config;
-    std::vector<ClientInfo*> clients;
     char                    *buffer;
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
 

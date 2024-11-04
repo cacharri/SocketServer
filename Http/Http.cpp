@@ -17,6 +17,7 @@ namespace {
 // FORMA DE COPLIEN
 Http::Http()
 {
+
 }
 
 Http::Http(const Http& copy)
@@ -90,14 +91,11 @@ void    Http::launch_all()
 {
     LOG_INFO("All servers are launching... Press CTRL+C to quit");
     
-
     for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
-    {
         (*it)->init();
-    }
 
     // Creamos un vector los pollfds de nuestros socket pasivos de nuestros servidores
-    std::list<pollfd> master_fds;
+    std::vector<pollfd> master_fds;
     // Creamos un vector los pollfds de nuestros socket activos de nuestros servidores
     // Anadimos el socket de escucha(pasivo) de cada servidor
     for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
@@ -110,14 +108,15 @@ void    Http::launch_all()
         master_fds.push_back(server_fd);
     }
 
-    std::list<pollfd> active_fds;
-    for (std::list<ClientInfo*>::iterator it = servers.clients.begin(); it != servers.clients.end(); ++it)
-        active_fds.push_back((*it)->pfd);
-
-
     // Bucle principale
     while (42)
     {
+        for (std::list<Server*>::iterator it_servers = servers.begin(); it_servers != servers.end(); it_servers++)
+        {
+            for (std::vector<ClientInfo*>::iterator it_clients = (*it_servers)->clients.begin(); it_clients != (*it_servers)->clients.end(); it_clients++)
+                master_fds.push_back((*it_clients)->pfd);
+        }
+
         int poll_count = poll(master_fds.data(), master_fds.size(), -1);
         
         if (poll_count < 0)
@@ -127,25 +126,12 @@ void    Http::launch_all()
             continue;
         }
 
-        // Comprobar los eventos
-        size_t server_index = 0;
-        size_t server_active_index = 0;
-        for (std::list<Server*>::iterator it = servers.begin(); 
-             it != servers.end();)
+        for (std::vector<pollfd>::iterator iter_poll_fd = master_fds.begin(); iter_poll_fd != master_fds.end(); iter_poll_fd++)
         {
-            if (active_fds.top()->revents & POLLIN)
-            {
-                LOG_INFO("Handling client !");
-                (*it)->handleClient(active_fds.top()); 
-            }
-            if (master_fds.top()->revents & POLLIN)
-            {
-                LOG_INFO("New client !");
-                (*it)->handleConnections(); 
-            }
-            it++;
-            server_active_index++;
-            server_index++;
+            // if ((*iter_poll_fd).revents & POLLIN)
+            // {
+            //     (*it)->handleConnections(); 
+            // }
         }
     }
 }
