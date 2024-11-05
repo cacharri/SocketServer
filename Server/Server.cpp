@@ -8,13 +8,19 @@ Server::Server(const ServerConfig& serverConfig)
     // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
     ConfigParser::copyServerConfig(serverConfig, Server::config);
     buffer = new char[config.client_max_body_size];
-
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
 Server::~Server()
 {
+    std::cout << "Destructor of Server Called" << std::endl;
     delete[] buffer;
+    std::vector<ClientInfo*>::iterator it = clients.begin();
+    while (it != clients.end())
+    {
+        delete (*it);
+        it++;
+    }
     clients.clear();
 }
 
@@ -46,11 +52,18 @@ void    Server::init()
     serverInfo.timeout = 0;
     serverInfo.keepAlive = true;
 
-    // lo anadimos a nuestro vectore para polear
-    clients.push_back(&serverInfo);
-
     toPassiveSocket(10);
 
+    std::string info_message("Server is listening on port ");
+    std::ostringstream conversion_stream;
+    conversion_stream << config.port;
+    info_message += conversion_stream.str();
+    info_message += std::string("  PassiveSocketBound: ");
+    conversion_stream.clear();
+    conversion_stream << getPassiveSocketFd();
+    info_message += conversion_stream.str();
+    info_message += " " + config.server_name;
+    LOG_INFO(info_message);
 }
 
 // void Server::launch()
@@ -127,26 +140,23 @@ void Server::acceptClient() {
         }
         return;
     }
-    //  socket to non-blocking
-    if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
-    {
-        close(clientFd);
-        ServerError error("Failed to set client socket to non-blocking !");
-        LOG_EXCEPTION(error);
-    }
 
-    ClientInfo newClient;
-    newClient.pfd.fd = clientFd;
-    newClient.pfd.events = POLLIN;
-    newClient.pfd.revents = 0;
-    newClient.lastActivity = time(NULL);
-    newClient.max = 10;
-    newClient.timeout = 10;
-    newClient.client_max_body_size = config.client_max_body_size;
-    newClient.keepAlive = true; // Par defecto suponemos keep-alive
-    clients.push_back(&newClient);
+    ClientInfo* newClient = new ClientInfo();
+    newClient->pfd.fd = clientFd;
+    newClient->pfd.events = POLLIN;
+    newClient->pfd.revents = 0;
+    newClient->lastActivity = time(NULL);
+    newClient->keepAlive = true;
+    newClient->timeout = 60;
+    newClient->client_max_body_size = config.client_max_body_size;
 
-    std::cout << "New Client on Fd: " << newClient.pfd.fd << " " << newClient.lastActivity << std::endl;
+    clients.push_back(newClient);
+
+    std::string info_message("New Client on Fd: ");
+    std::ostringstream      int_output;
+    int_output << clientFd;
+    info_message += int_output.str();
+    LOG_INFO(info_message.c_str());
 }
 
 
@@ -182,7 +192,9 @@ void Server::handleClient(ClientInfo* client)
         client->lastActivity = clientHandler.getLastActivity();
     }
     catch (const std::exception& e) {
-        LOG("Error handling client: " + std::string(e.what()));
+        std::string error_message("Error handling client: ");
+        error_message += std::string(e.what());
+        LOG(error_message.c_str());
         removeClient(client);
     }
 }
@@ -190,9 +202,18 @@ void Server::handleClient(ClientInfo* client)
 
 bool    Server::IsTimeout(ClientInfo* client)
 {
-    if (!client->keepAlive || 
-        difftime(time(NULL), client->lastActivity) > CONNECTION_TIMEOUT)
+    time_t currentTime = time(NULL);
+    time_t diff = currentTime - client->lastActivity;
+    
+    if (!client->keepAlive || diff > CONNECTION_TIMEOUT)
+    {
+        std::string info_message("Client Timeouted: ");
+        std::ostringstream      time_output;
+        time_output << diff;
+        info_message += time_output.str();
+        LOG_INFO(info_message.c_str());
         return true;
+    }
     return false;
 }
 
