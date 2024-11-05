@@ -109,8 +109,7 @@ void    Http::launch_all()
 
     while (42)
     {
-        size_t num_clients = 0;
-        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
+        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); ++srv_it)
         {
             for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
                  cli_it != (*srv_it)->clients.end(); cli_it++)
@@ -122,7 +121,7 @@ void    Http::launch_all()
                 master_fds.push_back(active_fd);
             }
         }
-
+        std::cout << "New size of master_fds: " <<  master_fds.size() << std::endl;
         int poll_count = poll(&master_fds[0], master_fds.size(), -1);
         
         if (poll_count < 0)
@@ -140,7 +139,6 @@ void    Http::launch_all()
             if (master_fds[fd_index].revents & POLLIN)
             {
                 (*it)->acceptClient();
-                num_clients++;
             }
         }
 
@@ -152,7 +150,8 @@ void    Http::launch_all()
             //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
             while (cli_it != (*srv_it)->clients.end())
             {
-                size_t current_fd_index = (num_servers + (fd_index <= num_servers? 1: fd_index)) - 1;
+                size_t current_fd_index = (fd_index < num_servers - 1? fd_index: (num_servers - 1) + (fd_index));
+
                 if (current_fd_index >= master_fds.size())
                     break;
 
@@ -160,20 +159,18 @@ void    Http::launch_all()
                 {
                     close((*cli_it)->pfd.fd);
                     cli_it = (*srv_it)->clients.erase(cli_it);
-                    num_clients--;
                     continue;
                 }
-                std::cout <<  "Current client index (starting at " << num_servers << "): [" << current_fd_index << "/ "<< num_clients << "]" << std::endl;
+    
+                std::cout <<  "Current client index for master_fds (starting at " << num_servers << "): [" << current_fd_index << "/ "<< servers.size() + fd_index << "]" << std::endl;
                 if (master_fds[current_fd_index].revents & POLLIN)
                 {
-                    std::cout << "Heloo" << std::endl;
                     (*srv_it)->handleClient(*cli_it);
                 }
                 else if (master_fds[current_fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
                 {
                     close((*cli_it)->pfd.fd);
                     cli_it = (*srv_it)->clients.erase(cli_it);
-                    num_clients--;
                     continue;
                 }
 

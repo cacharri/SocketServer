@@ -21,7 +21,6 @@ Server::~Server()
         delete (*it);
         it++;
     }
-    clients.clear();
 }
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
@@ -43,15 +42,6 @@ void    Server::init()
         router.loadEndpoints(it->first, it->second);
 
     // Creamos el primer cliente a polear (poll()) que seria nuestro socket passivo.
-    ClientInfo serverInfo;
-    serverInfo.pfd.fd = getPassiveSocketFd();
-    serverInfo.pfd.events = POLLIN;
-    serverInfo.pfd.revents = 0;
-    serverInfo.lastActivity = 0;
-    serverInfo.max = 0;
-    serverInfo.timeout = 0;
-    serverInfo.keepAlive = true;
-
     toPassiveSocket(10);
 
     std::string info_message("Server is listening on port ");
@@ -149,7 +139,6 @@ void Server::acceptClient() {
     newClient->keepAlive = true;
     newClient->timeout = 60;
     newClient->client_max_body_size = config.client_max_body_size;
-
     clients.push_back(newClient);
 
     std::string info_message("New Client on Fd: ");
