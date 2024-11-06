@@ -131,11 +131,23 @@ Represents an HTTP response. It constructs and stores response information, incl
 - **getBody() const**: Returns the body of the response.
 
 ## To Do
-- Implement CGI handling (use execve, GET usage & post usage)
-- Test header management.
-- Append Variables to `server.config` structure.
-- Redirection endpoint
-- Read Subject
+- Do not use errno after read/write
+- Make post work with json
+- Implement PATH_INFO macro for cgi compilator binary Primer argumento de execve
+- El CGI tiene que ejecutarse en el buen directorio para el acceso al fichero del camino relativo. Ein ? a revisar(frase del subject traducido del frances)
+- Implement DELETE
+- Review rooting
+- Control memory leaks at error points
+- Control error codes (hagamos una lista de los qe controlamos)
+- Control de la entrega del body cuando hay un errorCode
+- Mejorar   ConfigParser en el manejo de error_pages para manejar multiples paginas y error status
+- Implement LocationConfig bozy size limit overwriting server custom size or default size.
+- Control Headers:
+   - Review chunked mode
+   - listar los headers de Request que tenemos en cuenta.
+   - Escribir los headers de la respuesta.
+- Make server listen on multiple passive sockets
+- Compare with nginx
 
 ## Sources
 - [HTTP Content Negotiation](https://http.dev/content-negotiation)

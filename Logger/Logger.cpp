@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Logger.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: Smagniny <santi.mag777@gmail.com>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/14 15:57:54 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/14 23:56:45 by Smagniny         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Logger.hpp"
 
 Logger* Logger::instance = NULL;
@@ -25,7 +13,6 @@ Logger::Logger()
 {
     logFileName = "webserver.log";
     logFile.open(logFileName.c_str(), std::ios::app);
-    
 }
 
 Logger::~Logger()
@@ -41,29 +28,42 @@ Logger::~Logger()
     }
 }
 
-
-void Logger::log(const std::string& message, const char* file, int line)
+void Logger::logINFO(const char* file, int line, const std::string& message)
 {
     time_t now = time(0);
     char* dt = ctime(&now);
     std::string timestamp(dt);
-    timestamp = timestamp.substr(0, timestamp.length() - 1); // Remove newline
-    
-    std::string line_number;
-    std::stringstream out;
-    out << line;
-    line_number = out.str();
-    std::string logMessage = "[ " + timestamp + " ]  " + "[ " + file +" ]  " + "[ " + line_number +" ] " + "[ "+ message +" ]" + "\n";
+    timestamp = timestamp.substr(0, timestamp.length() - 1);
+
+    std::ostringstream lineStr;
+    lineStr << line;
+
+    std::cout << GREY << "[ " << timestamp << " ] [ " << file << ":" 
+              << lineStr.str() << " ] " << message << RESET << std::endl;
+}
+
+void Logger::log(const char* file, int line, const std::string& message)
+{
+    time_t now = time(0);
+    char* dt = ctime(&now);
+    std::string timestamp(dt);
+    timestamp = timestamp.substr(0, timestamp.length() - 1);
+
+    std::ostringstream lineStr;
+    lineStr << line;
+
+    std::string logMessage = "[ " + timestamp + " ] [ " + file + ":" + 
+                           lineStr.str() + " ] " + message + "\n";
 
     if (logFile.is_open()) {
         logFile << logMessage;
         logFile.flush();
     }
-    std::cout << logMessage;
+    std::cout << RED << logMessage << RESET;
 }
 
-void Logger::logException(const std::exception& e, const char* file, int line) 
+void Logger::logException(const std::exception& e, const char* file, int line)
 {
-    log(e.what(), file, line);
+    log(file, line, std::string("Exception: ") + e.what());
     throw e;
-}
+} 

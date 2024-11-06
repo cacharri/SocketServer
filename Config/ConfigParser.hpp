@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 02:04:35 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/02 22:04:16 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,13 +54,16 @@ class ConfigParser {
 	private:
         ConfigParser();
         ~ConfigParser();
-        
-        static void printLocationConfig(const ServerConfig& serverConfig);
+        ConfigParser(const ConfigParser& copy);
+        ConfigParser& operator=(const ConfigParser& assign);
 
 	public:
+        
 		static  std::vector<ServerConfig>   parseServerConfigFile(const std::string& filename);
         static  void                        copyServerConfig(const ServerConfig& source, ServerConfig& destination);
+        
 		static                   size_t     parseSize(const std::string& sizeStr);
+        static  void                        printLocationConfig(const ServerConfig& serverConfig);
 
         class ConfigError: public std::exception
         {
