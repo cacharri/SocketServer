@@ -67,10 +67,10 @@ void    Http::configure(const std::string&  configfile)
         }
 
     } catch (const std::exception& e) {
-        LOG_EXCEPTION(ServerError(e.what()));
+        LOG(e.what());
     }
     if (servers.empty())
-        LOG_EXCEPTION(ServerError("No servers could be started."));
+        LOG("No servers could be started.");
 
 }
 
@@ -92,8 +92,14 @@ void    Http::launch_all()
 {
     LOG_INFO("All servers are launching... Press CTRL+C to quit");
     
-    for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
-        (*it)->init();
+    std::list<Server*>::iterator it = servers.begin();
+    try {
+        for (; it != servers.end(); ++it)
+            (*it)->init();
+    } catch (std::exception& e){
+        delete (*it);
+        servers.erase(it);
+    }
 
     std::vector<pollfd> master_fds;
     
