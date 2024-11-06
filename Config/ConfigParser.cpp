@@ -53,6 +53,7 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         newLocConfig.upload_store = locConfig.upload_store;
         newLocConfig.cgi_pass = locConfig.cgi_pass;
         newLocConfig.redirect = locConfig.redirect;
+		newLocConfig.redirect_type = locConfig.redirect_type;
         destination.locations[path] = newLocConfig;
     }
 
@@ -160,15 +161,16 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 					else
 						currentLocation.client_max_body_size = parseSize("20K");
 				} else if (token == "return") {
-						int statusCode;
-						std::string redirectUrl;
-
-						iss >> statusCode;
-						if (statusCode == 301) {
-							iss >> redirectUrl;
-							currentLocation.redirect = redirectUrl;
-							std::cout << "[CONF]: Set redirect " << currentLocation.redirect << std::endl;
-						}
+                    int statusCode;
+                    std::string redirectUrl;
+                    iss >> statusCode >> redirectUrl;
+                    currentLocation.redirect = redirectUrl;
+                    currentLocation.redirect_type = statusCode;
+                    if (statusCode == 301) {
+                        std::cout << "[CONF]: Set redirect (301) " << currentLocation.redirect << std::endl;
+                    } else if (statusCode == 302) {
+                        std::cout << "[CONF]: Set redirect (302) " << currentLocation.redirect << std::endl;
+                    }
 				}
 			}
 		}

@@ -98,14 +98,32 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             cgi_handler_instance.handle(request, response, locationconfig);
          //   delete cgi_handler_instance;
             
-        }
+        }/*
         if (!locationconfig.redirect.empty()) {
             response->setStatus(301, "Moved Permanently");
             response->setHeader("Location", locationconfig.redirect);
             response->setBody("<html><body><h1>301 Moved Permanently</h1></body></html>");
             return;
+        }*/
+        if (!locationconfig.redirect.empty()) {
+            if (locationconfig.redirect_type == 301) {
+                response->setStatus(301, "Moved Permanently");
+            } else if (locationconfig.redirect_type == 302) {
+                response->setStatus(302, "Found");
+            } else {
+                response->setStatus(400, "Bad Request");
+                response->setBody("<html><body><h1>400 Bad Request</h1></body></html>");
+                return;
+            }
+            response->setHeader("Location", locationconfig.redirect);
+            std::ostringstream oss;
+            oss << locationconfig.redirect_type;
+            std::string body = "<html><body><h1>" + oss.str() + " " +
+                            (locationconfig.redirect_type == 301 ? "Moved Permanently" : "Found") +
+                            "</h1></body></html>";
+            response->setBody(body);
+            return;
         }
-
         else if (fullpath[fullpath.size() - 1] == '/')
         {
             struct stat buffer;

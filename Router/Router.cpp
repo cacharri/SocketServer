@@ -37,6 +37,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config->endpointdata.upload_store = locationconfig.upload_store;
     config->endpointdata.cgi_pass = locationconfig.cgi_pass;
     config->endpointdata.redirect = locationconfig.redirect;
+    config->endpointdata.redirect_type = locationconfig.redirect_type;
     config->handler = requesthandler;
 
     routes[path].push_back(config);
@@ -94,30 +95,62 @@ bool isDirectory(const std::string& path) {
     return (info.st_mode & S_IFDIR) != 0; // Verifica si es un directorio
 }
 
+
+std::string formatDateTime(time_t time) {
+    struct tm* timeInfo = localtime(&time);
+    char buffer[20];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeInfo);
+    return std::string(buffer);
+}
+
+std::string formatSize(off_t size) {
+    std::stringstream ss;
+    ss << size << " B";
+    return ss.str();
+}
+
 std::string generateAutoIndex(const std::string& directory) {
-    std::cout << "Generando autoindex para el directorio: " << directory << std::endl; // Añadir depuración
-    std::string autoindexHtml = "<html><body><h1>Index of " + directory + "</h1><ul>";
-    
+    std::cout << "Generando autoindex para el directorio: " << directory << std::endl;
+
+    std::string autoindexHtml = "<html><head><style>";
+    autoindexHtml += "table { width: 100%; border-collapse: collapse; }";
+    autoindexHtml += "th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; text-align: left; }";
+    autoindexHtml += "th { background-color: #f2f2f2; font-weight: bold; }";
+    autoindexHtml += "tr:hover { background-color: #f9f9f9; }";
+    autoindexHtml += "</style></head><body>";
+    autoindexHtml += "<h1>Index of " + directory + "</h1><table>";
+    autoindexHtml += "<tr><th style='width: 50%;'>Name</th><th style='width: 20%;'>Size</th><th style='width: 30%;'>Last Modified</th></tr>";
+
+
     DIR* dir = opendir(directory.c_str());
     if (dir != NULL) {
         struct dirent* entry;
         while ((entry = readdir(dir)) != NULL) {
             std::string filename = entry->d_name;
             if (filename != "." && filename != "..") {
-                autoindexHtml += "<li><a href=\"" + filename + "\">" + filename + "</a></li>";
+                std::string filepath = directory + "/" + filename;
+
+                struct stat fileStat;
+                if (stat(filepath.c_str(), &fileStat) == 0) {
+                    autoindexHtml += "<tr><td><a href=\"" + filename + "\">" + filename + "</a></td>"; // Ruta relativa
+                    autoindexHtml += "<td>" + formatSize(fileStat.st_size) + "</td>"; // Tamaño del archivo
+                    autoindexHtml += "<td>" + formatDateTime(fileStat.st_mtime) + "</td>"; // Fecha de modificación
+                    autoindexHtml += "</tr>";
+                } else {
+                    std::cerr << "No se pudo obtener información del archivo: " << filename << std::endl;
+                }
             }
         }
         closedir(dir);
     } else {
         // Error al abrir el directorio
         autoindexHtml = "<html><body><h1>Error: Cannot open directory</h1></body></html>";
-        std::cerr << "Error al abrir el directorio: " << strerror(errno) << std::endl; // Mostrar error
+        std::cerr << "Error al abrir el directorio: " << strerror(errno) << std::endl;
     }
-    
-    autoindexHtml += "</ul></body></html>";
+
+    autoindexHtml += "</table></body></html>";
     return autoindexHtml;
 }
-
 
 void Router::route(const Request* request, Response* response) {
     if (routes.empty()) {
@@ -147,4 +180,3 @@ void Router::route(const Request* request, Response* response) {
         response->setBody("404 Not Found");
     }
 }
-
