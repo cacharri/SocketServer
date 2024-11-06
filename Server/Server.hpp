@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 11:51:48 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 15:30:22 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,11 +60,21 @@ class Response;
 
 class Server : public MotherSocket {
 public:
+    std::vector<ClientInfo*> clients;
+    
     explicit Server(const ServerConfig& serverConfig);
     ~Server();
 
-    void        launch();
+    int getPassiveSocketFd() const;
+
+    // Core functions
+    //void        launch();
     void        init();
+    void        acceptClient();
+    void        handleClient(ClientInfo* incoming_client);
+    void        removeClient(ClientInfo* client);
+    bool        IsTimeout(ClientInfo* client);
+    
     class ServerError: public std::exception {
         private:
             std::string error_string;
@@ -77,20 +87,13 @@ public:
 private:
     Router                  router;
     ServerConfig            config;
-    std::vector<ClientInfo> clients;
-    char                    *buffer;
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
 
     // Headers functions
-    void        analyzeBasicHeaders(const Request* request, Response* response, int index);
+    void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
     
-    // Core functions
-    void        acceptClient();
-    void        handleClient(size_t index);
     void        sendResponse(int clientSocket, const std::string& response);
-    void        removeClient(size_t index);
     
-    bool        IsTimeout(size_t index);
 
     // Disable copy constructor and assignment operator
     Server(const Server&);

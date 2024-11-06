@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Ejemplo</title>
+</head>
+<body>
+    <h1>Formulario de Ejemplo</h1>
+    <form action="/forms" method="POST" accept-charset="UTF-8">
+        <!-- Campo de nombre -->
+        <label for="name">Nombre:</label>
+        <input type="text" id="name" name="name" required>
+        <br><br>
+
+        <!-- Campo de email -->
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <br><br>
+
+        <!-- Campo de edad -->
+        <label for="age">Edad:</label>
+        <input type="number" id="age" name="age" min="18" max="100">
+        <br><br>
+
+        <!-- Género -->
+        <label>Género:</label><br>
+        <input type="radio" id="male" name="gender" value="male">
+        <label for="male">Hombre</label><br>
+        <input type="radio" id="female" name="gender" value="female">
+        <label for="female">Mujer</label><br>
+        <input type="radio" id="other" name="gender" value="other">
+        <label for="other">Otro</label>
+        <br><br>
+
+        <!-- Selección de país -->
+        <label for="country">País:</label>
+        <select id="country" name="country">
+            <option value="spain">España</option>
+            <option value="mexico">México</option>
+            <option value="argentina">Argentina</option>
+            <option value="colombia">Colombia</option>
+        </select>
+        <br><br>
+
+        <!-- Intereses -->
+        <label>Intereses:</label><br>
+        <input type="checkbox" id="coding" name="interests" value="coding">
+        <label for="coding">Programación</label><br>
+        <input type="checkbox" id="music" name="interests" value="music">
+        <label for="music">Música</label><br>
+        <input type="checkbox" id="sports" name="interests" value="sports">
+        <label for="sports">Deportes</label>
+        <br><br>
+
+        <!-- Área de comentarios -->
+        <label for="comments">Comentarios:</label><br>
+        <textarea id="comments" name="comments" rows="4" cols="50"></textarea>
+        <br><br>
+
+        <!-- Botón de enviar -->
+        <button type="submit">Enviar</button>
+    </form>
+</body>
+</html>

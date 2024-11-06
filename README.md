@@ -131,7 +131,6 @@ Represents an HTTP response. It constructs and stores response information, incl
 - **getBody() const**: Returns the body of the response.
 
 ## To Do
-- Do not use errno after read/write
 - Make post work with json
 - Implement PATH_INFO macro for cgi compilator binary Primer argumento de execve
 - El CGI tiene que ejecutarse en el buen directorio para el acceso al fichero del camino relativo. Ein ? a revisar(frase del subject traducido del frances)
@@ -140,8 +139,7 @@ Represents an HTTP response. It constructs and stores response information, incl
 - Control memory leaks at error points
 - Control error codes (hagamos una lista de los qe controlamos)
 - Control de la entrega del body cuando hay un errorCode
-- Mejorar   ConfigParser en el manejo de error_pages para manejar multiples paginas y error status
-- Implement LocationConfig bozy size limit overwriting server custom size or default size.
+- Mejorar ConfigParser en el manejo de error_pages para manejar multiples paginas y error status
 - Control Headers:
    - Review chunked mode
    - listar los headers de Request que tenemos en cuenta.

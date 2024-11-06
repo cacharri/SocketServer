@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/29 23:02:59 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 03:10:33 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 14:01:15 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,29 +33,40 @@ struct ClientInfo {
     bool            keepAlive;
     unsigned int    timeout;
     unsigned int    max;
+    
+    ClientInfo() 
+        : lastActivity(time(NULL))
+        , client_max_body_size(8192)
+        , keepAlive(true)
+        , timeout(60)
+        , max(100)
+    {
+        pfd.fd = -1;
+        pfd.events = 0;
+        pfd.revents = 0;
+    }
 };
 
 class Client {
 private:
     size_t      clientFd;
-    ClientInfo& session_info;
+    ClientInfo* session_info;
     Request     *request;
     Response    *response;
-    std::vector<char> buffer;
-
 
 public:
-    Client(size_t fd, ClientInfo& session_info);
+    Client(ClientInfo* session_info);
     ~Client();
 
-    void        ReadFromConexion();
     bool        HandleConnection();
 
-    Request*    getRequest() { return request; }
-    Response*   getResponse() { return response; }
+    Request*    getRequest();
+    Response*   getResponse();
     
-    bool        shouldKeepAlive() const { return session_info.keepAlive; }
-    time_t      getLastActivity() const { return session_info.lastActivity; }
+    bool        shouldKeepAlive()const;
+    time_t      getLastActivity() const;
+    
+    void        setLastActivity() const; 
 
     class ClientError : public std::exception {
         private:

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fancy File Uploader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f06, #0047ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+        }
+
+        .upload-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .upload-container h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .upload-container p {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border: none;
+            background-color: #ffffff;
+            color: #000;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"] {
+            background-color: #f06;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0047ff;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        a {
+            color: #00ffcc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        document.querySelector('form').onsubmit = function() {
+            const fileInput = document.querySelector('input[type="file"]');
+            if (!fileInput.files.length) {
+                alert("Please select a file to upload.");
+                return false; // Prevent form submission
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="upload-container">
+        <h1>File Upload Portal</h1>
+        <p>Select a file and click "Upload" to submit:</p>
+
+        <!-- Form for uploading a file using POST -->
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" name="fileUpload" required>
+            <input type="submit" value="Upload">
+        </form>
+
+        <div class="footer">
+            <p>Want to view the files? <a href="/upload?view=files">Click here</a></p>
+        </div>
+    </div>
+</body>
+</html>

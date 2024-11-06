@@ -38,7 +38,7 @@ void Logger::logINFO(const char* file, int line, const std::string& message)
     std::ostringstream lineStr;
     lineStr << line;
 
-    std::cout << GREY << "[ " << timestamp << " ] [ " << file << ":" 
+    std::cout << GREEN << "[ " << timestamp << " ] [ " << file << ":" 
               << lineStr.str() << " ] " << message << RESET << std::endl;
 }
 

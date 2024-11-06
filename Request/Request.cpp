@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 02:41:55 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 14:07:44 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,247 +15,137 @@
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
 
-Request::Request(const size_t& ClientFd, ClientInfo& info_ref): info(info_ref)
+Request::Request(ClientInfo& info_ref)
+    : info(info_ref)
 {
-    readStatusLine(ClientFd);
-    readHeaders(ClientFd);
-    readBody(ClientFd);
-}
-void    Request::readStatusLine(const size_t& clientFd)
-{
-    char c;
-    std::string statusLine;
-    
-    while (42) {
-        ssize_t result = recv(clientFd, &c, 1, 0);
-        if (result <= 0)
-            throw RequestError("Invalid read on clientFd for status line");
-            
-        statusLine += c;
-        if (c == '\n' && statusLine.length() >= 2 && 
-            statusLine[statusLine.length()-2] == '\r')
-            break;
-        
-        if (statusLine.length() > 8192) // Por si el status line es enorme
-            throw RequestError("Status line too long");
+    try {
+        // leer toda la request de 'golpe' hasta client_max_body_size como limite
+        if (!readData(info_ref.pfd.fd, info.client_max_body_size))
+            throw RequestError("Failed to read request data");
+        // Parsear la requeste
+        parseRequest();
     }
-    std::istringstream lineStream(statusLine);
-    lineStream >> method >> uri >> httpVersion;
-    if (method.empty() || uri.empty() || httpVersion.empty())
-        throw RequestError("Invalid Status line !");
-}
-
-void    Request::readHeaders(const size_t& clientFd)
-{
-    std::string headerLine;
-    std::string allHeaders;
-    bool endOfHeaders = false;
-    
-    while (!endOfHeaders) {
-        char c;
-        ssize_t result = recv(clientFd, &c, 1, 0);
-        if (result <= 0)
-            throw RequestError("Invalid read on ClientFd for headers");
-            
-        headerLine += c;
-        allHeaders += c;
-        
-        if (c == '\n') {
-            if (headerLine == "\r\n") {
-                endOfHeaders = true;
-            }
-            headerLine.clear();
-        }
-        
-        if (allHeaders.length() > info.client_max_body_size)
-            throw RequestError("Headers too long");
-    }
-
-    std::istringstream HeadersStream(allHeaders);
-    std::string line;
-
-    while (std::getline(HeadersStream, line) && line != "\r")
-    {
-        size_t colonPos = line.find(':');
-        if (colonPos != std::string::npos) {
-            std::string key = line.substr(0, colonPos);
-            std::string value = line.substr(colonPos + 1);
-            
-            // Trim whiteSpace
-            key.erase(0, key.find_first_not_of(" \t"));
-            key.erase(key.find_last_not_of(" \t") + 1);
-            value.erase(0, value.find_first_not_of(" \t"));
-            value.erase(value.find_last_not_of(" \t\r\n") + 1);
-            headers[key] = value;
-            
-        }
+    catch (const std::exception& e) {
+        throw RequestError(e.what());
     }
 }
 
-bool Request::readBody(const size_t& ClientFd)
+bool Request::readData(const size_t& ClientFd, size_t maxSize)
 {
-    std::string contentLength = getHeader("Content-Length");
-    std::string transferEncoding = getHeader("Transfer-Encoding");
-    
-    if (contentLength.empty() && transferEncoding.empty())
-        return true; // Pas de body
-    
-    if (!contentLength.empty())
-        return readContentLengthBody(ClientFd, std::atoi(contentLength.c_str()));
-    
-    if (transferEncoding == "chunked")
-        return readChunkedBody(ClientFd);
-        
-    throw RequestError("Unsupported Transfer-Encoding");
-}
-
-bool Request::readContentLengthBody(const size_t& ClientFd, size_t length)
-{
-    if (length > info.client_max_body_size)
-        throw RequestError("Body size exceeds maximum allowed size");
-        
-    char buffer[4096];
+    char buffer[2046];  // Buffer de talla razonable
     size_t totalRead = 0;
-    
-    while (totalRead < length)
+    bool headerComplete = false;
+    std::string tempBody;
+
+    while (totalRead < maxSize)
     {
-        size_t toRead = std::min(sizeof(buffer), length - totalRead);
-        ssize_t bytesRead = recv(ClientFd, buffer, toRead, 0);
-        
+        ssize_t bytesRead = recv(ClientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0)
         {
-            if (errno != EAGAIN && errno != EWOULDBLOCK)
-                throw RequestError("Error reading body");
-            continue;
-        }
-        
-        body.append(buffer, bytesRead);
-        totalRead += bytesRead;
-    }
-    
-    return true;
-}
-
-bool Request::readChunkedBody(const size_t& ClientFd)
-{
-    std::string tempBody;
-    
-    while (true)
-    {
-        // 1. Lire la taille du chunk
-        std::string chunkSizeStr;
-        char c;
-        
-        while (true) {
-            ssize_t result = recv(ClientFd, &c, 1, 0);
-            if (result <= 0)
-                throw RequestError("Error reading chunk size");
-                
-            if (c == '\r') {
-                if (recv(ClientFd, &c, 1, 0) <= 0 || c != '\n')
-                    throw RequestError("Invalid chunk format");
-                break;
-            }
-            chunkSizeStr += c;
-        }
-        
-        // 2. Convertir la taille hexadécimale en décimal
-        unsigned long chunkSize;
-        std::istringstream iss(chunkSizeStr);
-        iss >> std::hex >> chunkSize;
-        
-        // 3. Si chunk size est 0, c'est la fin
-        if (chunkSize == 0) {
-            // Lire le CRLF final
-            if (recv(ClientFd, &c, 1, 0) <= 0 || c != '\r' ||
-                recv(ClientFd, &c, 1, 0) <= 0 || c != '\n')
-                throw RequestError("Invalid end of chunked body");
+            if (bytesRead == 0) // || (errno != EAGAIN && errno != EWOULDBLOCK))
+                throw RequestError("Connection closed or error");
             break;
         }
-        
-        // 4. Vérifier la taille maximale
-        if (tempBody.length() + chunkSize > info.client_max_body_size)
-            throw RequestError("Chunked body exceeds maximum size");
-            
-        // 5. Lire le chunk
-        std::vector<char> chunk(chunkSize);
-        size_t bytesRead = 0;
-        
-        while (bytesRead < chunkSize) {
-            ssize_t result = recv(ClientFd, &chunk[bytesRead], 
-                                chunkSize - bytesRead, 0);
-            if (result <= 0)
-                throw RequestError("Error reading chunk data");
-            bytesRead += result;
+
+        tempBody.append(buffer, bytesRead);
+        totalRead += bytesRead;
+
+        // BUscar el final de los headers (\r\n\r\n)
+        if (!headerComplete)
+        {
+            size_t headerEnd = tempBody.find("\r\n\r\n");
+            if (headerEnd != std::string::npos)
+            {
+                headerComplete = true;
+                // si hay un content-lenght, podemos determinar el tamano total de la request (header + response)
+                size_t contentLength = parseContentLength(tempBody.substr(0, headerEnd));
+                if (contentLength > 0)
+                {
+                    if (contentLength > maxSize)
+                        throw RequestError("Content length exceeds maximum allowed size");
+                    // Continuar de leer hasta que tengamos todo el body
+                    if (totalRead >= headerEnd + 4 + contentLength)
+                        break;
+                }
+                else
+                {
+                    // NO hay body
+                    break;
+                }
+            }
         }
-        
-        // 6. Ajouter le chunk au body
-        tempBody.append(chunk.begin(), chunk.end());
-        
-        // 7. Lire le CRLF après le chunk
-        if (recv(ClientFd, &c, 1, 0) <= 0 || c != '\r' ||
-            recv(ClientFd, &c, 1, 0) <= 0 || c != '\n')
-            throw RequestError("Invalid chunk format");
     }
-    
     body = tempBody;
     return true;
 }
 
+size_t Request::parseContentLength(const std::string& headers)
+{
+    std::string contentLengthHeader = "Content-Length: ";
+    size_t pos = headers.find(contentLengthHeader);
+    if (pos == std::string::npos)
+        return 0;
 
-// bool    Request::HostHeader()
-// {
-//     std::string host(this->getHeader("Host"));
+    size_t start = pos + contentLengthHeader.length();
+    size_t end = headers.find("\r\n", start);
+    if (end == std::string::npos)
+        return 0;
 
-//     if (host.empty() || isValidHostHeader(host) == false)
-//         return false;
-//     return true;
-// }
+    std::string lengthStr = headers.substr(start, end - start);
+    return std::atoi(lengthStr.c_str());
+}
 
+void Request::parseRequest()
+{
+    size_t headerEnd = body.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
+        throw RequestError("Invalid request format: no header delimiter found");
 
+    // seprar headers y body
+    std::string headers = body.substr(0, headerEnd);
+    if (headerEnd + 4 < body.length())
+        body = body.substr(headerEnd + 4);
+    else
+        body.clear();
 
-// void Request::parse(const std::string& rawRequest)
-// {
-//     std::istringstream requestStream(rawRequest);
-//     std::string line;
+    // parseo status-line
+    size_t firstLineEnd = headers.find("\r\n");
+    if (firstLineEnd == std::string::npos)
+        throw RequestError("Invalid request format: no status line");
 
-//     // Parse request line
-//     if (std::getline(requestStream, line))
-//     {
-//         std::istringstream lineStream(line);
-//         lineStream >> method >> uri >> httpVersion;
-//         if (method.empty() || uri.empty() || httpVersion.empty())
-//             LOG("Error parsing request line: invalid format");
-//     } else{
-//         LOG("Error parsing request line");
-//         return;
-//     }
+    std::string statusLine = headers.substr(0, firstLineEnd);
+    std::istringstream statusStream(statusLine);
+    statusStream >> method >> uri >> httpVersion;
 
-//     // Parse headers
-//     while (std::getline(requestStream, line) && line != "\r")
-//     {
-//         size_t colonPos = line.find(':');
-//         if (colonPos != std::string::npos) {
-//             std::string key = line.substr(0, colonPos);
-//             std::string value = line.substr(colonPos + 1);
+    if (method.empty() || uri.empty() || httpVersion.empty())
+        throw RequestError("Invalid status line format");
+
+    // Parseo de los headers
+    std::string headerSection = headers.substr(firstLineEnd + 2);
+    std::istringstream headerStream(headerSection);
+    std::string line;
+
+    while (std::getline(headerStream, line))
+    {
+        if (line == "\r" || line.empty())
+            break;
+
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos)
+        {
+            std::string key = line.substr(0, colonPos);
+            std::string value = line.substr(colonPos + 1);
             
-//             // Trim whiteSpace
-//             key.erase(0, key.find_first_not_of(" \t"));
-//             key.erase(key.find_last_not_of(" \t") + 1);
-//             value.erase(0, value.find_first_not_of(" \t"));
-//             value.erase(value.find_last_not_of(" \t\r\n") + 1);
-
-//             headers[key] = value;
-//         }
-//     }
-
-//     // Parse body
-//     std::string bodyLine;
-//     while (std::getline(requestStream, bodyLine))
-//         body += bodyLine + "\n";
-//     //if (!body.empty())
-//     //    body.pop_back(); // Remove last newline
-// }
+            // borar tabs espacios \n\r
+            key.erase(0, key.find_first_not_of(" \t"));
+            key.erase(key.find_last_not_of(" \t") + 1);
+            value.erase(0, value.find_first_not_of(" \t"));
+            value.erase(value.find_last_not_of(" \t\r\n") + 1);
+            
+            this->headers[key] = value;
+        }
+    }
+}
 
 std::string Request::getMethod() const
 {
