@@ -34,8 +34,9 @@ struct LocationConfig {
     size_t					    client_max_body_size;
     std::string					cgi_pass; //ruta o comando que se va a usar para ejecutar el script
     std::string                 redirect;
+    int                         redirect_type;
 
-    LocationConfig(): autoindex(false), allow_upload(false), client_max_body_size(8192) {};
+    LocationConfig(): autoindex(false), allow_upload(false), client_max_body_size(8192), redirect_type(0) {};
 };
 
 struct ServerConfig {
