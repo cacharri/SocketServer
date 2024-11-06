@@ -71,14 +71,15 @@ void    Http::configure(const std::string&  configfile)
     }
     if (servers.empty())
         LOG_EXCEPTION(ServerError("No servers could be started."));
+
 }
 
 void    Http::free_servers()
 {
     LOG_INFO("Shutting down servers ...");
     for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
-        delete *it;
-    
+        // (*it)->~Server();
+        delete (*it);
     servers.clear();
 }
 
@@ -106,13 +107,17 @@ void    Http::launch_all()
     }
 
     size_t num_servers = servers.size();
+    size_t tempflag_printing = 0;
+    size_t tempflag2_printing2 = 0;
 
     while (42)
     {
-        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); ++srv_it)
+        master_fds.resize(num_servers);
+        
+        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
             for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
-                 cli_it != (*srv_it)->clients.end(); cli_it++)
+                cli_it != (*srv_it)->clients.end(); cli_it++)
             {
                 pollfd  active_fd;
                 active_fd.fd = (*cli_it)->pfd.fd;
@@ -121,8 +126,17 @@ void    Http::launch_all()
                 master_fds.push_back(active_fd);
             }
         }
-        std::cout << "New size of master_fds: " <<  master_fds.size() << std::endl;
-        int poll_count = poll(&master_fds[0], master_fds.size(), -1);
+        tempflag_printing = master_fds.size();
+        if (tempflag_printing != tempflag2_printing2)
+        {
+            std::ostringstream  printing;
+            printing << master_fds.size();
+            printing << " FD are used" << std::endl;
+            LOG_INFO(printing.str());
+        }
+        tempflag2_printing2 = tempflag_printing;
+
+        int poll_count = poll(&master_fds[0], master_fds.size(), 1000);
         
         if (poll_count < 0)
         {
@@ -130,52 +144,52 @@ void    Http::launch_all()
                 LOG("Poll error in master loop !!!");
             continue;
         }
-        //  Gestionar eventos 
-        size_t fd_index = 0;
-        for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); it++, fd_index++)
+
+
+        size_t master_fd_index = 0;
+        // Empezar por ver los eventos de los sockets pasivos
+        for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); it++, master_fd_index++)
         {
-            // Vérifier le socket passif du serveur
             // Controlar socket pasivo
-            if (master_fds[fd_index].revents & POLLIN)
+            if (master_fds[master_fd_index].revents & POLLIN)
             {
                 (*it)->acceptClient();
             }
         }
-
-        // Controlar clientes anadidos (sockets activos) en todos los servidores ( a partir de fd_index(sockets de los servidores, pasivos))
-
+        // Despues Controlar clientes anadidos (sockets activos) en todos los servidores. (partiendo  del iterador master_fd_index para acceder a los socket activos en mastr_fds)
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
             std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin();
             //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
             while (cli_it != (*srv_it)->clients.end())
             {
-                size_t current_fd_index = (fd_index < num_servers - 1? fd_index: (num_servers - 1) + (fd_index));
-
-                if (current_fd_index >= master_fds.size())
+                if (master_fd_index >= master_fds.size())
+                {
+                    LOG_INFO("Client has not been polled: Index out of bounds");
                     break;
-
+                }
                 if ((*srv_it)->IsTimeout(*cli_it))
                 {
                     close((*cli_it)->pfd.fd);
+                    delete  *cli_it;
                     cli_it = (*srv_it)->clients.erase(cli_it);
+                    LOG_INFO("Client Timeouted");
                     continue;
                 }
-    
-                std::cout <<  "Current client index for master_fds (starting at " << num_servers << "): [" << current_fd_index << "/ "<< servers.size() + fd_index << "]" << std::endl;
-                if (master_fds[current_fd_index].revents & POLLIN)
+                if (master_fds[master_fd_index].revents & POLLIN)
                 {
-                    (*srv_it)->handleClient(*cli_it);
+                    (*srv_it)->handleClient(*cli_it); // try catch error & removing pollfd from master_fds if crash;
                 }
-                else if (master_fds[current_fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                else if (master_fds[master_fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
                 {
                     close((*cli_it)->pfd.fd);
+                    delete  *cli_it;
                     cli_it = (*srv_it)->clients.erase(cli_it);
+                    LOG_INFO("Conexion Removed");
                     continue;
                 }
-
                 cli_it++;
-                fd_index++;
+                master_fd_index++;
             }
         }
     }

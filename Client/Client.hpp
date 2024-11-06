@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/29 23:02:59 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/05 01:53:18 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 14:01:15 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,14 +53,11 @@ private:
     ClientInfo* session_info;
     Request     *request;
     Response    *response;
-    std::vector<char> buffer;
-
 
 public:
     Client(ClientInfo* session_info);
     ~Client();
 
-    void        ReadFromConexion();
     bool        HandleConnection();
 
     Request*    getRequest();
@@ -68,6 +65,8 @@ public:
     
     bool        shouldKeepAlive()const;
     time_t      getLastActivity() const;
+    
+    void        setLastActivity() const; 
 
     class ClientError : public std::exception {
         private:

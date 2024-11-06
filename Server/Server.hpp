@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/04 23:08:00 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 15:30:22 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,6 @@ public:
 private:
     Router                  router;
     ServerConfig            config;
-    char                    *buffer;
     static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
 
     // Headers functions

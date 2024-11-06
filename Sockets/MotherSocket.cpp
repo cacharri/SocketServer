@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:44 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/10/09 12:58:42 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/05 18:04:02 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,15 +53,15 @@ void MotherSocket::toPassiveSocket(int queueLimit) {
         SocketError error("Failed to bind socket");
         LOG_EXCEPTION(error);
         throw error;
-    } else
-        std::cout << "PassiveSocket: " << socketFd << " bound successfully to " << inet_ntoa(socketStruct.sin_addr) << ":" << ntohs(socketStruct.sin_port) << std::endl;
+    } //else
+        //std::cout << "PassiveSocket: " << socketFd << " bound successfully to " << inet_ntoa(socketStruct.sin_addr) << ":" << ntohs(socketStruct.sin_port) << std::endl;
 
     if (listen(socketFd, queueLimit) == -1) {
         SocketError error("Failed to set passive socket");
         LOG_EXCEPTION(error);
         throw error;
-    } else
-        std::cout << "Server is now listening." << std::endl;
+    } //else
+        //std::cout << "Server is now listening." << std::endl;
 }
 
 void MotherSocket::toActiveSocket() {

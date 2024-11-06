@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/04 23:09:17 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 14:07:44 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ Request::Request(ClientInfo& info_ref)
         // leer toda la request de 'golpe' hasta client_max_body_size como limite
         if (!readData(info_ref.pfd.fd, info.client_max_body_size))
             throw RequestError("Failed to read request data");
-        
         // Parsear la requeste
         parseRequest();
     }
@@ -43,7 +42,7 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         ssize_t bytesRead = recv(ClientFd, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0)
         {
-            if (bytesRead == 0 || (errno != EAGAIN && errno != EWOULDBLOCK))
+            if (bytesRead == 0) // || (errno != EAGAIN && errno != EWOULDBLOCK))
                 throw RequestError("Connection closed or error");
             break;
         }
@@ -76,7 +75,6 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
             }
         }
     }
-
     body = tempBody;
     return true;
 }

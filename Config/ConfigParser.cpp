@@ -28,7 +28,8 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
         std::cout << "  Path: " << path << "\n";
         std::cout << "    Root: " << locConfig.root << "\n";
         std::cout << "    Index: " << locConfig.index << "\n";
-        std::cout << "    Autoindex: " << (locConfig.autoindex ? "on" : "off") << "\n";
+		if (locConfig.autoindex)
+			std::cout << "    Autoindex: on \n";
         std::cout << "    Allowed Methods: ";
         
         std::vector<std::string>::const_iterator methodIt;
@@ -37,9 +38,12 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
         }
         
         std::cout << "\n";
-        std::cout << "    Allow Upload: " << (locConfig.allow_upload ? "on" : "off") << "\n";
-        std::cout << "    Upload Store: " << locConfig.upload_store << "\n";
-        std::cout << "    CGI Pass: " << locConfig.cgi_pass << "\n";
+		if (locConfig.allow_upload)
+			std::cout << "    allow_upload: on \n";
+		if (!(locConfig.upload_store.empty()))
+			std::cout << "    Upload Store: on \n";
+		if (!(locConfig.cgi_pass.empty()))
+			std::cout << "    cgi_pass: " << locConfig.cgi_pass << "\n";
     }
 }
 
@@ -100,13 +104,13 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 		if (token == "server") {
 			inServerBlock = true;
 			currentServer = ServerConfig();
-			std::cout << "[CONF]: Found New Server" << std::endl;
+			//std::cout << "[CONF]: Found New Server" << std::endl;
 
 		} else if (token == "location") {
 			inLocationBlock = true;
 			iss >> currentLocationPath;
 			currentLocation = LocationConfig();
-			std::cout << "[CONF]: Found New Endpoint" << std::endl;
+			//std::cout << "[CONF]: Found New Endpoint" << std::endl;
 		} else if (token == "}") {
 			if (inLocationBlock) {
 				inLocationBlock = false;
@@ -137,33 +141,33 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 			} else if (inLocationBlock) {
 				if (token == "root") {
 					iss >> currentLocation.root;
-					std::cout << "[CONF]: Set Root " << currentLocation.root << std::endl;
+					//std::cout << "[CONF]: Set Root " << currentLocation.root << std::endl;
 				} else if (token == "index") {
 					iss >> currentLocation.index;
-					std::cout << "[CONF]: Set Index " << currentLocation.index << std::endl;
+					//std::cout << "[CONF]: Set Index " << currentLocation.index << std::endl;
 
 				} else if (token == "autoindex") {
 					std::string value;
 					iss >> value;
 					currentLocation.autoindex = (value == "on");
-					std::cout << "[CONF]: Set autoIndex " << currentLocation.autoindex << std::endl;
+					//std::cout << "[CONF]: Set autoIndex " << currentLocation.autoindex << std::endl;
 				} else if (token == "method") {
 					std::string method;
 					while (iss >> method) {
 						currentLocation.methods.push_back(method);
-						std::cout << "[CONF]: Added allowed method " << method << std::endl;
+						//std::cout << "[CONF]: Added allowed method " << method << std::endl;
 					}
 				} else if (token == "allow_upload") {
 					std::string value;
 					iss >> value;
 					currentLocation.allow_upload = (value == "on");
-					std::cout << "[CONF]: Allow Uppload " << currentLocation.allow_upload << std::endl;
+					//std::cout << "[CONF]: Allow Uppload " << currentLocation.allow_upload << std::endl;
 				} else if (token == "upload_store") {
 					iss >> currentLocation.upload_store;
-					std::cout << "[CONF]: upload_store " << currentLocation.upload_store << std::endl;
+					//std::cout << "[CONF]: upload_store " << currentLocation.upload_store << std::endl;
 				} else if (token == "cgi_pass") {
 					iss >> currentLocation.cgi_pass;
-					std::cout << "[CONF]: cgi-pass " << currentLocation.cgi_pass << std::endl;
+					//std::cout << "[CONF]: cgi-pass " << currentLocation.cgi_pass << std::endl;
 				} else if (token == "client_max_body_size")	{
 					std::string sizeStr;
 					iss >> sizeStr;
@@ -179,7 +183,7 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 						if (statusCode == 301) {
 							iss >> redirectUrl;
 							currentLocation.redirect = redirectUrl;
-							std::cout << "[CONF]: Set redirect " << currentLocation.redirect << std::endl;
+							//std::cout << "[CONF]: Set redirect " << currentLocation.redirect << std::endl;
 						}
 				}
 			}
@@ -201,7 +205,7 @@ size_t ConfigParser::parseSize(const std::string& sizeStr)
         size = atoi(sizeStr.c_str());
     }
 
-	std::cout << "Parsed size; " << size << std::endl;
+	//std::cout << "Parsed size; " << size << std::endl;
     return size;
 }
 

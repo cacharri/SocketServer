@@ -23,7 +23,8 @@ Router::~Router()
             delete (*vecIt);
         }
     }
-    std::cout << "Destructor of router called "<< std::endl;
+    LOG_INFO("Destructor of Router Called");
+    //std::cout << "Destructor of router called "<< std::endl;
 }
 
 void    Router::addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod)
@@ -40,7 +41,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config->handler = requesthandler;
 
     routes[path].push_back(config);
-     std::cout << "Ruta añadida: " << path << " con autoindex: " << (locationconfig.autoindex ? "Habilitado" : "Deshabilitado") << std::endl;
+    //std::cout << "Ruta añadida: " << path << " con autoindex: " << (locationconfig.autoindex ? "Habilitado" : "Deshabilitado") << std::endl;
 }
 
 void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig)
@@ -61,13 +62,13 @@ void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig&
         // Verificar si GET está permitido y asociarlo a la función adecuada
         if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "GET") != locConfig.methods.end()) {
             GetHandler  *get_handler_instance = new GetHandler();
-            std::cout << "[ROUTER] Se ha añadido un GET endpoint ! " << endpoint << std::endl;
+            //std::cout << "[ROUTER] Se ha añadido un GET endpoint ! " << endpoint << std::endl;
             addRoute(endpoint, locConfig, get_handler_instance, "GET");
         }
         // Verificar si POST está permitido y asociarlo a la función de manejar POST
         if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "POST") != locConfig.methods.end()) {
             PostHandler  *post_handler_instance = new PostHandler();
-            std::cout << "[ROUTER] Se ha añadido un POST endpoint ! " << endpoint << std::endl;
+            //std::cout << "[ROUTER] Se ha añadido un POST endpoint ! " << endpoint << std::endl;
             addRoute(endpoint, locConfig, post_handler_instance, "POST");
         }
     //}
@@ -95,7 +96,7 @@ bool isDirectory(const std::string& path) {
 }
 
 std::string generateAutoIndex(const std::string& directory) {
-    std::cout << "Generando autoindex para el directorio: " << directory << std::endl; // Añadir depuración
+    //std::cout << "Generando autoindex para el directorio: " << directory << std::endl; // Añadir depuración
     std::string autoindexHtml = "<html><body><h1>Index of " + directory + "</h1><ul>";
     
     DIR* dir = opendir(directory.c_str());
@@ -135,11 +136,10 @@ void Router::route(const Request* request, Response* response) {
             response->setBody("405 Method Not Allowed");
             return;
         }
-        std::string fullPath = ptr->endpointdata.root + request->getUri();
-        std::cout << "Ruta completa: " << fullPath << std::endl;
-        std::cout << "Han solicitado " << ptr->endpointdata.index << std::endl;
+        std::ostringstream printing("Han solicitado ");
+        printing << request->getMethod().c_str();
+        LOG_INFO(printing.str());
         ptr->handler->handle(request, response, ptr->endpointdata);
-        
 
     }
     else {

@@ -9,6 +9,7 @@
 
 // Codes couleur ANSI
 #define GREY    "\033[90m"
+#define GREEN   "\033[32m"
 #define RED     "\033[31m"
 #define RESET   "\033[0m"
 

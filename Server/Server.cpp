@@ -7,20 +7,22 @@ Server::Server(const ServerConfig& serverConfig)
     std::cout << "<Server>:\n\t- " << serverConfig.host << "\n\t- " << serverConfig.port << std::endl;
     // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
     ConfigParser::copyServerConfig(serverConfig, Server::config);
-    buffer = new char[config.client_max_body_size];
+
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
 Server::~Server()
 {
-    std::cout << "Destructor of Server Called" << std::endl;
-    delete[] buffer;
-    std::vector<ClientInfo*>::iterator it = clients.begin();
-    while (it != clients.end())
+    //std::cout << "Number of clients"  << clients.size() << std::endl;
+    LOG_INFO("Destructor of Server Called");
+    int i = 0;
+    while (i < clients.size())
     {
-        delete (*it);
-        it++;
+        LOG_INFO("Deleting one client");
+        delete clients[i];
+        i++;
     }
+    clients.clear();
 }
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
@@ -151,11 +153,11 @@ void Server::acceptClient() {
 
 void Server::sendResponse(int clientSocket, const std::string& response)
 {
-    ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
+    ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), MSG_CONFIRM);
     if (bytesSent < 0)
     {
-            ServerError error("Failed to send response !");
-            LOG_EXCEPTION(error);
+        ServerError error("Failed to send response !");
+        LOG_EXCEPTION(error);
     }
 }
 
@@ -164,6 +166,7 @@ void Server::removeClient(ClientInfo* client)
     close(client->pfd.fd);
     std::vector<ClientInfo*>::iterator it = std::find(clients.begin(), clients.end(), client);
     if (it != clients.end())
+        delete (*it);
         clients.erase(it);
 }
 
@@ -176,15 +179,13 @@ void Server::handleClient(ClientInfo* client)
         analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
         router.route(clientHandler.getRequest(), clientHandler.getResponse());
         sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
-        
-        client->keepAlive = clientHandler.shouldKeepAlive();
-        client->lastActivity = clientHandler.getLastActivity();
+        clientHandler.setLastActivity();
+        if (clientHandler.shouldKeepAlive() == false)
+            removeClient(client);
     }
     catch (const std::exception& e) {
-        std::string error_message("Error handling client: ");
-        error_message += std::string(e.what());
-        LOG(error_message.c_str());
         removeClient(client);
+        LOG(e.what());
     }
 }
 
@@ -200,6 +201,7 @@ bool    Server::IsTimeout(ClientInfo* client)
         std::ostringstream      time_output;
         time_output << diff;
         info_message += time_output.str();
+        info_message += " seconds elapsed\n";
         LOG_INFO(info_message.c_str());
         return true;
     }

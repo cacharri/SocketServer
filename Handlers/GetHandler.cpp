@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 11:47:39 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/06 15:16:31 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,8 +79,7 @@ std::string getMimeType(const std::string& filename) {
 }
 
 void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
-    std::cout << "Received GET request" << std::endl;
-
+    //std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         std::string fullpath(cwd);
@@ -91,21 +90,23 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         }
         fullpath += locationconfig.index;
 
-        std::cout << "Full path:: " << fullpath << std::endl;
+        //std::cout << "Full path:: " << fullpath << std::endl;
+        LOG_INFO(fullpath);
         if ((!locationconfig.cgi_pass.empty()))
         {
             CgiHandler cgi_handler_instance;
             cgi_handler_instance.handle(request, response, locationconfig);
-         //   delete cgi_handler_instance;
-            
+            LOG_INFO("CGI Resource");
+         // delete cgi_handler_instance;
         }
-        if (!locationconfig.redirect.empty()) {
+        if (!locationconfig.redirect.empty())
+        {
+            LOG_INFO("Redirected");
             response->setStatus(301, "Moved Permanently");
             response->setHeader("Location", locationconfig.redirect);
             response->setBody("<html><body><h1>301 Moved Permanently</h1></body></html>");
             return;
         }
-
         else if (fullpath[fullpath.size() - 1] == '/')
         {
             struct stat buffer;
@@ -115,7 +116,9 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                     response->setStatus(200, "OK");
                     response->setBody(fileContent);
                     response->setHeader("Content-Type", "text/html");
+                    LOG_INFO("AUTOINDEX resource");
                 } else {
+                    LOG_INFO("Forbidden resource");
                     response->setStatus(403, "Forbidden");
                     response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
                 }
@@ -123,17 +126,17 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             }
         }
         else{
-
             std::string fileContent = readFile(fullpath);
             if (!(fileContent.empty())) {
                 response->setStatus(200, "OK");
                 response->setBody(fileContent);
                 response->setHeader("Content-Type", getMimeType(fullpath));
             }
+            LOG_INFO("Read Resource Succesfully");
         }
     }
     else {
-        std::cerr << "Error al obtener el directorio actual" << std::endl;
+        LOG_INFO("Failed current Directory Read");
         response->setStatus(500, "Internal Server Error");
         response->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
     }
