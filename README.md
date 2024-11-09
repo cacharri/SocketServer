@@ -135,7 +135,6 @@ Represents an HTTP response. It constructs and stores response information, incl
 - Implement PATH_INFO macro for cgi compilator binary Primer argumento de execve
 - El CGI tiene que ejecutarse en el buen directorio para el acceso al fichero del camino relativo. Ein ? a revisar(frase del subject traducido del frances)
 - Implement DELETE
-- Review rooting
 - Control memory leaks at error points
 - Control error codes (hagamos una lista de los qe controlamos)
 - Control de la entrega del body cuando hay un errorCode
@@ -144,7 +143,6 @@ Represents an HTTP response. It constructs and stores response information, incl
    - Review chunked mode
    - listar los headers de Request que tenemos en cuenta.
    - Escribir los headers de la respuesta.
-- Make server listen on multiple passive sockets
 - Compare with nginx
 
 ## Sources
