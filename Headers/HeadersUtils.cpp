@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/20 17:14:02 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/22 03:01:48 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/09 22:49:13 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,7 @@ bool isValidIPv4(const std::string& ip)
             return false;
         ++parts;
     }
-    std::cout << "parts: " << parts << std::endl;
-
+    //std::cout << "parts: " << parts << std::endl;
     return parts == 4;
 }
 

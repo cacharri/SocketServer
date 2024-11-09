@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/06 15:16:31 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/10 00:13:03 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,11 +85,6 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         std::string fullpath(cwd);
         fullpath += locationconfig.root;
         
-        if (!fullpath.empty() && fullpath[fullpath.size() - 1] != '/') {
-            fullpath += '/';
-        }
-        fullpath += locationconfig.index;
-
         //std::cout << "Full path:: " << fullpath << std::endl;
         LOG_INFO(fullpath);
         if ((!locationconfig.cgi_pass.empty()))

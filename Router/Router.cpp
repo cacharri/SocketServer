@@ -151,30 +151,74 @@ std::string generateAutoIndex(const std::string& directory) {
     return autoindexHtml;
 }
 
-void Router::route(const Request* request, Response* response) {
+
+void Router::route(const Request* request, Response* response)
+{
     if (routes.empty()) {
-        std::cout << "empty router map" << std::endl;
+        response->setStatus(404, "Not Found");
         return;
     }
 
-    std::map<std::string, std::vector<RouteConfig *> >::iterator it = routes.find(request->getUri());
-    
-    if (it != routes.end()) {
-        RouteConfig *ptr = HasValidMethod((*it).second, request->getMethod());
-        
-        if (ptr == NULL) {
-            response->setStatus(405, "Method Not Allowed");
-            response->setBody("405 Method Not Allowed");
-            return;
+    std::string best_match_path = "";
+    RouteConfig* best_match_config = NULL;
+    size_t best_match_length = 0;
+    std::string remaining_path = "";
+
+    // Mapear el URI 
+    for (std::map<std::string, std::vector<RouteConfig*> >::iterator it = routes.begin(); 
+         it != routes.end(); ++it)
+    {
+        const std::string& location_path = it->first;
+        LocationConfig& loc_config = it->second[0]->endpointdata;
+
+        // Match exacto del endpoint
+        if (request->getUri() == location_path)
+        {
+            best_match_config = it->second[0];
+            best_match_path = location_path;
+            break;
         }
-        std::ostringstream printing("Han solicitado ");
-        printing << request->getMethod().c_str();
-        LOG_INFO(printing.str());
-        ptr->handler->handle(request, response, ptr->endpointdata);
+        
+        // Match por prefijo de endpoint (relativo)
+        if (request->getUri().substr(0, location_path.length()) == location_path)
+        {
+            if (location_path.length() > best_match_length)
+            {
+                best_match_length = location_path.length();
+                best_match_config = it->second[0];
+                best_match_path = location_path;
+                remaining_path = request->getUri().substr(location_path.length());
+            }
+        }
+    }
+
+    if (!best_match_config)
+    {
+        response->setStatus(404, "Not Found");
+        return;
+    }
+
+    // Construir el path relativo
+    std::string full_path = best_match_config->endpointdata.root;
+    if (!remaining_path.empty())
+    {
+        if (full_path[full_path.length()-1] != '/' && remaining_path[0] != '/')
+            full_path += '/';
+
+        full_path += remaining_path;
 
     }
-    else {
-        response->setStatus(404, "Not found");
-        response->setBody("404 Not Found");
+    // pasar una copia de LocationConfig con el root relativo enrutado
+    LocationConfig temp_config = best_match_config->endpointdata;
+    temp_config.root = full_path;
+    // Verificar si el metodo existe para el endpoint y llamar al handler al endpoint enrutado
+    RouteConfig* route_config = HasValidMethod(routes[best_match_path], request->getMethod());
+    if (route_config)
+    {
+        route_config->handler->handle(request, response, temp_config);
+    }
+    else
+    {
+        response->setStatus(405, "Method Not Allowed");
     }
 }
