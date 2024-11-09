@@ -19,7 +19,7 @@ ConfigParser::~ConfigParser()
 }
 
 void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
-    std::cout << "Locations for server " << serverConfig.server_name << "( " << serverConfig.host << " )\n";
+    std::cout << "Locations for server " << serverConfig.server_name << "( " << *(serverConfig.ports.begin()) << " )\n";
     std::map<std::string, LocationConfig>::const_iterator it;
     for (it = serverConfig.locations.begin(); it != serverConfig.locations.end(); ++it) {
         const std::string& path = it->first;
@@ -47,9 +47,14 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
     }
 }
 
-void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& destination) {
-    destination.host = source.host;
-    destination.port = source.port;
+void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& destination)
+{
+    destination.interface = source.interface;
+	if (!(source.ports.empty()))
+	{
+		for (std::vector<int>::const_iterator it = source.ports.begin(); it != source.ports.end(); it++)
+			destination.ports.push_back((*it));
+	}
     destination.server_name = source.server_name;
     destination.error_pages = source.error_pages; 
     destination.client_max_body_size = source.client_max_body_size;
@@ -122,9 +127,11 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 			}
 		} else if (inServerBlock && (token.size() > 1)) {
 			if (token == "host") {
-				iss >> currentServer.host;
+				iss >> currentServer.interface;
 			} else if (token == "port") {
-				iss >> currentServer.port;
+				int	in_port;
+				iss >> in_port;
+				currentServer.ports.push_back(in_port);
 			} else if (token == "server_name") {
 				iss >> currentServer.server_name;
 			} else if (token == "error_page") {

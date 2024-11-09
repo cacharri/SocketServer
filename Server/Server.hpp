@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/06 15:30:22 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/09 19:02:53 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,20 +58,21 @@ class Response;
 5. The removeClient() method properly closes and removes disconnected clients from the fds vector.
 */
 
-class Server : public MotherSocket {
+class Server : public MotherSocket
+{
+
 public:
     std::vector<ClientInfo*> clients;
-    
-    explicit Server(const ServerConfig& serverConfig);
+
+    Server(const ServerConfig& serverConfig);
     ~Server();
 
-    int getPassiveSocketFd() const;
-
     // Core functions
+
     //void        launch();
     void        init();
-    void        acceptClient();
-    void        handleClient(ClientInfo* incoming_client);
+    void        acceptClient(int listenFd);
+    void        handleClient(ClientInfo* client);
     void        removeClient(ClientInfo* client);
     bool        IsTimeout(ClientInfo* client);
     
@@ -91,10 +92,8 @@ private:
 
     // Headers functions
     void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
-    
     void        sendResponse(int clientSocket, const std::string& response);
     
-
     // Disable copy constructor and assignment operator
     Server(const Server&);
     Server& operator=(const Server&);

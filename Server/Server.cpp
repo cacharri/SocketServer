@@ -2,12 +2,9 @@
 
 // ----------------------------------- Parametric Constructor --------------------------------------------
 Server::Server(const ServerConfig& serverConfig)
-    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.port, serverConfig.host)
+    : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.ports, serverConfig.interface)
 {
-    std::cout << "<Server>:\n\t- " << serverConfig.host << "\n\t- " << serverConfig.port << std::endl;
-    // Copiarse la configuracion en formato struct serverConfig (con una funcion statica de configparser)
-    ConfigParser::copyServerConfig(serverConfig, Server::config);
-
+    ConfigParser::copyServerConfig(serverConfig, config);
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
@@ -27,10 +24,6 @@ Server::~Server()
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
 
-int Server::getPassiveSocketFd() const
-{
-    return MotherSocket::getPassiveSocketFd();
-}
 
 
 void    Server::init()
@@ -46,83 +39,22 @@ void    Server::init()
     // Creamos el primer cliente a polear (poll()) que seria nuestro socket passivo.
     toPassiveSocket(10);
 
-    std::string info_message("Server is listening on port ");
-    std::ostringstream conversion_stream;
-    conversion_stream << config.port;
-    info_message += conversion_stream.str();
-    info_message += std::string("  PassiveSocketBound: ");
-    conversion_stream.clear();
-    conversion_stream << getPassiveSocketFd();
-    info_message += conversion_stream.str();
-    info_message += " " + config.server_name;
-    LOG_INFO(info_message);
+    std::ostringstream info_message;
+    info_message << "Server is listening on fd (each one corresponding to a port): ";
+    for (std::vector<int>::const_iterator it = socketFds.begin(); it != socketFds.end(); it++)
+    {
+        info_message << *it << " ";
+    }
+    LOG_INFO(info_message.str());
 }
 
-// void Server::launch()
-// {
 
-//     std::vector<pollfd> pollFds(1, clients.back().pfd);
-
-//     while (42)
-//     {
-//         // std::cout << "\nWaiting for events... Current clients: " << (clients.size() - 1) << "\n"<<std::endl;
-        
-//         int pollCount = poll(pollFds.data(), pollFds.size(), 1000);
-
-//         if (pollCount == -1)
-//         {
-//             if (errno != EINTR) // Ignorar interrupciones del sistema
-//             {
-//                 ServerError error("Poll failed");
-//                 LOG_EXCEPTION(error);
-//             }
-//             continue;
-//         }
-
-//         // Controlar los timeouts y gestionar los eventos em este bucle
-//         for (size_t i = 0; i < clients.size(); )
-//         {
-//             // sessiones con tiempo de ausencia superior a CONNECTION_TIMEOUT miembro privado server.
-//             if (IsTimeout(i))
-//             {
-//                 pollFds.erase(pollFds.begin() + i);
-//                 continue;
-//             }
-
-//             // disponible para leer/escribir
-//             if (pollFds[i].revents & POLLIN)
-//             {
-//                 if (pollFds[i].fd == getPassiveSocketFd())
-//                 {
-//                     clients[0].lastActivity = time(NULL);
-//                     acceptClient();
-//                     pollFds.push_back(clients.back().pfd);
-//                 }
-//                 else
-//                 {
-//                     std::cout << "\nHandling Request of resource demand on Fd: " << pollFds[i].fd << "\n"<<std::endl;
-
-//                     handleClient(i);
-//                 }
-//             }
-//             else if (pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
-//             {
-//                 std::cout << "Removing Connection FD: " << clients[i].pfd.fd << std::endl;
-//                 removeClient(i);
-//                 pollFds.erase(pollFds.begin() + i);
-//                 continue;
-//             }
-
-//             ++i;
-//         }
-//     }
-// }
-
-void Server::acceptClient() {
+void Server::acceptClient(int listenFd)
+{
     sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
     
-    int clientFd = accept(getPassiveSocketFd(), (struct sockaddr*)&clientAddr, &clientAddrLen);
+    int clientFd = accept(listenFd, (struct sockaddr*)&clientAddr, &clientAddrLen);
     if (clientFd < 0)
     {
         if (errno != EAGAIN && errno != EWOULDBLOCK)
@@ -143,11 +75,9 @@ void Server::acceptClient() {
     newClient->client_max_body_size = config.client_max_body_size;
     clients.push_back(newClient);
 
-    std::string info_message("New Client on Fd: ");
-    std::ostringstream      int_output;
-    int_output << clientFd;
-    info_message += int_output.str();
-    LOG_INFO(info_message.c_str());
+    std::ostringstream info_message;
+    info_message << "New Client on Fd: " << clientFd;
+    LOG_INFO(info_message.str());
 }
 
 

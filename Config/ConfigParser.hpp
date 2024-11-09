@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/02 22:04:16 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/09 21:46:28 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,14 +40,13 @@ struct LocationConfig {
 };
 
 struct ServerConfig {
-    std::string								host; //direccion ip o del host donde el servidor escucha
-    int										port; 
+    std::string								interface; //direccion ip o del host donde el servidor escucha
+    std::vector<int>						ports; 
     std::string								server_name;
     std::map<int, std::string>				error_pages; //paginas personalizadas segun el codigo de error
     size_t									client_max_body_size; // 
     std::map<std::string, LocationConfig>	locations; // map de rutas a confi instead ofvector para asociar cada ruta 
-
-    ServerConfig(): port(8080), client_max_body_size(8192) {};
+    ServerConfig(): client_max_body_size(8192) {};
 };
 
 class ConfigParser {

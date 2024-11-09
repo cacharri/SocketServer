@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:57:16 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/03 01:40:14 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/09 21:29:52 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,14 +21,14 @@
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 class MotherSocket {
 public:
-    MotherSocket(int domain, int service, int protocol, int port, const std::string& interface);
+    MotherSocket(int domain, int service, int protocol, const std::vector<int>& ports, const std::string& interface);
     virtual ~MotherSocket();
 
-    int getPassiveSocketFd() const;
-    const sockaddr_in& getAddress() const;
+    std::vector<int> getPassiveSocketFd() const;
 
     void setNonBlocking();
     void toPassiveSocket(int queueLimit);
@@ -44,8 +44,8 @@ public:
     };
     
 protected:
-    int             socketFd;
-    sockaddr_in     socketStruct;
+    std::vector<int>             socketFds;
+    std::vector<sockaddr_in>     socketStructs;
 
 private:
     void setSocketOption(int optionLevel, int option);

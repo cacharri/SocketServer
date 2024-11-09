@@ -88,13 +88,20 @@ void    Http::quitSignal()
     free_servers();
 }
 
+void Http::setupSignalHandlers(Http* http)
+{
+    g_http_instance = http;
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+}
+
 void    Http::launch_all()
 {
     LOG_INFO("All servers are launching... Press CTRL+C to quit");
     
     std::list<Server*>::iterator it = servers.begin();
     try {
-        for (; it != servers.end(); ++it)
+        for (; it != servers.end(); it++)
             (*it)->init();
     } catch (std::exception& e){
         delete (*it);
@@ -103,23 +110,28 @@ void    Http::launch_all()
 
     std::vector<pollfd> master_fds;
     
-    for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
+    size_t num_servers = 0;
+    for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
     {
-        pollfd server_fd;
-        server_fd.fd = (*it)->getPassiveSocketFd();
-        server_fd.events = POLLIN;
-        server_fd.revents = 0;
-        master_fds.push_back(server_fd);
+        std::vector<int> server_fds = (*srv_it)->getPassiveSocketFd();
+        for (std::vector<int>::iterator fd_it = server_fds.begin(); fd_it != server_fds.end(); fd_it++)
+        {
+            pollfd server_fd;
+            server_fd.fd = *fd_it;
+            server_fd.events = POLLIN;
+            server_fd.revents = 0;
+            master_fds.push_back(server_fd);
+            num_servers++;
+        }
     }
 
-    size_t num_servers = servers.size();
     size_t tempflag_printing = 0;
     size_t tempflag2_printing2 = 0;
 
     while (42)
-    {
-        master_fds.resize(num_servers);
-        
+    {        
+        master_fds.resize(num_servers); // permite reiniciar el buffer de los sockets para poll. En el siguiente loop se cargaran los nuevos Fds gracias a accepClient.
+
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
             for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
@@ -131,6 +143,7 @@ void    Http::launch_all()
                 active_fd.revents = 0;
                 master_fds.push_back(active_fd);
             }
+
         }
         tempflag_printing = master_fds.size();
         if (tempflag_printing != tempflag2_printing2)
@@ -152,16 +165,18 @@ void    Http::launch_all()
         }
 
 
-        size_t master_fd_index = 0;
-        // Empezar por ver los eventos de los sockets pasivos
-        for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); it++, master_fd_index++)
+        size_t fd_index = 0;
+        // Controlar los eventos en los socketPassivos de los servidores.
+        for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
-            // Controlar socket pasivo
-            if (master_fds[master_fd_index].revents & POLLIN)
+            std::vector<int> server_fds = (*srv_it)->getPassiveSocketFd();
+            for (std::vector<int>::iterator fd_it = server_fds.begin(); fd_it != server_fds.end(); fd_it++, fd_index++)
             {
-                (*it)->acceptClient();
+                if (master_fds[fd_index].revents & POLLIN)
+                    (*srv_it)->acceptClient(*fd_it);
             }
         }
+        
         // Despues Controlar clientes anadidos (sockets activos) en todos los servidores. (partiendo  del iterador master_fd_index para acceder a los socket activos en mastr_fds)
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
@@ -169,7 +184,7 @@ void    Http::launch_all()
             //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
             while (cli_it != (*srv_it)->clients.end())
             {
-                if (master_fd_index >= master_fds.size())
+                if (fd_index >= master_fds.size())
                 {
                     LOG_INFO("Client has not been polled: Index out of bounds");
                     break;
@@ -182,11 +197,11 @@ void    Http::launch_all()
                     LOG_INFO("Client Timeouted");
                     continue;
                 }
-                if (master_fds[master_fd_index].revents & POLLIN)
+                if (master_fds[fd_index].revents & POLLIN)
                 {
                     (*srv_it)->handleClient(*cli_it); // try catch error & removing pollfd from master_fds if crash;
                 }
-                else if (master_fds[master_fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                else if (master_fds[fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
                 {
                     close((*cli_it)->pfd.fd);
                     delete  *cli_it;
@@ -195,18 +210,12 @@ void    Http::launch_all()
                     continue;
                 }
                 cli_it++;
-                master_fd_index++;
+                fd_index++;
             }
         }
     }
 }
 
-void Http::setupSignalHandlers(Http* http)
-{
-    g_http_instance = http;
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-}
 
 
 
