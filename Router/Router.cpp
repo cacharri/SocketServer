@@ -176,6 +176,7 @@ void Router::route(const Request* request, Response* response)
         {
             best_match_config = it->second[0];
             best_match_path = location_path;
+            remaining_path = loc_config.index;
             break;
         }
         
@@ -206,7 +207,6 @@ void Router::route(const Request* request, Response* response)
             full_path += '/';
 
         full_path += remaining_path;
-
     }
     // pasar una copia de LocationConfig con el root relativo enrutado
     LocationConfig temp_config = best_match_config->endpointdata;
