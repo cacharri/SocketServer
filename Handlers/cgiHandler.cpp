@@ -5,7 +5,8 @@ CgiHandler::CgiHandler() {}
 
 CgiHandler::~CgiHandler() {}
 
-void CgiHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
+void CgiHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) 
+{
     std::string scriptPath = locationconfig.root + "/" + locationconfig.index; // Ruta del archivo
     std::map<std::string, std::string> env;
 
@@ -28,20 +29,18 @@ void CgiHandler::handle(const Request* request, Response* response, const Locati
     //env["SERVER_SOFTWARE"]
    
 
-    
- 
-       std::ostringstream oss;
-        oss << request->getBody().size();
-        env["CONTENT_LENGTH"] = oss.str();
+    std::ostringstream oss;
+    oss << request->getBody().size();
+    env["CONTENT_LENGTH"] = oss.str();
 
-        // Ejecutar el CGI sin cuerpo
-        std::string output = executeCgi(scriptPath, env, request->getBody());
-        response->setHeader("Content-Type", "text/html");
-        response->setBody(output);
+    // Ejecutar el CGI sin cuerpo
+    std::string output = executeCgi(scriptPath, env, request->getBody());
+    response->setHeader("Content-Type", "text/html");
+    response->setBody(output);
     
 
     // Establecer el estado de la respuesta
-    response->setStatus(200, "OK");
+    response->setStatusCode(200);
    
 }
 

@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:29:58 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/09/21 18:59:57 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/11 13:27:07 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,17 +20,28 @@
 class Response
 {
 private:
-    int statusCode;
-    std::string statusMessage;
-    std::map<std::string, std::string> headers;
-    std::string body;
+    std::string                         statusline;
+    int                                 statusCode;
+    std::string                         statusCodeMessage;
+    std::map<std::string, std::string>  headers;
+    std::string                         body;
+    
+    std::string                         allData;
+    
+    std::string	                        resource_extension;
+    std::map<int, std::string>          _statusCodesMap;
+    std::map<int, std::string>          _errorPageFilesMap;
+    std::map<std::string, std::string>  _mimeTypesMap;
 
 public:
-    Response(int code = 200);
-    void setStatus(int code, const std::string& message);
+    Response();
+    void    initStatusCode(void);
+    void    initMimesTypes(void);
+
+    std::string getMimeType(const std::string& filename);
+    void setStatusCode(int code);
     void setContentLength();
     void setContentType(const std::string& type);
-
     void setHeader(const std::string& key, const std::string& value);
     void setBody(const std::string& content);
     std::string toString() const;

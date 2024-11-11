@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 11:43:01 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/11 13:17:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,6 @@ class GetHandler : public RequestHandler
         
         virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
     private:
-    
-        std::string     printCurrentWorkingDirectory();
         std::string     readFile(const std::string &fullPath);
         
 };

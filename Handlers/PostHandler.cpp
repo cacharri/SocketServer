@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/10/30 12:03:04 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/11 13:33:38 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,11 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             // Now we process the multipart data
             //std::cout << "BODY POST >>> " << requestBody << std::endl;
             if (request->getBody().empty())
+            {
                 LOG("EMPTY BODY POST REQUEST");
+                response->setStatusCode(204);
+                response->setBody("Empty Body in post request");
+            }
     
             std::map<std::string, std::string> formData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store);
 
@@ -59,10 +63,10 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             responseBody += "</body></html>";
 
 
-            response->setStatus(200, "OK");
+            response->setStatusCode(201);
             response->setBody(responseBody);
         } else {
-            response->setStatus(400, "Bad Request");
+            response->setStatusCode(400);
             response->setBody("Boundary not found in Content-Type");
         }
     }
@@ -105,11 +109,11 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
         responseBody += "</body></html>";
 
-        response->setStatus(200, "OK");
+        response->setStatusCode(201);
         response->setBody(responseBody);
     }
     else {
-        response->setStatus(400, "Bad Request");
+        response->setStatusCode(400);
         response->setBody("Unsupported Content-Type");
     }
 }

@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/10 00:13:03 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/11 14:43:32 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,7 @@
 #include "../Router/Router.hpp"
 
 GetHandler::GetHandler()
-{
-    
+{    
 }
 
 GetHandler::~GetHandler()
@@ -24,7 +23,9 @@ GetHandler::~GetHandler()
     
 }
 
-std::string GetHandler::readFile(const std::string &fullPath) {
+
+std::string GetHandler::readFile(const std::string &fullPath)
+{
     struct stat buffer;
 
     // Verificar si el archivo existe
@@ -40,43 +41,13 @@ std::string GetHandler::readFile(const std::string &fullPath) {
         std::cerr << "Error: No se pudo abrir el archivo: " << fullPath << std::endl; // Log de error
         return ""; // Devuelve una cadena vacía si no se puede abrir
     }
-
+    
     std::stringstream bufferStream;
     bufferStream << file.rdbuf(); // Lee el contenido del archivo
+    std::cout << bufferStream.str();
     return bufferStream.str(); // Devuelve el contenido del archivo
 }
 
-
-/*void        GetHandler::handle(const Request& request, Response& response, const LocationConfig& locationconfig)
-{
-    std::cout << "Received GET request" << std::endl;
-
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) //abs path from user
-    {
-        std::string fullpath(cwd);
-        fullpath = fullpath + locationconfig.root + "/" + locationconfig.index; // Construct full path
-        response->setBody(readFile(fullpath));
-    }
-    response->setStatus(200, "OK");
-}*/
-
-std::string getMimeType(const std::string& filename) {
-    // Comprobar si el nombre del archivo termina en ".jpg", ".jpeg", ".png", ".gif"
-    if (filename.size() >= 4 && filename.compare(filename.size() - 4, 4, ".jpg") == 0) {
-        return "image/jpeg";
-    } else if (filename.size() >= 5 && filename.compare(filename.size() - 5, 5, ".jpeg") == 0) {
-        return "image/jpeg";
-    } else if (filename.size() >= 4 && filename.compare(filename.size() - 4, 4, ".png") == 0) {
-        return "image/png";
-    } else if (filename.size() >= 4 && filename.compare(filename.size() - 4, 4, ".gif") == 0) {
-        return "image/gif";
-    } else if (filename.size() >= 5 && filename.compare(filename.size() - 5, 5, ".html") == 0) {
-        return ("text/html");
-    }
-    //"application/octet-stream"
-    return "text/html"; // Tipo por defecto
-}
 
 void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
     //std::cout << "Received GET request" << std::endl;
@@ -96,12 +67,12 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         if (!locationconfig.redirect.empty()) {
             if (locationconfig.redirect_type == 301) {
                 LOG_INFO("Redirected Permanently");
-                response->setStatus(301, "Moved Permanently");
+                response->setStatusCode(301);
             } else if (locationconfig.redirect_type == 302) {
                 LOG_INFO("Redirected Temporaly");
-                response->setStatus(302, "Found");
+                response->setStatusCode(302);
             } else {
-                response->setStatus(400, "Bad Request");
+                response->setStatusCode(400);
                 response->setBody("<html><body><h1>400 Bad Request</h1></body></html>");
                 return;
             }
@@ -120,13 +91,13 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
                 if (locationconfig.autoindex) {
                     std::string fileContent = generateAutoIndex(fullpath);
-                    response->setStatus(200, "OK");
+                    response->setStatusCode(200);
                     response->setBody(fileContent);
                     response->setHeader("Content-Type", "text/html");
                     LOG_INFO("AUTOINDEX resource");
                 } else {
                     LOG_INFO("Forbidden resource");
-                    response->setStatus(403, "Forbidden");
+                    response->setStatusCode(403);
                     response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
                 }
                 return ;
@@ -134,17 +105,18 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         }
         else{
             std::string fileContent = readFile(fullpath);
-            if (!(fileContent.empty())) {
-                response->setStatus(200, "OK");
+            if (!(fileContent.empty()))
+            {
+                response->setStatusCode(200);
                 response->setBody(fileContent);
-                response->setHeader("Content-Type", getMimeType(fullpath));
+                response->setHeader("Content-Type", response->getMimeType(fullpath));
             }
             LOG_INFO("Read Resource Succesfully");
         }
     }
     else {
         LOG_INFO("Failed current Directory Read");
-        response->setStatus(500, "Internal Server Error");
+        response->setStatusCode(500);
         response->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
     }
 }

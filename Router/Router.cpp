@@ -155,7 +155,7 @@ std::string generateAutoIndex(const std::string& directory) {
 void Router::route(const Request* request, Response* response)
 {
     if (routes.empty()) {
-        response->setStatus(404, "Not Found");
+        response->setStatusCode(404);
         return;
     }
 
@@ -195,7 +195,7 @@ void Router::route(const Request* request, Response* response)
 
     if (!best_match_config)
     {
-        response->setStatus(404, "Not Found");
+        response->setStatusCode(404);
         return;
     }
 
@@ -211,14 +211,18 @@ void Router::route(const Request* request, Response* response)
     // pasar una copia de LocationConfig con el root relativo enrutado
     LocationConfig temp_config = best_match_config->endpointdata;
     temp_config.root = full_path;
-    // Verificar si el metodo existe para el endpoint y llamar al handler al endpoint enrutado
     RouteConfig* route_config = HasValidMethod(routes[best_match_path], request->getMethod());
-    if (route_config)
+    if (request->getMethod() != "GET" && request->getMethod() != "POST" && request->getMethod() != "DELETE")
     {
+        response->setStatusCode(501);
+        response->setBody("Method not allowed");
+        return ;
+    }
+    else if (route_config)
+    {
+        // Verificar si el metodo existe para el endpoint y llamar al handler al endpoint enrutado
         route_config->handler->handle(request, response, temp_config);
     }
     else
-    {
-        response->setStatus(405, "Method Not Allowed");
-    }
+        response->setStatusCode(405);
 }

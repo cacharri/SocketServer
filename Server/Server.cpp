@@ -176,7 +176,7 @@ void     Server::analyzeBasicHeaders(const Request* request, Response* response,
     if (connectionHeader == "keep-alive")
     {
         client->keepAlive = true;
-
+        response->setHeader("Connection", "Keep-alive");
         // KEEP-ALIVE
         std::string isthere_keepalive_spec(request->getHeader("Keep-alive"));
 
