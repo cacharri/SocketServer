@@ -158,6 +158,7 @@ const char * Server::ServerError::what() const throw()
 
 //-------------------------------- HEADERS HANDLING ------------------------------------
 
+// HOST, KEEP-ALIVE, CONTENT-LENGHT
 void     Server::analyzeBasicHeaders(const Request* request, Response* response, ClientInfo*    client)
 {   
 

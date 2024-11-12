@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 14:43:32 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/12 02:18:04 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,36 +24,14 @@ GetHandler::~GetHandler()
 }
 
 
-std::string GetHandler::readFile(const std::string &fullPath)
-{
-    struct stat buffer;
-
-    // Verificar si el archivo existe
-    if (stat(fullPath.c_str(), &buffer) != 0) {
-        std::cerr << "Error: El archivo no existe: " << fullPath << std::endl; // Log de error
-        return ""; // Devuelve una cadena vacía si no existe
-    }
-
-    std::ifstream file(fullPath.c_str());
-
-    // Verificar si se pudo abrir el archivo
-    if (!file.is_open()) {
-        std::cerr << "Error: No se pudo abrir el archivo: " << fullPath << std::endl; // Log de error
-        return ""; // Devuelve una cadena vacía si no se puede abrir
-    }
-    
-    std::stringstream bufferStream;
-    bufferStream << file.rdbuf(); // Lee el contenido del archivo
-    std::cout << bufferStream.str();
-    return bufferStream.str(); // Devuelve el contenido del archivo
-}
-
-
 void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
     //std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         std::string fullpath(cwd);
+        std::string requested_resource = request->getUri();
+        //std::cout << requested_resource << std::endl;
+        
         fullpath += locationconfig.root;
         
         //std::cout << "Full path:: " << fullpath << std::endl;
@@ -62,7 +40,9 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         {
             CgiHandler cgi_handler_instance;
             cgi_handler_instance.handle(request, response, locationconfig);
+            response->setStatusCode(201);
             LOG_INFO("CGI Resource");
+            return ;
         }
         if (!locationconfig.redirect.empty()) {
             if (locationconfig.redirect_type == 301) {
@@ -103,15 +83,32 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                 return ;
             }
         }
+
         else{
-            std::string fileContent = readFile(fullpath);
-            if (!(fileContent.empty()))
+            
+            if (access(fullpath.c_str(), F_OK) != 0) {
+                response->setStatusCode(404);
+                response->setBody("<html><body><h1>404 Not Found</h1></body></html>");
+            }
+            
+            std::cout << fullpath.c_str() << std::endl;
+            std::ifstream file(fullpath.c_str());
+            if (!file.is_open())
+            {
+                response->setStatusCode(404); 
+                response->setBody("<html><body><h1>404 Not found</h1></body></html>");
+            }
+            
+            std::stringstream bufferStream;
+            bufferStream << file.rdbuf();
+
+            if (!(bufferStream.str().empty()))
             {
                 response->setStatusCode(200);
-                response->setBody(fileContent);
+                response->setBody(bufferStream.str());
                 response->setHeader("Content-Type", response->getMimeType(fullpath));
+                LOG_INFO("Read Resource Succesfully");
             }
-            LOG_INFO("Read Resource Succesfully");
         }
     }
     else {

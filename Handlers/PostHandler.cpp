@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 13:33:38 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/12 03:21:46 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,10 @@ void        PostHandler::handle(const Request* request, Response* response, cons
     std::cout << "Content type is " << contentType << std::endl;
     if ((!locationconfig.cgi_pass.empty()))
         {
-           CgiHandler cgi_handler_instance;
+            CgiHandler cgi_handler_instance;
             cgi_handler_instance.handle(request, response, locationconfig);
+            response->setStatusCode(201);
+            return ;
           //  delete cgi_handler_instance;
         }
 
@@ -43,25 +45,37 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             std::string boundary = contentType.substr(boundaryPos + 9); // 9 is the length of "boundary="
             std::cout << "Content type boundary is " << boundary << std::endl;
 
-            // Now we process the multipart data
-            //std::cout << "BODY POST >>> " << requestBody << std::endl;
             if (request->getBody().empty())
             {
                 LOG("EMPTY BODY POST REQUEST");
                 response->setStatusCode(204);
                 response->setBody("Empty Body in post request");
+                return;
             }
-    
-            std::map<std::string, std::string> formData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store);
+            std::string fileData;
+            std::string filename;
+            fileData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store, filename);
 
-            // Generar respuesta HTML
+            // Check if fileData is empty
+            if (request->getBody().empty())
+            {
+                response->setStatusCode(400);
+                response->setBody("No file data found in multipart request");
+                return;
+            }
+
+            // Save the file and check for errors
+            if (!saveFile(filename, fileData)) {
+                response->setStatusCode(500);
+                response->setBody("Failed to save file: " + filename);
+                return;
+            }
+
+            // Generate response HTML
             response->setHeader("Content-Type", "text/html; charset=UTF-8");
-            std::string responseBody = "<html><body><h1>Archivo Subido correctamente</h1>";
-            for (std::map<std::string, std::string>::iterator it = formData.begin(); it != formData.end(); ++it) {
-                    responseBody += "<p>" + escapeHtml(it->second) + "</p>";
-            }
+            std::string responseBody = "<html><body><h1>File Uploaded Successfully</h1>";
+            responseBody += "<p>File saved as: " + filename + "</p>";
             responseBody += "</body></html>";
-
 
             response->setStatusCode(201);
             response->setBody(responseBody);
@@ -97,6 +111,9 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         else
         {
             std::cerr << "No se pudo abrir el archivo form_data.csv" << std::endl;
+            response->setStatusCode(500);
+            response->setBody("Failed to open form_data.csv");
+            return;
         }
 
         // Generate response HTML
@@ -118,29 +135,29 @@ void        PostHandler::handle(const Request* request, Response* response, cons
     }
 }
 
-// Nueva función para manejar multipart/form-data
-void PostHandler::saveFile(const std::string& filename, const std::string& data) {
+bool PostHandler::saveFile(const std::string& filename, const std::string& data) {
     std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(data.c_str(), data.size());
         outFile.close();
+        return true; 
     } else {
         std::cerr << "Error: " << filename << std::endl;
+        return false; 
     }
 }
 
-std::map<std::string, std::string> PostHandler::parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store) {
-    std::map<std::string, std::string>	formData;
-    std::string                         partDelimiter = "--" + boundary;
-    std::string 						fileData;
-    size_t 								start = 0;
-    
+std::string     PostHandler::parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store, std::string& filename) {
+    std::string fileData;
+    std::string partDelimiter = "--" + boundary;
+    size_t start = 0;
+
     while ((start = data.find(partDelimiter, start)) != std::string::npos) {
         start += partDelimiter.length();
         size_t end = data.find(partDelimiter, start);
         
         if (end == std::string::npos) {
-            break; // No hay más partes
+            break; // No more parts
         }
         
         std::string part = data.substr(start, end - start);
@@ -148,39 +165,35 @@ std::map<std::string, std::string> PostHandler::parseMultipartFormData(const std
         size_t filenamePos = part.find("filename=\"");
         
         if (namePos != std::string::npos) {
-            namePos += 6; // Longitud de "name=\""
+            namePos += 6; // Length of "name=\""
             size_t nameEnd = part.find("\"", namePos);
             std::string name = part.substr(namePos, nameEnd - namePos);
             
             if (filenamePos != std::string::npos) {
-                
-                // Es un campo de archivo
-                filenamePos += 10; // Longitud de "filename=\""
+                // It's a file field
+                filenamePos += 10; // Length of "filename=\""
                 size_t filenameEnd = part.find("\"", filenamePos);
-                std::string filename(post_upload_store);
+                filename = post_upload_store;
                 if (filename[filename.size() - 1] == '/')
                     filename += part.substr(filenamePos, filenameEnd - filenamePos);
                 else
                     filename += "/" + part.substr(filenamePos, filenameEnd - filenamePos);
 
-                size_t valuePos = part.find("\r\n\r\n", filenameEnd) + 4; // Salta los encabezados
-                fileData = part.substr(valuePos, part.size() - valuePos - 2); // Sin los últimos dos caracteres
-                formData[name] = fileData;
-				saveFile(filename, fileData);
-                std::cout << "Archivo subido: " << filename << std::endl;
+                size_t valuePos = part.find("\r\n\r\n", filenameEnd) + 4; // Skip headers
+                fileData = part.substr(valuePos, part.size() - valuePos - 2); // Without the last two characters
             } else {
-                // Campo de formulario normal
-                size_t valuePos = part.find("\r\n\r\n", nameEnd) + 4; // Salta los encabezados
-                std::string value = part.substr(valuePos, part.size() - valuePos - 2); // Sin los últimos dos caracteres
-                formData[name] = value;
+                // Normal form field
+                size_t valuePos = part.find("\r\n\r\n", nameEnd) + 4; // Skip headers
+                std::string value = part.substr(valuePos, part.size() - valuePos - 2); // Without the last two characters
+                // You can handle normal fields here if needed
             }
         }        
         start = end;
     }
-    return formData;
+    return fileData;
+    // Return fileData through the reference parameter if needed
 }
 
-// Función para parsear el cuerpo de la solicitud UrlEncoded en pares clave-valor
 std::map<std::string, std::string> PostHandler::parseUrlFormData(const std::string& body)
 {
     std::map<std::string, std::string> formData;

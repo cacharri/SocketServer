@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 13:17:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/12 03:20:57 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,10 +50,7 @@ class GetHandler : public RequestHandler
         GetHandler();
         ~GetHandler();
         
-        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
-    private:
-        std::string     readFile(const std::string &fullPath);
-        
+        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);        
 };
 
 class PostHandler : public RequestHandler 
@@ -63,11 +60,11 @@ class PostHandler : public RequestHandler
         ~PostHandler();
         virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
     private:
-            void                                saveFile(const std::string& filename, const std::string& data);
+            bool                                saveFile(const std::string& filename, const std::string& data);
             std::string                         urlDecode(const std::string &str);
             std::string                         escapeHtml(const std::string& data);
             std::map<std::string, std::string>  parseUrlFormData(const std::string& body);
-            std::map<std::string, std::string>  parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store);
+            std::string                         parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store, std::string& filename);
 };
 
 class CgiHandler : public RequestHandler 

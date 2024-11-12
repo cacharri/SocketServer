@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/06 14:07:44 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/12 03:04:58 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,62 +37,57 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
     bool headerComplete = false;
     std::string tempBody;
 
-    while (totalRead < maxSize)
-    {
-        ssize_t bytesRead = recv(ClientFd, buffer, sizeof(buffer), 0);
+    // leer headers del fd
+    while (totalRead < sizeof(buffer) - 1) {
+        ssize_t bytesRead = recv(ClientFd, buffer + totalRead, sizeof(buffer) - totalRead - 1, 0);
         if (bytesRead <= 0)
-        {
-            if (bytesRead == 0) // || (errno != EAGAIN && errno != EWOULDBLOCK))
-                throw RequestError("Connection closed or error");
+            return false;
+        totalRead += bytesRead;
+        
+        // comprobar si hemos llegado al final de los headers
+        if (strstr(buffer, "\r\n\r\n") != NULL) {
+            headerComplete = true;            
+            buffer[totalRead] = '\0';
             break;
         }
-
-        tempBody.append(buffer, bytesRead);
-        totalRead += bytesRead;
-
-        // BUscar el final de los headers (\r\n\r\n)
-        if (!headerComplete)
-        {
-            size_t headerEnd = tempBody.find("\r\n\r\n");
-            if (headerEnd != std::string::npos)
-            {
-                headerComplete = true;
-                // si hay un content-lenght, podemos determinar el tamano total de la request (header + response)
-                size_t contentLength = parseContentLength(tempBody.substr(0, headerEnd));
-                if (contentLength > 0)
-                {
-                    if (contentLength > maxSize)
-                        throw RequestError("Content length exceeds maximum allowed size");
-                    // Continuar de leer hasta que tengamos todo el body
-                    if (totalRead >= headerEnd + 4 + contentLength)
-                        break;
-                }
-                else
-                {
-                    // NO hay body
-                    break;
-                }
-            }
-        }
     }
-    body = tempBody;
+
+    if (!headerComplete)
+        return false;        
+
+    // Separar headers y body
+    std::string headers(buffer);
+    size_t headerEnd = headers.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
+        throw RequestError("Invalid request format: no header delimiter found");
+
+    // Parsear Content-Length
+    size_t contentLength = 0;
+    size_t contentLengthPos = headers.find("Content-Length: ");
+    if (contentLengthPos != std::string::npos) {
+        size_t lengthStart = contentLengthPos + 16; // valor de "Content-Length: "
+        size_t lengthEnd = headers.find("\r\n", lengthStart);
+        std::string lengthStr = headers.substr(lengthStart, lengthEnd - lengthStart);
+        contentLength = static_cast<size_t>(atoi(lengthStr.c_str()));
+    }
+    // comprobar que el tamano sea menor que el de la config 
+    if (contentLength > maxSize) {
+        throw RequestError("Request body exceeds maximum allowed size");
+    }
+    body = buffer;
+    // Leer el body con el tamano correcto. Content-lenght de la request ( inferior al client_max_body_size )
+    tempBody.resize(contentLength);
+    size_t totalBodyRead = 0;
+    while (totalBodyRead < contentLength)
+    {
+        ssize_t bytesRead = recv(ClientFd, &tempBody[totalBodyRead], contentLength - totalBodyRead, 0);
+        if (bytesRead <= 0)
+            return false;
+        totalBodyRead += bytesRead;
+    }
+    
+    body += tempBody;
     return true;
-}
-
-size_t Request::parseContentLength(const std::string& headers)
-{
-    std::string contentLengthHeader = "Content-Length: ";
-    size_t pos = headers.find(contentLengthHeader);
-    if (pos == std::string::npos)
-        return 0;
-
-    size_t start = pos + contentLengthHeader.length();
-    size_t end = headers.find("\r\n", start);
-    if (end == std::string::npos)
-        return 0;
-
-    std::string lengthStr = headers.substr(start, end - start);
-    return std::atoi(lengthStr.c_str());
 }
 
 void Request::parseRequest()
