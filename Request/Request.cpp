@@ -22,8 +22,6 @@ Request::Request(ClientInfo& info_ref)
         // leer toda la request de 'golpe' hasta client_max_body_size como limite
         if (!readData(info_ref.pfd.fd, info.client_max_body_size))
             throw RequestError("Failed to read request data");
-        // Parsear la requeste
-        parseRequest();
     }
     catch (const std::exception& e) {
         throw RequestError(e.what());
@@ -32,34 +30,43 @@ Request::Request(ClientInfo& info_ref)
 
 bool Request::readData(const size_t& ClientFd, size_t maxSize)
 {
-    char buffer[2046];  // Buffer de talla razonable
+    char buffer[1046];  // Buffer de talla razonable
     size_t totalRead = 0;
     bool headerComplete = false;
     std::string tempBody;
+    std::string headers;
 
     // leer headers del fd
     while (totalRead < sizeof(buffer) - 1) {
         ssize_t bytesRead = recv(ClientFd, buffer + totalRead, sizeof(buffer) - totalRead - 1, 0);
         if (bytesRead <= 0)
-            return false;
+        {
+            LOG_INFO("ADIOS invalid headers read");
+            return false;        
+        }
         totalRead += bytesRead;
         
         // comprobar si hemos llegado al final de los headers
-        if (strstr(buffer, "\r\n\r\n") != NULL) {
-            headerComplete = true;            
-            buffer[totalRead] = '\0';
+        char *endHeaders = strstr(buffer, "\r\n\r\n");
+        if (endHeaders != NULL)
+        {
+            headerComplete = true;
+            headers = std::string(buffer);
+            headers[( (headers.rfind("\r\n\r\n")) + 4 )] = '\0';
+            tempBody += std::string(endHeaders + 4);
             break;
         }
+        else
+            throw RequestError("Invalid request format: no header delimiter found");
+
     }
 
+    std::cout << "Headers : " << headers << std::endl;
     if (!headerComplete)
+    {
+        LOG_INFO("ADIOS headers incomplete");
         return false;        
-
-    // Separar headers y body
-    std::string headers(buffer);
-    size_t headerEnd = headers.find("\r\n\r\n");
-    if (headerEnd == std::string::npos)
-        throw RequestError("Invalid request format: no header delimiter found");
+    }
 
     // Parsear Content-Length
     size_t contentLength = 0;
@@ -71,72 +78,75 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         contentLength = static_cast<size_t>(atoi(lengthStr.c_str()));
     }
     // comprobar que el tamano sea menor que el de la config 
-    if (contentLength > maxSize) {
+    if (contentLength > maxSize)
         throw RequestError("Request body exceeds maximum allowed size");
-    }
-    body = buffer;
+
     // Leer el body con el tamano correcto. Content-lenght de la request ( inferior al client_max_body_size )
+    std::cout << "Size of body read meanwhie reading headers: " << tempBody.size() << std::endl;
+    std::cout << "Body size: " << contentLength << std::endl;
+
+    if (tempBody.size() >= contentLength - 1)
+    {
+        body += tempBody;
+        parseRequest(headers);
+        return true;
+    }
+
     tempBody.resize(contentLength);
     size_t totalBodyRead = 0;
     while (totalBodyRead < contentLength)
     {
+        std::cout << "loop read body" << std::endl;
         ssize_t bytesRead = recv(ClientFd, &tempBody[totalBodyRead], contentLength - totalBodyRead, 0);
+        std::cout << "I read " << bytesRead << "From body" << std::endl;
         if (bytesRead <= 0)
-            return false;
+        {
+            LOG_INFO("ADIOS invalid body read");
+            break ;        
+        }
         totalBodyRead += bytesRead;
     }
-    
     body += tempBody;
+    parseRequest(headers);
     return true;
 }
 
-void Request::parseRequest()
-{
-    size_t headerEnd = body.find("\r\n\r\n");
-    if (headerEnd == std::string::npos)
-        throw RequestError("Invalid request format: no header delimiter found");
+void Request::parseRequest(std::string headers) {
+    // Parsing status-line
+    std::string statusLine;
+    std::istringstream LineStatusStream(headers);
+    std::getline(LineStatusStream, statusLine);  // Read the first line
 
-    // seprar headers y body
-    std::string headers = body.substr(0, headerEnd);
-    if (headerEnd + 4 < body.length())
-        body = body.substr(headerEnd + 4);
-    else
-        body.clear();
+    // Parse status line (method, uri, http version)
 
-    // parseo status-line
-    size_t firstLineEnd = headers.find("\r\n");
-    if (firstLineEnd == std::string::npos)
-        throw RequestError("Invalid request format: no status line");
-
-    std::string statusLine = headers.substr(0, firstLineEnd);
-    std::istringstream statusStream(statusLine);
-    statusStream >> method >> uri >> httpVersion;
+    LOG_INFO(statusLine);
+    std::istringstream statusLineStream(statusLine);
+    statusLineStream >> method >> uri >> httpVersion;
 
     if (method.empty() || uri.empty() || httpVersion.empty())
         throw RequestError("Invalid status line format");
 
-    // Parseo de los headers
-    std::string headerSection = headers.substr(firstLineEnd + 2);
-    std::istringstream headerStream(headerSection);
+    // Parsing headers
     std::string line;
-
-    while (std::getline(headerStream, line))
-    {
-        if (line == "\r" || line.empty())
+    while (std::getline(LineStatusStream, line)) {
+        // Ignore empty lines and lines with just carriage return
+        if (line.empty() || line == "\r") {
             break;
+        }
 
         size_t colonPos = line.find(':');
-        if (colonPos != std::string::npos)
-        {
+        if (colonPos != std::string::npos) {
             std::string key = line.substr(0, colonPos);
             std::string value = line.substr(colonPos + 1);
-            
-            // borar tabs espacios \n\r
+
+            // Remove leading/trailing spaces and tabs
             key.erase(0, key.find_first_not_of(" \t"));
             key.erase(key.find_last_not_of(" \t") + 1);
+
             value.erase(0, value.find_first_not_of(" \t"));
             value.erase(value.find_last_not_of(" \t\r\n") + 1);
-            
+
+            // Store in the map
             this->headers[key] = value;
         }
     }

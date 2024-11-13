@@ -36,7 +36,7 @@ public:
 
     bool readData(const size_t& ClientFd, size_t maxSize);
     size_t parseContentLength(const std::string& headers);
-    void    parseRequest();
+    void    parseRequest(std::string headers);
 
 
     // void readStatusLine(const size_t& ClientFd);

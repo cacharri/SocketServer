@@ -58,6 +58,6 @@ private:
 };
 
 bool isDirectory(const std::string& path);
-std::string generateAutoIndex(const std::string& directory);
+
 
 #endif

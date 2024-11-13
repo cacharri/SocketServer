@@ -25,7 +25,7 @@ PostHandler::~PostHandler()
 
 void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
 {   
-    std::cout << "Received POST request" << std::endl;
+    //std::cout << "Received POST request" << std::endl;
     request->print();
 
     std::string contentType = request->getHeader("Content-Type");
@@ -38,7 +38,6 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             return ;
           //  delete cgi_handler_instance;
         }
-
     else if (contentType.find("multipart/form-data") != std::string::npos) {
         size_t boundaryPos = contentType.find("boundary=");
         if (boundaryPos != std::string::npos) {
@@ -85,46 +84,15 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         }
     }
     else if (contentType == "application/x-www-form-urlencoded") {
+
         std::string requestBody = request->getBody();
         std::map<std::string, std::string> formData = parseUrlFormData(requestBody);
 
-        // Process the form data as needed
-        std::string name = urlDecode(formData["name"]);
-        std::string email = urlDecode(formData["email"]);
-        std::string age = urlDecode(formData["age"]);
-        std::string gender = urlDecode(formData["gender"]);
-        std::string comments = urlDecode(formData["comments"]);
+        std::string responseBody;
+        responseBody += "SUuuuuuu";
 
-        std::cout << "Decoded name: " << name << std::endl;
-
-        std::string upload_path = ((locationconfig.upload_store[locationconfig.upload_store.size() - 1] == '/') 
-                            ? locationconfig.upload_store + "form_inputs_database.csv" 
-                            : locationconfig.upload_store + "/form_inputs_database.csv");
-                            
-        std::ofstream csvFile(upload_path.c_str(), std::ios::app);
-        if (csvFile.is_open())
-        {
-            csvFile << "\"" << name << "\",\"" << email << "\",\"" << age << "\",\"" << gender << "\",\"" << comments << "\"" << std::endl;
-            csvFile.close();
-            std::cout << "Datos guardados en " << upload_path << std::endl;
-        }
-        else
-        {
-            std::cerr << "No se pudo abrir el archivo form_data.csv" << std::endl;
-            response->setStatusCode(500);
-            response->setBody("Failed to open form_data.csv");
-            return;
-        }
-
-        // Generate response HTML
-        std::string responseBody = "<html><body>";
-        responseBody += "<h1>Formulario Recibido</h1>";
-        responseBody += "<p>Nombre: " + escapeHtml(name) + "</p>";
-        responseBody += "<p>Email: " + escapeHtml(email) + "</p>";
-        responseBody += "<p>Edad: " + escapeHtml(age) + "</p>";
-        responseBody += "<p>G&eacute;nero: " + escapeHtml(gender) + "</p>";
-        responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
-        responseBody += "</body></html>";
+        std::cout << "DEletear este archivo "<< formData.at("archivo") << std::endl;
+        std::cout << "Vamooooss un post delete ! > " << formData.at("boton") << std::endl;
 
         response->setStatusCode(201);
         response->setBody(responseBody);
@@ -132,18 +100,6 @@ void        PostHandler::handle(const Request* request, Response* response, cons
     else {
         response->setStatusCode(400);
         response->setBody("Unsupported Content-Type");
-    }
-}
-
-bool PostHandler::saveFile(const std::string& filename, const std::string& data) {
-    std::ofstream outFile(filename.c_str(), std::ios::binary);
-    if (outFile.is_open()) {
-        outFile.write(data.c_str(), data.size());
-        outFile.close();
-        return true; 
-    } else {
-        std::cerr << "Error: " << filename << std::endl;
-        return false; 
     }
 }
 
@@ -211,6 +167,67 @@ std::map<std::string, std::string> PostHandler::parseUrlFormData(const std::stri
 
     return formData;
 }
+
+
+void    PostHandler::appendUsertoDatabase(std::map<std::string, std::string>& formData, Response& response, LocationConfig& locationconfig)
+{
+    //Process the form data as needed
+        std::string name = urlDecode(formData["name"]);
+        std::string email = urlDecode(formData["email"]);
+        std::string age = urlDecode(formData["age"]);
+        std::string gender = urlDecode(formData["gender"]);
+        std::string comments = urlDecode(formData["comments"]);
+
+        std::cout << "Decoded name: " << name << std::endl;
+
+        std::string upload_path = ((locationconfig.upload_store[locationconfig.upload_store.size() - 1] == '/') 
+                            ? locationconfig.upload_store + "form_inputs_database.csv" 
+                            : locationconfig.upload_store + "/form_inputs_database.csv");
+                            
+        std::ofstream csvFile(upload_path.c_str(), std::ios::app);
+        if (csvFile.is_open())
+        {
+            csvFile << "\"" << name << "\",\"" << email << "\",\"" << age << "\",\"" << gender << "\",\"" << comments << "\"" << std::endl;
+            csvFile.close();
+            std::cout << "Datos guardados en " << upload_path << std::endl;
+        }
+        else
+        {
+            std::cerr << "No se pudo abrir el archivo form_data.csv" << std::endl;
+            response.setStatusCode(500);
+            response.setBody("Failed to open form_data.csv");
+            return;
+        }
+
+        // Generate response HTML
+        std::string responseBody = "<html><body>";
+        responseBody += "<h1>Formulario Recibido</h1>";
+        responseBody += "<p>Nombre: " + escapeHtml(name) + "</p>";
+        responseBody += "<p>Email: " + escapeHtml(email) + "</p>";
+        responseBody += "<p>Edad: " + escapeHtml(age) + "</p>";
+        responseBody += "<p>G&eacute;nero: " + escapeHtml(gender) + "</p>";
+        responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
+        responseBody += "</body></html>";
+}
+
+void                                PostHandler::deleteFilefromDatabase(std::map<std::string, std::string>& formData)
+{
+
+}
+
+
+bool PostHandler::saveFile(const std::string& filename, const std::string& data) {
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
+    if (outFile.is_open()) {
+        outFile.write(data.c_str(), data.size());
+        outFile.close();
+        return true; 
+    } else {
+        std::cerr << "Error: " << filename << std::endl;
+        return false; 
+    }
+}
+
 
 std::string                         PostHandler::urlDecode(const std::string &str) 
 {

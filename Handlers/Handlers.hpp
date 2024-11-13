@@ -65,6 +65,8 @@ class PostHandler : public RequestHandler
             std::string                         escapeHtml(const std::string& data);
             std::map<std::string, std::string>  parseUrlFormData(const std::string& body);
             std::string                         parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store, std::string& filename);
+            void                                appendUsertoDatabase(std::map<std::string, std::string>& formData, Response& response, LocationConfig& locationconfig);
+            void                                deleteFilefromDatabase(std::map<std::string, std::string>& formData);
 };
 
 class CgiHandler : public RequestHandler 
@@ -77,7 +79,16 @@ public:
 private:
     std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );
 };
+class DeleteHandler : public RequestHandler {
+public:
+    DeleteHandler();
+    virtual ~DeleteHandler();
 
+    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig);
+ //   std::string extractFilePathFromJson(const std::string& body);
+    std::string getQueryParam(const std::string& url, const std::string& param);
+    bool fileExists(const std::string& filepath);
+};
 
 // void        handleHome(const Request& request, Response& response);
 // void        handleAbout(const Request& request, Response& response);
