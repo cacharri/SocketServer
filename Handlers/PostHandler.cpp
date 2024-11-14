@@ -26,6 +26,7 @@ PostHandler::~PostHandler()
 void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
 {   
     //std::cout << "Received POST request" << std::endl;
+    DeleteHandler deleteHandlerInstance;
     request->print();
 
     std::string contentType = request->getHeader("Content-Type");
@@ -93,7 +94,7 @@ void        PostHandler::handle(const Request* request, Response* response, cons
 
         std::cout << "DEletear este archivo "<< formData.at("archivo") << std::endl;
         std::cout << "Vamooooss un post delete ! > " << formData.at("boton") << std::endl;
-
+        deleteHandlerInstance.handle(request, response, locationconfig);
         response->setStatusCode(201);
         response->setBody(responseBody);
     }

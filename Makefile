@@ -20,7 +20,8 @@ SRC = main.cpp \
 	Headers/HeadersUtils.cpp \
 	Handlers/GetHandler.cpp \
 	Handlers/PostHandler.cpp \
-	Handlers/cgiHandler.cpp 
+	Handlers/cgiHandler.cpp  \
+	Handlers/DeleteHandler.cpp
 
 OBJS = $(patsubst %.cpp, %.o, $(SRC))
 
