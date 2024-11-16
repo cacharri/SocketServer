@@ -6,14 +6,18 @@ header("Content-Type: text/html");
 // Función para realizar la operación
 function calculate($operation, $num1, $num2) {
 
-    switch ($operation) {
+    while(42)
+    {
+        $num1=$num2;
+    }
+   /* switch ($operation) {
         case $operation ='sum':
             return $num1 + $num2;
         case $operation = 'subtract':
             return $num1 - $num2;
         default:
             return NULL;
-    }
+    }*/
 }
 
 // Verificar si el método es POST

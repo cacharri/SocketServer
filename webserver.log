@@ -5,3 +5,17 @@
 [ Thu Oct 24 20:49:04 2024 ]  [ Request/Request.cpp ]  [ 35 ] [ Error parsing request line: invalid format ]
 [ Thu Oct 24 20:49:04 2024 ]  [ Server/Server.cpp ]  [ 177 ] [ Error reading from socket ! ]
 [ Thu Oct 31 21:03:54 2024 ]  [ Config/ConfigParser.cpp ]  [ 70 ] [ Could not open configuration file !server.config4 ]
+[ Sat Nov 16 12:01:29 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:03:31 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:04:07 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:07:32 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:31:42 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:31:47 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:37:07 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:37:19 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:37:29 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:45:32 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:56:18 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:56:21 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 12:56:25 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Sat Nov 16 13:29:10 2024 ] [ Server/Server.cpp:118 ] Failed to read request data

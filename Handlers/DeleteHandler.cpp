@@ -47,6 +47,7 @@ std::string urlDecode(const std::string &encoded) {
 }
 
 void DeleteHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
+    std::cout << "delete handle request body"<< request->getBody()<< std::endl;
     std::string resourcePath = locationconfig.root;
     if (!resourcePath.empty() && resourcePath[resourcePath.size() - 1] == '/') {
         resourcePath = resourcePath.substr(0, resourcePath.size() - 1);
