@@ -11,13 +11,15 @@
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
             font-family: Arial, sans-serif;
-            color: #660000;
-            background-color: #f8d7da;
+            color: #333;
+            background-color: #f4f4f9;
         }
+        
         header {
-            background: #c72c41;
+            background: #5e60ce;
             color: white;
             padding: 2rem;
             text-align: center;
@@ -49,7 +51,7 @@
         
         h2 {
             font-size: 1.8rem;
-            color: #c72c41;
+            color: #5e60ce;
             margin-bottom: 1rem;
         }
         
@@ -57,7 +59,7 @@
             padding: 0.8rem 1.2rem;
             margin-right: 1rem;
             border: none;
-            background: #ff6f61;
+            background: #48bfe3;
             color: white;
             font-size: 1rem;
             border-radius: 5px;
@@ -66,13 +68,13 @@
         }
         
         .request-simulation button:hover {
-            background: #ff3b30;
+            background: #0096c7;
         }
         
         #response {
             margin-top: 1rem;
             font-size: 1rem;
-            color: #660000;
+            color: #333;
         }
         
         .navigation ul {
@@ -86,17 +88,17 @@
         
         .navigation a {
             text-decoration: none;
-            color: #ff3b30;
+            color: #0096c7;
             font-weight: bold;
             transition: color 0.3s ease;
         }
         
         .navigation a:hover {
-            color: #c72c41;
+            color: #48bfe3;
         }
         
         footer {
-            background: #c72c41;
+            background: #5e60ce;
             color: white;
             text-align: center;
             padding: 1rem;
@@ -106,25 +108,19 @@
 </head>
 <body>
     <header>
-        <h1>Learn HTTP 1.1: Self-Hosted Server</h1>
-        <p>Interact with the elements below to see how HTTP requests work behind the scenes.</p>
+        <h1>HTTP 1.1: Self-Hosted Server</h1>
+        <p>Interactua con los links de abajo !</p>
     </header>
     <main>
-        <section class="request-simulation">
-            <h2>HTTP Request Simulation</h2>
-            <button id="getButton" onclick="sendGetRequest()">Simulate GET Request</button>
-            <button id="postButton" onclick="sendPostRequest()">Simulate POST Request</button>
-            <div id="response"></div>
-        </section>
         <section class="navigation">
             <h2>Link Navigation</h2>
             <p>Click the links below to observe the <code>href</code> behavior in HTTP 1.1:</p>
             <ul>
-                <li><a href="/img-test/"> Listing directory Resource</a></li>
-                <li><a href="/img-test/meme.jpg"> JPEG Image Resource</a></li>
                 <li><a href="/upload"> Upload a file</a></li>
+                <li><a href="/uploads">  See files </a></li>
+                <li><a href="/delete">  Delete files </a></li>
                 <li><a href="/cgi-bin"> Execute on server</a></li>
-                <li><a href="/redirect"> Redirection link</a></li>
+                <li><a href="/redirect"> Next Server</a></li>
             </ul>
         </section>
     </main>
@@ -133,31 +129,6 @@
             <p>Powered by 42 - Self-Hosted HTTP 1.1 Server</p>
             <p>Smagniny, Ialvarez, Mtorrado</p>
         </div>
-
     </footer>
-
-    <script>
-        function sendGetRequest() {
-            fetch(window.location.href, { method: 'GET' })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('response').innerText = "GET Request Successful: " + data;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function sendPostRequest() {
-            fetch(window.location.href, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Hello from POST!" })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('response').innerText = "POST Request Successful: " + data;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-    </script>
 </body>
 </html>

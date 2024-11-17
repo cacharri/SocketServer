@@ -24,8 +24,6 @@ Server::~Server()
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
 
-
-
 void    Server::init()
 {
     setNonBlocking();
@@ -108,10 +106,15 @@ void Server::handleClient(ClientInfo* client)
         
         analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
         router.route(clientHandler.getRequest(), clientHandler.getResponse());
+        setErrorPageFromStatusCode(clientHandler.getResponse());
         sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
         clientHandler.setLastActivity();
         if (clientHandler.shouldKeepAlive() == false)
             removeClient(client);
+        // if (handleRedirects())
+        // {
+
+        // }
     }
     catch (const std::exception& e) {
         removeClient(client);
@@ -137,6 +140,24 @@ bool    Server::IsTimeout(ClientInfo* client)
     }
     return false;
 }
+
+void        Server::setErrorPageFromStatusCode(Response*    response)
+{
+    std::string filepath = config.error_pages[response->getStatusCode()];
+    if (filepath.empty())
+        return ;
+    std::ifstream file(filepath.c_str());
+    if (!file.is_open())
+    {
+        LOG("Invalid file error page");
+        return ;
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    response->setBody(buffer.str());
+
+}
+
 
 
 //-------------------------------- EXCEPTION HANDLING ------------------------------------

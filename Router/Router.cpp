@@ -136,10 +136,11 @@ void Router::route(const Request* request, Response* response)
             }
         }
     }
-
+    //std::cout << "Match with " << best_match_config->endpointdata.root << std::endl;
     if (!best_match_config)
     {
         response->setStatusCode(404);
+        response->setBody(readFile("/var/www/error-pages/404.html"));
         return;
     }
 
@@ -149,7 +150,6 @@ void Router::route(const Request* request, Response* response)
     {
         if (full_path[full_path.length()-1] != '/' && remaining_path[0] != '/')
             full_path += '/';
-
         full_path += remaining_path;
     }
     // pasar una copia de LocationConfig con el root relativo enrutado
@@ -159,7 +159,7 @@ void Router::route(const Request* request, Response* response)
     if (request->getMethod() != "GET" && request->getMethod() != "POST" && request->getMethod() != "DELETE")
     {
         response->setStatusCode(501);
-        response->setBody("Method not allowed");
+        response->setBody(readFile("/var/www/error-pages/501.html"));
         return ;
     }
     else if (route_config)
@@ -168,7 +168,11 @@ void Router::route(const Request* request, Response* response)
         route_config->handler->handle(request, response, temp_config);
     }
     else
+    {
         response->setStatusCode(405);
+        response->setBody(readFile("/var/www/error-pages/405.html"));
+    }
+
 }
 
 

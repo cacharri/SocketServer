@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/12 03:20:57 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/17 00:47:10 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,9 @@ public:
     std::string getQueryParam(const std::string& url, const std::string& param);
     bool fileExists(const std::string& filepath);
 };
+
+
+std::string     readFile(const std::string& path);
 
 // void        handleHome(const Request& request, Response& response);
 // void        handleAbout(const Request& request, Response& response);

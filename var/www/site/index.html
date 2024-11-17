@@ -108,25 +108,19 @@
 </head>
 <body>
     <header>
-        <h1>Learn HTTP 1.1: Self-Hosted Server</h1>
-        <p>Interact with the elements below to see how HTTP requests work behind the scenes.</p>
+        <h1>HTTP 1.1: Self-Hosted Server</h1>
+        <p>Interactua con los links de abajo !</p>
     </header>
     <main>
-        <section class="request-simulation">
-            <h2>HTTP Request Simulation</h2>
-            <button id="getButton" onclick="sendGetRequest()">Simulate GET Request</button>
-            <button id="postButton" onclick="sendPostRequest()">Simulate POST Request</button>
-            <div id="response"></div>
-        </section>
         <section class="navigation">
             <h2>Link Navigation</h2>
             <p>Click the links below to observe the <code>href</code> behavior in HTTP 1.1:</p>
             <ul>
-                <li><a href="/media"> Listing directory Resource</a></li>
-                <li><a href="/media/meme.jpg"> JPEG Image Resource</a></li>
                 <li><a href="/upload"> Upload a file</a></li>
+                <li><a href="/uploads">  See files </a></li>
+                <li><a href="/delete">  Delete files </a></li>
                 <li><a href="/cgi-bin"> Execute on server</a></li>
-                <li><a href="/redirect"> Redirection link</a></li>
+                <li><a href="/redirect"> Next Server</a></li>
             </ul>
         </section>
     </main>
@@ -135,31 +129,6 @@
             <p>Powered by 42 - Self-Hosted HTTP 1.1 Server</p>
             <p>Smagniny, Ialvarez, Mtorrado</p>
         </div>
-
     </footer>
-
-    <script>
-        function sendGetRequest() {
-            fetch(window.location.href, { method: 'GET' })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('response').innerText = "GET Request Successful: " + data;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function sendPostRequest() {
-            fetch(window.location.href, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Hello from POST!" })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('response').innerText = "POST Request Successful: " + data;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-    </script>
 </body>
 </html>

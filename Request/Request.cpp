@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/12 03:04:58 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/17 14:00:33 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
 
     }
 
-    std::cout << "Headers : " << headers << std::endl;
+    //std::cout << "Headers : " << headers << std::endl;
     if (!headerComplete)
     {
         LOG_INFO("ADIOS headers incomplete");
@@ -82,8 +82,8 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         throw RequestError("Request body exceeds maximum allowed size");
 
     // Leer el body con el tamano correcto. Content-lenght de la request ( inferior al client_max_body_size )
-    std::cout << "Size of body read meanwhie reading headers: " << tempBody.size() << std::endl;
-    std::cout << "Body size: " << contentLength << std::endl;
+    //std::cout << "Size of body read meanwhie reading headers: " << tempBody.size() << std::endl;
+    //std::cout << "Body size: " << contentLength << std::endl;
 
     if (tempBody.size() >= contentLength - 1)
     {
@@ -119,7 +119,7 @@ void Request::parseRequest(std::string headers) {
 
     // Parse status line (method, uri, http version)
 
-    LOG_INFO(statusLine);
+    //LOG_INFO(statusLine);
     std::istringstream statusLineStream(statusLine);
     statusLineStream >> method >> uri >> httpVersion;
 

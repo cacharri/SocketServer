@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/12 03:21:46 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/17 02:11:13 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,29 +27,28 @@ void        PostHandler::handle(const Request* request, Response* response, cons
 {   
     //std::cout << "Received POST request" << std::endl;
     DeleteHandler deleteHandlerInstance;
-    request->print();
+    //request->print();
 
     std::string contentType = request->getHeader("Content-Type");
-    std::cout << "Content type is " << contentType << std::endl;
+    //std::cout << "Content type is " << contentType << std::endl;
     if ((!locationconfig.cgi_pass.empty()))
-        {
+    {
             CgiHandler cgi_handler_instance;
             cgi_handler_instance.handle(request, response, locationconfig);
             response->setStatusCode(201);
             return ;
-          //  delete cgi_handler_instance;
-        }
+    }
     else if (contentType.find("multipart/form-data") != std::string::npos) {
         size_t boundaryPos = contentType.find("boundary=");
         if (boundaryPos != std::string::npos) {
             std::string boundary = contentType.substr(boundaryPos + 9); // 9 is the length of "boundary="
-            std::cout << "Content type boundary is " << boundary << std::endl;
+            //std::cout << "Content type boundary is " << boundary << std::endl;
 
             if (request->getBody().empty())
             {
                 LOG("EMPTY BODY POST REQUEST");
                 response->setStatusCode(204);
-                response->setBody("Empty Body in post request");
+                response->setBody(readFile("/var/www/error-pages/204.html"));
                 return;
             }
             std::string fileData;
@@ -60,28 +59,31 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             if (request->getBody().empty())
             {
                 response->setStatusCode(400);
-                response->setBody("No file data found in multipart request");
+                response->setBody(readFile("/var/www/error-pages/400.html"));
                 return;
             }
 
             // Save the file and check for errors
-            if (!saveFile(filename, fileData)) {
+            if (!saveFile(filename, fileData))
+            {
                 response->setStatusCode(500);
-                response->setBody("Failed to save file: " + filename);
+                response->setBody(readFile("/var/www/error-pages/500.html"));
                 return;
             }
-
-            // Generate response HTML
             response->setHeader("Content-Type", "text/html; charset=UTF-8");
-            std::string responseBody = "<html><body><h1>File Uploaded Successfully</h1>";
-            responseBody += "<p>File saved as: " + filename + "</p>";
+            std::string responseBody = "<html><body>";
+            responseBody += "<h1>File Uploaded Successfully!</h1>";
+            responseBody += "<p>Your file has been uploaded as: " + filename + "</p>";
+            responseBody += "<script>localStorage.setItem('uploadedFileName', '" + filename + "');</script>";
+            responseBody += "<p><a href='/upload'>Upload another file</a></p>";
+            responseBody += "<p><a href='/'>Go back to home</a></p>";
             responseBody += "</body></html>";
 
             response->setStatusCode(201);
             response->setBody(responseBody);
         } else {
             response->setStatusCode(400);
-            response->setBody("Boundary not found in Content-Type");
+            response->setBody(readFile("/var/www/error-pages/400.html"));
         }
     }
     else if (contentType == "application/x-www-form-urlencoded") {
@@ -92,14 +94,15 @@ void        PostHandler::handle(const Request* request, Response* response, cons
    //     responseBody += "SUuuuuuu";
         
     
-      //  std::cout << "DEletear este archivo "<< formData.at("archivo") << std::endl;
-      //  std::cout << "url decode " << urlDecode(formData.at("archivo")) << std::endl;
+        //std::cout << "DEletear este archivo "<< formData.at("archivo") << std::endl;
+        //std::cout << "url decode " << urlDecode(formData.at("boton")) << std::endl;
 
         if (request->getUri() == "/delete")
         {
             deleteFilefromDatabase(formData, *response, locationconfig);
         }
-        else{
+        else
+        {
             appendUsertoDatabase(formData, *response, locationconfig);
         }
     }
@@ -220,46 +223,47 @@ void     PostHandler::deleteFilefromDatabase(std::map<std::string, std::string>&
 {
     std::string responseBody;
     std::string resourcePath = urlDecode(formData.at("archivo"));
-            std::string file;
-            if ((resourcePath.find(".")!= std::string::npos))
-            {
-            size_t pos = resourcePath.rfind("/");
-            file = resourcePath.substr(pos + 1);
-            }
-        // Verificar si el archivo o directorio existe
-            struct stat fileStat;
-            if (stat(resourcePath.c_str(), &fileStat) != 0) {
-                LOG_INFO("NO EXISTE");
-                responseBody = "<html><body><h1>403 Not Found</h1></body></html>";
-                response.setStatusCode(404);
-            //    response->setBody("<html><body><h1>404 Not Found</h1></body></html>");
-                return;
-            }
+    std::string file;
+    if ((resourcePath.find(".")!= std::string::npos))
+    {
+        size_t pos = resourcePath.rfind("/");
+        file = resourcePath.substr(pos + 1);
+    }
+// Verificar si el archivo o directorio existe
+    struct stat fileStat;
+    if (stat(resourcePath.c_str(), &fileStat) != 0) {
+        LOG_INFO("NO EXISTE");
+        responseBody = "<html><body><h1>403 Not Found</h1></body></html>";
+        response.setStatusCode(404);
+    //    response->setBody("<html><body><h1>404 Not Found</h1></body></html>");
+        return;
+    }
 
-            if (S_ISDIR(fileStat.st_mode)) {
-                if (rmdir(resourcePath.c_str()) == 0) {
-                    response.setStatusCode(204);
-                } else {
-                    response.setStatusCode(403);
-                    responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
-                }
-            } else {
-                if (remove(resourcePath.c_str()) == 0) {
-                    responseBody = "<html><body><h1>File deleted Successfully</h1>";
-                    responseBody += "<p>File deleted : " + file + "</p>";
-                    responseBody += "</body></html>";
-                    response.setStatusCode(201);
-                    LOG_INFO("ARCHIVO BORRADO");
-                } else {
-                    responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
-                    response.setStatusCode(403);
-                }
-            response.setBody(responseBody);
-            }
+    if (S_ISDIR(fileStat.st_mode)) {
+        if (rmdir(resourcePath.c_str()) == 0) {
+            response.setStatusCode(204);
+        } else {
+            response.setStatusCode(403);
+            responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
+        }
+    } else {
+        if (remove(resourcePath.c_str()) == 0) {
+            responseBody = "<html><body><h1>File deleted Successfully</h1>";
+            responseBody += "<p>File deleted : " + file + "</p>";
+            responseBody += "</body></html>";
+            response.setStatusCode(201);
+            LOG_INFO("ARCHIVO BORRADO");
+        } else {
+            responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
+            response.setStatusCode(403);
+        }
+    response.setBody(responseBody);
+    }
 }
 
 
-bool PostHandler::saveFile(const std::string& filename, const std::string& data) {
+bool PostHandler::saveFile(const std::string& filename, const std::string& data)
+{
     std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(data.c_str(), data.size());

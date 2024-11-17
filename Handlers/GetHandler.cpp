@@ -6,12 +6,29 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/12 02:18:04 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/17 01:11:05 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Handlers.hpp"
 #include "../Router/Router.hpp"
+
+std::string     readFile(const std::string& path)
+{
+    std::ifstream file(path.c_str());
+    if (!file.is_open())
+    {
+        std::ifstream error_file("/var/www/error-pages/404.html");
+        if (!error_file.is_open())
+            return "404 not a page";
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return buffer.str();
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 std::string formatDateTime(time_t time) {
     struct tm* timeInfo = localtime(&time);
@@ -109,9 +126,8 @@ std::string generateAutoIndexDelete(const std::string& directoryPath, const Loca
         autoindexHtml += "<td>";
         autoindexHtml += "<form action='/delete' method='POST'>";
         autoindexHtml += "<input type='hidden' name='archivo' value=";
-        autoindexHtml += "'" + filepath + "'";
-        autoindexHtml += " value='delete'>"; // Pasamos la ruta del archivo
-        autoindexHtml += "<input type='submit' name='boton' value='Delete'>";
+        autoindexHtml += "'" + filepath + "'>";
+        autoindexHtml += "<input type='submit' name='boton' value='Delete'>";// Pasamos la ruta del archivo
         autoindexHtml += "</form>";
         autoindexHtml += "</td>";
 
@@ -143,10 +159,10 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         //std::cout << requested_resource << std::endl;
         
         fullpath += locationconfig.root;
-        
-        //std::cout << "Full path:: " << fullpath << std::endl;
+    
+        //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
         LOG_INFO(fullpath);
-        if ((!locationconfig.cgi_pass.empty()))
+        if (locationconfig.cgi_pass.empty() == false)
         {
             CgiHandler cgi_handler_instance;
             cgi_handler_instance.handle(request, response, locationconfig);
@@ -154,18 +170,8 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             LOG_INFO("CGI Resource");
             return ;
         }
-        if (!locationconfig.redirect.empty()) {
-            if (locationconfig.redirect_type == 301) {
-                LOG_INFO("Redirected Permanently");
-                response->setStatusCode(301);
-            } else if (locationconfig.redirect_type == 302) {
-                LOG_INFO("Redirected Temporaly");
-                response->setStatusCode(302);
-            } else {
-                response->setStatusCode(400);
-                response->setBody("<html><body><h1>400 Bad Request</h1></body></html>");
-                return;
-            }
+        if (!locationconfig.redirect.empty())
+        {
             response->setHeader("Location", locationconfig.redirect);
             std::ostringstream oss;
             oss << locationconfig.redirect_type;
@@ -173,12 +179,14 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                             (locationconfig.redirect_type == 301 ? "Moved Permanently" : "Found") +
                             "</h1></body></html>";
             response->setBody(body);
+            response->setStatusCode(locationconfig.redirect_type);
             return;
         }
         else if (fullpath[fullpath.size() - 1] == '/')
         {
             struct stat buffer;
-            if (fullpath.find("uploads") != std::string::npos)
+
+            if (request->getUri().compare("/delete") == 0)
             {
                 if (locationconfig.autoindex) {
                     std::string fileContent = generateAutoIndexDelete(fullpath, locationconfig);
@@ -189,7 +197,7 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                 } else {
                     LOG_INFO("Forbidden resource");
                     response->setStatusCode(403);
-                    response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
+                    response->setBody(readFile("/var/www/error-pages/403.html"));
                 }
                 return ;
 
@@ -204,7 +212,7 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
                 } else {
                     LOG_INFO("Forbidden resource");
                     response->setStatusCode(403);
-                    response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
+                    response->setBody(readFile("/var/www/error-pages/403.html"));
                 }
                 return ;
             }
@@ -214,20 +222,19 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             
             if (access(fullpath.c_str(), F_OK) != 0) {
                 response->setStatusCode(404);
-                response->setBody("<html><body><h1>404 Not Found</h1></body></html>");
+                response->setBody(readFile("/var/www/error-pages/404.html"));
             }
-            
-            std::cout << fullpath.c_str() << std::endl;
+            //std::cout << fullpath.c_str() << std::endl;
             std::ifstream file(fullpath.c_str());
             if (!file.is_open())
             {
-                response->setStatusCode(404); 
-                response->setBody("<html><body><h1>404 Not found</h1></body></html>");
+                response->setStatusCode(404);
+                response->setBody(readFile("/var/www/error-pages/404.html"));
             }
             
             std::stringstream bufferStream;
             bufferStream << file.rdbuf();
-
+            
             if (!(bufferStream.str().empty()))
             {
                 response->setStatusCode(200);
@@ -240,6 +247,6 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
     else {
         LOG_INFO("Failed current Directory Read");
         response->setStatusCode(500);
-        response->setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+        response->setBody(readFile("/var/www/error-pages/500.html"));
     }
 }
