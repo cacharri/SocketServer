@@ -4,6 +4,7 @@
 Server::Server(const ServerConfig& serverConfig)
     : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.ports, serverConfig.interface)
 {
+    ConfigParser::setDefaultErrorPages(config);
     ConfigParser::copyServerConfig(serverConfig, config);
 }
 

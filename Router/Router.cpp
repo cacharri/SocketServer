@@ -33,7 +33,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config->endpointdata.root = locationconfig.root;
     config->endpointdata.index = locationconfig.index;
     config->endpointdata.autoindex = locationconfig.autoindex;
-    config->endpointdata.methods.push_back(HandledMethod); // shallow copy
+    config->endpointdata.methods.push_back(HandledMethod); 
     config->endpointdata.allow_upload = locationconfig.allow_upload;
     config->endpointdata.upload_store = locationconfig.upload_store;
     config->endpointdata.cgi_pass = locationconfig.cgi_pass;
@@ -71,6 +71,10 @@ void    Router::loadEndpoints(const std::string& endpoint, const LocationConfig&
             PostHandler  *post_handler_instance = new PostHandler();
             //std::cout << "[ROUTER] Se ha añadido un POST endpoint ! " << endpoint << std::endl;
             addRoute(endpoint, locConfig, post_handler_instance, "POST");
+        }
+        if (std::find(locConfig.methods.begin(), locConfig.methods.end(), "DELETE") != locConfig.methods.end()) {
+            DeleteHandler* delete_handler = new DeleteHandler();
+            addRoute(endpoint, locConfig, delete_handler, "DELETE");
         }
     //}
   
@@ -140,7 +144,6 @@ void Router::route(const Request* request, Response* response)
     if (!best_match_config)
     {
         response->setStatusCode(404);
-        response->setBody(readFile("/var/www/error-pages/404.html"));
         return;
     }
 
@@ -148,8 +151,10 @@ void Router::route(const Request* request, Response* response)
     std::string full_path = best_match_config->endpointdata.root;
     if (!remaining_path.empty())
     {
-        if (full_path[full_path.length()-1] != '/' && remaining_path[0] != '/')
+        if (full_path[full_path.length()-1] != '/' && ( remaining_path.empty() || remaining_path[0] != '/' ) ) 
             full_path += '/';
+        else if (full_path[full_path.length()-1] == '/' && remaining_path[0] == '/')
+            full_path.resize(full_path.size() - 1);    
         full_path += remaining_path;
     }
     // pasar una copia de LocationConfig con el root relativo enrutado
@@ -159,7 +164,6 @@ void Router::route(const Request* request, Response* response)
     if (request->getMethod() != "GET" && request->getMethod() != "POST" && request->getMethod() != "DELETE")
     {
         response->setStatusCode(501);
-        response->setBody(readFile("/var/www/error-pages/501.html"));
         return ;
     }
     else if (route_config)
@@ -168,10 +172,7 @@ void Router::route(const Request* request, Response* response)
         route_config->handler->handle(request, response, temp_config);
     }
     else
-    {
         response->setStatusCode(405);
-        response->setBody(readFile("/var/www/error-pages/405.html"));
-    }
 
 }
 

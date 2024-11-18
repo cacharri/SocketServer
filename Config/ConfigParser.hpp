@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/09 21:46:28 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/18 03:39:11 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@ class ConfigParser {
 		static  std::vector<ServerConfig>   parseServerConfigFile(const std::string& filename);
         static  void                        copyServerConfig(const ServerConfig& source, ServerConfig& destination);
         
+        static  void                        setDefaultErrorPages(ServerConfig& destination);
 		static                   size_t     parseSize(const std::string& sizeStr);
         static  void                        printLocationConfig(const ServerConfig& serverConfig);
 

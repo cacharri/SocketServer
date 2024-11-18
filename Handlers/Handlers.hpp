@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/17 00:47:10 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/18 14:35:58 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ class LocationConfig;
 #include <sstream>
 #include <vector>
 #include <map>
-
 
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
@@ -79,23 +78,21 @@ public:
 private:
     std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );
 };
+
+
 class DeleteHandler : public RequestHandler {
 public:
     DeleteHandler();
     virtual ~DeleteHandler();
+    virtual void    handle(const Request* request, Response* response, const LocationConfig& locationconfig);
+    static  void    remove_file_or_dir(const std::string& filepath, Response* response, const LocationConfig& locationconfig);
 
-    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig);
- //   std::string extractFilePathFromJson(const std::string& body);
-    std::string getQueryParam(const std::string& url, const std::string& param);
-    bool fileExists(const std::string& filepath);
-};
-
+private:
+    // bool validatePath(const std::string& path, const std::string& root) const;
+    // bool deleteResource(const std::string& path, Response* response);
+    // std::string constructResponseHtml(const std::string& filename, bool success);
+}; 
 
 std::string     readFile(const std::string& path);
-
-// void        handleHome(const Request& request, Response& response);
-// void        handleAbout(const Request& request, Response& response);
-
-
 
 #endif

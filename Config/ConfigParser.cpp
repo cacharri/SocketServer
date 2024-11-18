@@ -47,6 +47,8 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
     }
 }
 
+
+
 void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& destination)
 {
     destination.interface = source.interface;
@@ -80,6 +82,24 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 
     printLocationConfig(destination);
 }
+
+void                        ConfigParser::setDefaultErrorPages(ServerConfig& destination)
+{
+	destination.error_pages[204] = "var/www/error-pages/504.html";
+	destination.error_pages[400] = "var/www/error-pages/504.html";
+	destination.error_pages[403] = "var/www/error-pages/504.html";
+	destination.error_pages[404] = "var/www/error-pages/504.html";
+	destination.error_pages[405] = "var/www/error-pages/504.html";
+	destination.error_pages[408] = "var/www/error-pages/504.html";
+	destination.error_pages[413] = "var/www/error-pages/504.html";
+	destination.error_pages[414] = "var/www/error-pages/504.html";
+	destination.error_pages[500] = "var/www/error-pages/504.html";
+	destination.error_pages[501] = "var/www/error-pages/504.html";
+	destination.error_pages[502] = "var/www/error-pages/504.html";
+	destination.error_pages[503] = "var/www/error-pages/504.html";
+	destination.error_pages[504] = "var/www/error-pages/504.html";
+}
+
 
 std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string& filename)
 {

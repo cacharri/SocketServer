@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/17 01:11:05 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/18 15:07:17 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,11 @@ std::string     readFile(const std::string& path)
     std::ifstream file(path.c_str());
     if (!file.is_open())
     {
-        std::ifstream error_file("/var/www/error-pages/404.html");
+        std::ifstream error_file("/var/www/error-pages/500.html");
         if (!error_file.is_open())
-            return "404 not a page";
+            return "Internal Error";
         std::stringstream buffer;
-        buffer << file.rdbuf();
+        buffer << error_file.rdbuf();
         return buffer.str();
     }
     std::stringstream buffer;
@@ -47,7 +47,7 @@ std::vector<std::string> listFiles(const std::string& directoryPath) {
     std::vector<std::string> files;
 
     // Abrir el directorio
-    std::cout << " directorio" << directoryPath <<std::endl;
+    //std::cout << " directorio" << directoryPath <<std::endl;
     DIR* dir = opendir(directoryPath.c_str());
     if (dir == NULL) {
         std::cerr << "Error: No se pudo abrir el directorio " << directoryPath << std::endl;
@@ -117,8 +117,7 @@ std::string generateAutoIndexDelete(const std::string& directoryPath, const Loca
     for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it)
     {
         const std::string& filename = *it;
-        std::string filepath = directoryPath + filename;  
-        std::cout << "filepath en autoindex delete" << filepath << std::endl;
+        //std::cout << "filepath en autoindex delete" << filepath << std::endl;
         autoindexHtml += "<tr>";
         autoindexHtml += "<td>" + filename + "</td>";
 
@@ -126,7 +125,7 @@ std::string generateAutoIndexDelete(const std::string& directoryPath, const Loca
         autoindexHtml += "<td>";
         autoindexHtml += "<form action='/delete' method='POST'>";
         autoindexHtml += "<input type='hidden' name='archivo' value=";
-        autoindexHtml += "'" + filepath + "'>";
+        autoindexHtml += "'" + filename + "'>";
         autoindexHtml += "<input type='submit' name='boton' value='Delete'>";// Pasamos la ruta del archivo
         autoindexHtml += "</form>";
         autoindexHtml += "</td>";
@@ -153,100 +152,90 @@ GetHandler::~GetHandler()
 void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
     //std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        std::string fullpath(cwd);
-        std::string requested_resource = request->getUri();
-        //std::cout << requested_resource << std::endl;
-        
-        fullpath += locationconfig.root;
+    std::string fullpath(cwd);
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+        fullpath.append(cwd);
     
-        //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
-        LOG_INFO(fullpath);
-        if (locationconfig.cgi_pass.empty() == false)
-        {
-            CgiHandler cgi_handler_instance;
-            cgi_handler_instance.handle(request, response, locationconfig);
-            response->setStatusCode(201);
-            LOG_INFO("CGI Resource");
+    //std::cout << requested_resource << std::endl;
+    fullpath += locationconfig.root;
+    if (fullpath[fullpath.length()-1] != '/' && locationconfig.index[0] != '/')
+        fullpath += '/';
+    else if (fullpath[fullpath.length()-1] == '/' && locationconfig.index[0] == '/')
+        fullpath.resize(fullpath.size() - 1);
+    fullpath += locationconfig.index;
+
+    //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
+    LOG_INFO(fullpath);
+    if (locationconfig.cgi_pass.empty() == false)
+    {
+        CgiHandler cgi_handler_instance;
+        cgi_handler_instance.handle(request, response, locationconfig);
+        response->setStatusCode(201);
+        LOG_INFO("CGI Resource");
+        return ;
+    }
+    else if (!locationconfig.redirect.empty())
+    {
+        response->setHeader("Location", locationconfig.redirect);
+        std::ostringstream oss;
+        oss << locationconfig.redirect_type;
+        std::string body = "<html><body><h1>" + oss.str() + " " +
+                        (locationconfig.redirect_type == 301 ? "Moved Permanently" : "Found") +
+                        "</h1></body></html>";
+        response->setBody(body);
+        response->setStatusCode(locationconfig.redirect_type);
+        return;
+    }
+    if (std::find(locationconfig.methods.begin(), locationconfig.methods.end(), "DELETE") != locationconfig.methods.end())
+    {
+        std::string fileContent = generateAutoIndexDelete(fullpath, locationconfig);
+        response->setStatusCode(200);
+        response->setBody(fileContent);
+        response->setHeader("Content-Type", "text/html");
+        LOG_INFO(" Delete autoindex page resource");
+        return ;
+    }
+    else if (fullpath[fullpath.size() - 1] == '/')
+    {
+        struct stat buffer;
+        if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
+            if (locationconfig.autoindex) {
+                std::string fileContent = generateAutoIndex(fullpath);
+                response->setStatusCode(200);
+                response->setBody(fileContent);
+                response->setHeader("Content-Type", "text/html");
+                LOG_INFO("AUTOINDEX resource");
+            } else {
+                LOG_INFO("Forbidden resource");
+                response->setStatusCode(403);
+            }
             return ;
         }
-        if (!locationconfig.redirect.empty())
-        {
-            response->setHeader("Location", locationconfig.redirect);
-            std::ostringstream oss;
-            oss << locationconfig.redirect_type;
-            std::string body = "<html><body><h1>" + oss.str() + " " +
-                            (locationconfig.redirect_type == 301 ? "Moved Permanently" : "Found") +
-                            "</h1></body></html>";
-            response->setBody(body);
-            response->setStatusCode(locationconfig.redirect_type);
-            return;
-        }
-        else if (fullpath[fullpath.size() - 1] == '/')
-        {
-            struct stat buffer;
-
-            if (request->getUri().compare("/delete") == 0)
-            {
-                if (locationconfig.autoindex) {
-                    std::string fileContent = generateAutoIndexDelete(fullpath, locationconfig);
-                    response->setStatusCode(200);
-                    response->setBody(fileContent);
-                    response->setHeader("Content-Type", "text/html");
-                    LOG_INFO("AUTOINDEX UPLOAD resource");
-                } else {
-                    LOG_INFO("Forbidden resource");
-                    response->setStatusCode(403);
-                    response->setBody(readFile("/var/www/error-pages/403.html"));
-                }
-                return ;
-
-            }
-            if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
-                if (locationconfig.autoindex) {
-                    std::string fileContent = generateAutoIndex(fullpath);
-                    response->setStatusCode(200);
-                    response->setBody(fileContent);
-                    response->setHeader("Content-Type", "text/html");
-                    LOG_INFO("AUTOINDEX resource");
-                } else {
-                    LOG_INFO("Forbidden resource");
-                    response->setStatusCode(403);
-                    response->setBody(readFile("/var/www/error-pages/403.html"));
-                }
-                return ;
-            }
-        }
-
-        else{
-            
-            if (access(fullpath.c_str(), F_OK) != 0) {
-                response->setStatusCode(404);
-                response->setBody(readFile("/var/www/error-pages/404.html"));
-            }
-            //std::cout << fullpath.c_str() << std::endl;
-            std::ifstream file(fullpath.c_str());
-            if (!file.is_open())
-            {
-                response->setStatusCode(404);
-                response->setBody(readFile("/var/www/error-pages/404.html"));
-            }
-            
-            std::stringstream bufferStream;
-            bufferStream << file.rdbuf();
-            
-            if (!(bufferStream.str().empty()))
-            {
-                response->setStatusCode(200);
-                response->setBody(bufferStream.str());
-                response->setHeader("Content-Type", response->getMimeType(fullpath));
-                LOG_INFO("Read Resource Succesfully");
-            }
-        }
     }
-    else {
-        LOG_INFO("Failed current Directory Read");
-        response->setStatusCode(500);
-        response->setBody(readFile("/var/www/error-pages/500.html"));
+    else{
+
+        // GET READ FILE
+        //std::cout << fullpath.c_str() << std::endl;
+        if (access(fullpath.c_str(), F_OK) != 0) {
+            response->setStatusCode(404);
+            return ;
+        }
+        std::ifstream file(fullpath.c_str());
+        if (!file.is_open())
+        {
+            response->setStatusCode(404);
+            return ;
+        }
+        
+        std::stringstream bufferStream;
+        bufferStream << file.rdbuf();
+        
+        if (!(bufferStream.str().empty()))
+        {
+            response->setStatusCode(200);
+            response->setBody(bufferStream.str());
+            response->setHeader("Content-Type", response->getMimeType(fullpath));
+            LOG_INFO("Read Resource Succesfully");
+        }
     }
 }

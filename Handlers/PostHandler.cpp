@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/17 02:11:13 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/18 14:37:41 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,6 @@ PostHandler::~PostHandler()
 void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
 {   
     //std::cout << "Received POST request" << std::endl;
-    DeleteHandler deleteHandlerInstance;
     //request->print();
 
     std::string contentType = request->getHeader("Content-Type");
@@ -87,24 +86,16 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         }
     }
     else if (contentType == "application/x-www-form-urlencoded") {
-
-        std::string requestBody = request->getBody();
-        std::map<std::string, std::string> formData = parseUrlFormData(requestBody);
-    //    std::string responseBody;
-   //     responseBody += "SUuuuuuu";
+        std::map<std::string, std::string> formData = parseUrlFormData(request->getBody());
         
-    
-        //std::cout << "DEletear este archivo "<< formData.at("archivo") << std::endl;
-        //std::cout << "url decode " << urlDecode(formData.at("boton")) << std::endl;
-
-        if (request->getUri() == "/delete")
-        {
-            deleteFilefromDatabase(formData, *response, locationconfig);
+        // Si c'est une demande de suppression via formulaire
+        if (request->getUri() == "/delete" && !(urlDecode(formData["archivo"]).empty()) && !(urlDecode(formData["boton"]).empty()) ) {
+            DeleteHandler deleteHandler;
+            deleteHandler.remove_file_or_dir(urlDecode(formData["archivo"]), response, locationconfig);
+            return;
         }
         else
-        {
             appendUsertoDatabase(formData, *response, locationconfig);
-        }
     }
 
    
@@ -186,7 +177,7 @@ void    PostHandler::appendUsertoDatabase(std::map<std::string, std::string>& fo
         std::string age = urlDecode(formData["age"]);
         std::string gender = urlDecode(formData["gender"]);
         std::string comments = urlDecode(formData["comments"]);
-
+        
         std::cout << "Decoded name: " << name << std::endl;
 
         std::string upload_path = ((locationconfig.upload_store[locationconfig.upload_store.size() - 1] == '/') 
@@ -218,49 +209,6 @@ void    PostHandler::appendUsertoDatabase(std::map<std::string, std::string>& fo
         responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
         responseBody += "</body></html>";
 }
-
-void     PostHandler::deleteFilefromDatabase(std::map<std::string, std::string>& formData, Response& response, const LocationConfig& locationconfig)
-{
-    std::string responseBody;
-    std::string resourcePath = urlDecode(formData.at("archivo"));
-    std::string file;
-    if ((resourcePath.find(".")!= std::string::npos))
-    {
-        size_t pos = resourcePath.rfind("/");
-        file = resourcePath.substr(pos + 1);
-    }
-// Verificar si el archivo o directorio existe
-    struct stat fileStat;
-    if (stat(resourcePath.c_str(), &fileStat) != 0) {
-        LOG_INFO("NO EXISTE");
-        responseBody = "<html><body><h1>403 Not Found</h1></body></html>";
-        response.setStatusCode(404);
-    //    response->setBody("<html><body><h1>404 Not Found</h1></body></html>");
-        return;
-    }
-
-    if (S_ISDIR(fileStat.st_mode)) {
-        if (rmdir(resourcePath.c_str()) == 0) {
-            response.setStatusCode(204);
-        } else {
-            response.setStatusCode(403);
-            responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
-        }
-    } else {
-        if (remove(resourcePath.c_str()) == 0) {
-            responseBody = "<html><body><h1>File deleted Successfully</h1>";
-            responseBody += "<p>File deleted : " + file + "</p>";
-            responseBody += "</body></html>";
-            response.setStatusCode(201);
-            LOG_INFO("ARCHIVO BORRADO");
-        } else {
-            responseBody = "<html><body><h1>403 Forbidden</h1></body></html>";
-            response.setStatusCode(403);
-        }
-    response.setBody(responseBody);
-    }
-}
-
 
 bool PostHandler::saveFile(const std::string& filename, const std::string& data)
 {
