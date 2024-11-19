@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/18 14:35:58 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/19 18:23:29 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ class LocationConfig;
 class RequestHandler {
 public:
     virtual ~RequestHandler() {}
-    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig) = 0;
+    virtual void handle(const Request* request, Response* response, LocationConfig& locationconfig) = 0;
 };
 
 class GetHandler : public RequestHandler
@@ -49,7 +49,7 @@ class GetHandler : public RequestHandler
         GetHandler();
         ~GetHandler();
         
-        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);        
+        virtual void        handle(const Request* request, Response* response, LocationConfig& locationconfig);        
 };
 
 class PostHandler : public RequestHandler 
@@ -57,7 +57,7 @@ class PostHandler : public RequestHandler
     public:
         PostHandler();
         ~PostHandler();
-        virtual void        handle(const Request* request, Response* response, const LocationConfig& locationconfig);
+        virtual void        handle(const Request* request, Response* response, LocationConfig& locationconfig);
     private:
             bool                                saveFile(const std::string& filename, const std::string& data);
             std::string                         urlDecode(const std::string &str);
@@ -73,7 +73,7 @@ class CgiHandler : public RequestHandler
 public:
     CgiHandler();
     virtual ~CgiHandler();
-    virtual void handle(const Request* request, Response* response, const LocationConfig& locationconfig);
+    virtual void handle(const Request* request, Response* response, LocationConfig& locationconfig);
     
 private:
     std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );
@@ -84,8 +84,8 @@ class DeleteHandler : public RequestHandler {
 public:
     DeleteHandler();
     virtual ~DeleteHandler();
-    virtual void    handle(const Request* request, Response* response, const LocationConfig& locationconfig);
-    static  void    remove_file_or_dir(const std::string& filepath, Response* response, const LocationConfig& locationconfig);
+    virtual void    handle(const Request* request, Response* response, LocationConfig& locationconfig);
+    static  void    remove_file_or_dir(Response* response, const LocationConfig& locationconfig);
 
 private:
     // bool validatePath(const std::string& path, const std::string& root) const;

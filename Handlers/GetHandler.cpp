@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 14:50:45 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/19 18:23:50 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ GetHandler::~GetHandler()
 }
 
 
-void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
+void GetHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) {
     std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
     std::string fullpath(cwd);

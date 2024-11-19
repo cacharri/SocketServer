@@ -47,7 +47,7 @@ DeleteHandler::~DeleteHandler() {
 // }
 
 
-void DeleteHandler::remove_file_or_dir(const std::string& filepath, Response* response, const LocationConfig& Locationconfig)
+void DeleteHandler::remove_file_or_dir(Response* response, const LocationConfig& Locationconfig)
 {
     // Verificar si el archivo o directorio existe
     char        cwd[PATH_MAX];
@@ -56,13 +56,9 @@ void DeleteHandler::remove_file_or_dir(const std::string& filepath, Response* re
         fullpath.append(cwd);
 
     fullpath += Locationconfig.root;
-    if (fullpath[fullpath.length()-1] != '/' && filepath[0] != '/')
-        fullpath += '/';
-    else if (fullpath[fullpath.length()-1] == '/' && filepath[0] == '/')
-        fullpath.resize(fullpath.size() - 1);
+
     
-    //fullpath += filepath;
-    //std::cout << fullpath << std::endl;
+    std::cout << fullpath << std::endl;
     struct stat fileStat;
     if (stat(fullpath.c_str(), &fileStat) != 0) {
         response->setStatusCode(403);
@@ -84,11 +80,11 @@ void DeleteHandler::remove_file_or_dir(const std::string& filepath, Response* re
 
 
 
-void DeleteHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
+void DeleteHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
 {
     LOG_INFO("DELETE request on route;");
     LOG_INFO(request->getUri());
-    remove_file_or_dir(locationconfig.root, response, locationconfig);
+    remove_file_or_dir(response, locationconfig);
 }
 
 

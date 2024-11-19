@@ -57,7 +57,10 @@ void    Http::configure(const std::string&  configfile)
     std::vector<ServerConfig> serverConfigs = ConfigParser::parseServerConfigFile(configfile);
 
     if (serverConfigs.empty())
-        LOG_EXCEPTION(ServerError("Configuration file does not have a valid Server Configuration."));
+    {
+        LOG("Configuration file does not have a valid Server Configuration.");
+        return ;
+    }
     
     try{
         
@@ -76,10 +79,9 @@ void    Http::configure(const std::string&  configfile)
 
 void    Http::free_servers()
 {
-    LOG_INFO("Shutting down servers ...");
-    for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); ++it)
-        // (*it)->~Server();
+    for (std::list<Server*>::iterator it = servers.begin(); it != servers.end(); it++)
         delete (*it);
+    LOG_INFO("Shutting down servers ...");
     servers.clear();
 }
 
@@ -97,9 +99,10 @@ void Http::setupSignalHandlers(Http* http)
 
 void    Http::launch_all()
 {
-    LOG_INFO("All servers are launching... Press CTRL+C to quit");
     
     std::list<Server*>::iterator it = servers.begin();
+    if (it == servers.end())
+        return ;
     try {
         for (; it != servers.end(); it++)
             (*it)->init();
@@ -107,6 +110,7 @@ void    Http::launch_all()
         delete (*it);
         servers.erase(it);
     }
+    LOG_INFO("All servers are launching... Press CTRL+C to quit");
 
     std::vector<pollfd> master_fds;
     

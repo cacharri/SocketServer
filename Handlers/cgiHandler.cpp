@@ -8,7 +8,7 @@ CgiHandler::CgiHandler() {}
 CgiHandler::~CgiHandler() {}
 
 
-void CgiHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) 
+void CgiHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) 
 {
     std::string scriptPath = locationconfig.root; // Ruta del archivo
     if (locationconfig.root.find(".py") == std::string::npos)

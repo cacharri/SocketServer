@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 15:24:15 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/19 18:50:08 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ PostHandler::~PostHandler()
     
 }
 
-void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
+void        PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
 {   
     std::cout << "Received POST request" << std::endl;
     //request->print();
@@ -96,9 +96,18 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         
         // Si c'est une demande de suppression via formulaire
         if (request->getUri() == "/delete" && !(urlDecode(formData["archivo"]).empty()) && !(urlDecode(formData["boton"]).empty()) ) {
-            DeleteHandler deleteHandler;
-            deleteHandler.remove_file_or_dir(urlDecode(formData["archivo"]), response, locationconfig);
+            DeleteHandler   deleteHandler;
+            std::string     filepath(urlDecode(formData["archivo"]));
+            
+            if (locationconfig.root[locationconfig.root.length()-1] != '/' && filepath[0] != '/')
+                locationconfig.root += std::string("/");
+            else if (locationconfig.root[locationconfig.root.length()-1] == '/' && filepath[0] == '/')
+                locationconfig.root.resize(locationconfig.root.size() - 1);
+                
+            locationconfig.root += filepath;
+            deleteHandler.remove_file_or_dir(response, locationconfig);
             return;
+            
         }
         else
             appendUsertoDatabase(formData, *response, locationconfig);
