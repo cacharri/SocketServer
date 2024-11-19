@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/18 14:37:41 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/19 15:24:15 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,18 @@ PostHandler::~PostHandler()
 
 void        PostHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig)
 {   
-    //std::cout << "Received POST request" << std::endl;
+    std::cout << "Received POST request" << std::endl;
     //request->print();
 
     std::string contentType = request->getHeader("Content-Type");
     //std::cout << "Content type is " << contentType << std::endl;
+    if (contentType.empty())
+    {
+        //std::cout << "yooo2" << std::endl;
+        response->setStatusCode(200);
+        std::cout << request->getBody() << std::endl;
+        response->setBody(request->getBody());
+    }
     if ((!locationconfig.cgi_pass.empty()))
     {
             CgiHandler cgi_handler_instance;
@@ -82,7 +89,6 @@ void        PostHandler::handle(const Request* request, Response* response, cons
             response->setBody(responseBody);
         } else {
             response->setStatusCode(400);
-            response->setBody(readFile("/var/www/error-pages/400.html"));
         }
     }
     else if (contentType == "application/x-www-form-urlencoded") {
@@ -96,6 +102,12 @@ void        PostHandler::handle(const Request* request, Response* response, cons
         }
         else
             appendUsertoDatabase(formData, *response, locationconfig);
+    }
+    else
+    {
+        response->setStatusCode(200);
+        std::cout << request->getBody() << std::endl;
+        response->setBody(request->getBody());
     }
 
    

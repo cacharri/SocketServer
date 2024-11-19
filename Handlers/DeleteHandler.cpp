@@ -61,7 +61,8 @@ void DeleteHandler::remove_file_or_dir(const std::string& filepath, Response* re
     else if (fullpath[fullpath.length()-1] == '/' && filepath[0] == '/')
         fullpath.resize(fullpath.size() - 1);
     
-    fullpath += filepath;
+    //fullpath += filepath;
+    //std::cout << fullpath << std::endl;
     struct stat fileStat;
     if (stat(fullpath.c_str(), &fileStat) != 0) {
         response->setStatusCode(403);

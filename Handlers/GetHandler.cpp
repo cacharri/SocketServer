@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/18 15:07:17 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/19 14:50:45 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,19 +150,18 @@ GetHandler::~GetHandler()
 
 
 void GetHandler::handle(const Request* request, Response* response, const LocationConfig& locationconfig) {
-    //std::cout << "Received GET request" << std::endl;
+    std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
     std::string fullpath(cwd);
     if (getcwd(cwd, sizeof(cwd)) != NULL)
-        fullpath.append(cwd);
+        fullpath.assign(cwd);
     
-    //std::cout << requested_resource << std::endl;
     fullpath += locationconfig.root;
-    if (fullpath[fullpath.length()-1] != '/' && locationconfig.index[0] != '/')
-        fullpath += '/';
-    else if (fullpath[fullpath.length()-1] == '/' && locationconfig.index[0] == '/')
-        fullpath.resize(fullpath.size() - 1);
-    fullpath += locationconfig.index;
+    // if (fullpath[fullpath.length()-1] != '/' && locationconfig.index[0] != '/')
+    //     fullpath += '/';
+    // else if (fullpath[fullpath.length()-1] == '/' && locationconfig.index[0] == '/')
+    //     fullpath.resize(fullpath.size() - 1);
+    // fullpath += locationconfig.index;
 
     //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
     LOG_INFO(fullpath);
@@ -186,7 +185,7 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         response->setStatusCode(locationconfig.redirect_type);
         return;
     }
-    if (std::find(locationconfig.methods.begin(), locationconfig.methods.end(), "DELETE") != locationconfig.methods.end())
+    else if (request->getUri().compare("/delete") == 0)
     {
         std::string fileContent = generateAutoIndexDelete(fullpath, locationconfig);
         response->setStatusCode(200);
@@ -195,7 +194,7 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         LOG_INFO(" Delete autoindex page resource");
         return ;
     }
-    else if (fullpath[fullpath.size() - 1] == '/')
+    else if (fullpath[fullpath.size() - 1] == '/' )
     {
         struct stat buffer;
         if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
@@ -213,9 +212,9 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
         }
     }
     else{
-
         // GET READ FILE
         //std::cout << fullpath.c_str() << std::endl;
+        
         if (access(fullpath.c_str(), F_OK) != 0) {
             response->setStatusCode(404);
             return ;
@@ -237,5 +236,6 @@ void GetHandler::handle(const Request* request, Response* response, const Locati
             response->setHeader("Content-Type", response->getMimeType(fullpath));
             LOG_INFO("Read Resource Succesfully");
         }
+        response->setStatusCode(200);
     }
 }
