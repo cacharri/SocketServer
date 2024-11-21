@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 16:02:01 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/21 18:46:23 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,6 @@
 Request::Request(ClientInfo& info_ref)
     : info(info_ref)
 {
-    try {
-        // leer toda la request de 'golpe' hasta client_max_body_size como limite
-        if (!readData(info_ref.pfd.fd, info.client_max_body_size))
-            throw RequestError("Failed to read request data");
-    }
-    catch (const std::exception& e) {
-        throw RequestError(e.what());
-    }
 }
 
 bool Request::readData(const size_t& ClientFd, size_t maxSize)
@@ -57,9 +49,9 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         }
         else
             throw RequestError("Invalid request format: no header delimiter found");
-
     }
 
+    std::cout << headers << std::endl;
     //std::cout << "Headers : " << headers << std::endl;
     if (!headerComplete)
     {
@@ -130,19 +122,28 @@ bool    Request::readContentLengthBody(const size_t& ClientFd, size_t contentLen
 {
     // Leer body teniendo en cuenta el COntent-legnht como limite
     size_t totalBodyRead = 0;
+    std::cout << contentLength << std::endl;
     while (totalBodyRead < contentLength)
     {
         //std::cout << "loop read body" << std::endl;
         ssize_t bytesRead = recv(ClientFd, &tempBody[totalBodyRead], contentLength - totalBodyRead, 0);
         //std::cout << "I read " << bytesRead << "From body" << std::endl;
-        if (bytesRead <= 0)
+        if (bytesRead < 0)
         {
             LOG_INFO("ADIOS invalid body read");
-            return false;        
+            return false;
+        }
+        else if (bytesRead == 0)
+        {
+            LOG_INFO("finished");
+            break ;
         }
         totalBodyRead += bytesRead;
+        std::cout << "Leido: " << totalBodyRead << std::endl;
     }
     body += tempBody;
+    std::cout << "tamaño body: " << body.size() << std::endl;
+
     return true;
 }
 
@@ -170,6 +171,7 @@ size_t  Request::parseContentLength(std::string&  headers, size_t max_size)
  
 //  Formato de datos chunked:
 //  [tamaño en hex]\r\n
+//  [datos]\r\n
 //  [datos]\r\n
 //  [siguiente tamaño en hex]\r\n
 //  [datos]\r\n

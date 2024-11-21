@@ -85,7 +85,7 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 
 void                        ConfigParser::setDefaultErrorPages(ServerConfig& destination)
 {
-	destination.error_pages[204] = "var/www/error-pages/504.html";
+	destination.error_pages[204] = "var/www/error-pages/204.html";
 	destination.error_pages[400] = "var/www/error-pages/504.html";
 	destination.error_pages[403] = "var/www/error-pages/504.html";
 	destination.error_pages[404] = "var/www/error-pages/504.html";

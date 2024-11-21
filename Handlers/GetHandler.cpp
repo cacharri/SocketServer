@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 18:23:50 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/21 17:54:49 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ std::string generateAutoIndex(const std::string& directory) {
 
                 struct stat fileStat;
                 if (stat(filepath.c_str(), &fileStat) == 0) {
-                    autoindexHtml += "<tr><td><a href=\"" + filename + "\">" + filename + "</a></td>"; // Ruta relativa
+                    autoindexHtml += "<tr><td><a href=\"/uploads/" + filename + "\">" + filename + "</a></td>"; // Ruta relativa
                     autoindexHtml += "<td>" + formatSize(fileStat.st_size) + "</td>"; // Tamaño del archivo
                     autoindexHtml += "<td>" + formatDateTime(fileStat.st_mtime) + "</td>"; // Fecha de modificación
                     autoindexHtml += "</tr>";

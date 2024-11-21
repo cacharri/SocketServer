@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/30 01:50:01 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/06 14:12:45 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/21 18:36:19 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,7 @@ Client::Client(ClientInfo* info)
     : clientFd(info->pfd.fd)
     , session_info(info)
 {
-    try {
-        request = new Request(*session_info);
-    }
-    catch (const std::exception& RequestError){
-        throw ClientError(RequestError.what());
-    }
-    response = new Response();
+
 }
 
 Client::~Client()
@@ -59,7 +53,17 @@ void        Client::setLastActivity() const
 
 bool Client::HandleConnection()
 {
-    
+    response = new Response();
+    try {
+        request = new Request(*session_info);
+        if (request->readData((*session_info).pfd.fd, (*session_info).client_max_body_size) == false)
+            return false;
+    }
+    catch (const std::exception& RequestError){
+        LOG(RequestError.what());
+        return false;
+    }
+
     return true;
 }
 

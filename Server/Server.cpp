@@ -105,13 +105,16 @@ void Server::handleClient(ClientInfo* client)
     try {
         Client clientHandler(client);
         
+        clientHandler.HandleConnection();
         analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
         router.route(clientHandler.getRequest(), clientHandler.getResponse());
         setErrorPageFromStatusCode(clientHandler.getResponse());
         sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+        close(client->pfd.fd);
         clientHandler.setLastActivity();
         if (clientHandler.shouldKeepAlive() == false)
             removeClient(client);
+        
         // if (handleRedirects())
         // {
 
