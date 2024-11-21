@@ -65,14 +65,21 @@ void DeleteHandler::remove_file_or_dir(Response* response, const LocationConfig&
         return;
     }
 
+
     if (S_ISDIR(fileStat.st_mode)) {
         if (rmdir(fullpath.c_str()) == 0)
-            response->setStatusCode(204);
+        {
+            response->setBody("<html><body><h1>Directory Removed Successfully!</h1><p><a href='/delete'>Delete another file</a></p><p><a href='/'>Go back to home</a></p></body></html>");
+            response->setStatusCode(201);
+        }
         else
             response->setStatusCode(403);
     } else {
         if (remove(fullpath.c_str()) == 0)
-            response->setStatusCode(204);
+        {
+            response->setBody("<html><body><h1>File Removed Successfully!</h1><p><a href='/delete'>Delete another file</a></p><p><a href='/'>Go back to home</a></p></body></html>");
+            response->setStatusCode(201);
+        }
         else
             response->setStatusCode(403);
     }

@@ -214,7 +214,6 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
     else{
         // GET READ FILE
         //std::cout << fullpath.c_str() << std::endl;
-        
         if (access(fullpath.c_str(), F_OK) != 0) {
             response->setStatusCode(404);
             return ;
