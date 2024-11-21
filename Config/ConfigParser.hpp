@@ -23,6 +23,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <unistd.h>
 
 struct LocationConfig {
     std::string					root;  //directorio raiz 
@@ -64,6 +65,11 @@ class ConfigParser {
         static  void                        setDefaultErrorPages(ServerConfig& destination);
 		static                   size_t     parseSize(const std::string& sizeStr);
         static  void                        printLocationConfig(const ServerConfig& serverConfig);
+        static  bool                        validateSyntax(const std::string& configFilePath);
+        static  void                        validateServerParams(const ServerConfig& serverConfig);
+        static  std::string                 intToString(int value);
+        static  void                        validateLocationParams(const LocationConfig& locationConfig);
+        static  void                        validateMethods(const std::vector<std::string>& methods);
 
         class ConfigError: public std::exception
         {

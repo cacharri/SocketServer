@@ -23,8 +23,8 @@ void CgiHandler::handle(const Request* request, Response* response, LocationConf
     env["REQUEST_METHOD"] = request->getMethod();
     env["CONTENT_TYPE"] = request->getHeader("Content-Type");
     env["PATH_INFO"] = locationconfig.cgi_pass;//request->getPath();
-   // env["QUERY_STRING"] = request->getUri();
-   // env["REMOTEaddr"] = to_string(locationconfig->HostHeader.host);
+    // env["QUERY_STRING"] = request->getUri();
+    // env["REMOTEaddr"] = to_string(locationconfig->HostHeader.host);
     //env["REMOTE_IDENT"] =
     //env["REMOTE_USRER"] =
     //env["REQUEST_URI"] = request->getPath() + request->getUri();
@@ -72,7 +72,9 @@ void handle_alarm(int sig) {
         time_t elapsed = current_time - current_process.start_time;
         
         if (elapsed >= CGI_TIMEOUT) {
-            LOG_INFO("CGI Timeout: Process running for " + elapsed);
+            std::ostringstream oss;
+            oss << elapsed;
+            LOG_INFO("CGI Timeout: Process running for " + oss.str());
             kill(current_process.pid, SIGKILL);
         }
     }
@@ -191,7 +193,7 @@ std::string CgiHandler::executeCgi(const std::string& scriptPath,
         usleep(1000);  // Evitar sobrecarga de CPU
     }
 
-    // COmprobar si el proceso se han terminado por una alarma
+    // Comprobar si el proceso se han terminado por una alarma
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
         return "Request timeouted";
     }

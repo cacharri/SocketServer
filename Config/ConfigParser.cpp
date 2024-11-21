@@ -99,128 +99,208 @@ void                        ConfigParser::setDefaultErrorPages(ServerConfig& des
 	destination.error_pages[503] = "var/www/error-pages/504.html";
 	destination.error_pages[504] = "var/www/error-pages/504.html";
 }
+bool ConfigParser::validateSyntax(const std::string& configFilePath) {
+    std::ifstream file(configFilePath.c_str());
+    if (!file.is_open()) {
+        throw ConfigError("Configuration file cannot be opened: " + configFilePath);
+    }
 
+    int openServerBlocks = 0, openLocationBlocks = 0;
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.find("server {") != std::string::npos) openServerBlocks++;
+        if (line.find("location") != std::string::npos) openLocationBlocks++;
+        if (line.find("}") != std::string::npos) {
+            if (openLocationBlocks > 0) openLocationBlocks--;
+            else if (openServerBlocks > 0) openServerBlocks--;
+        }
+    }
+    file.close();
+    if (openServerBlocks != 0 || openLocationBlocks != 0) {
+        throw ConfigError("Unmatched blocks in configuration file.");
+    }
+    return true;
+}
+
+bool isValidIP(const std::string& ip) {
+    int dots = 0;
+    size_t pos = 0;
+    while ((pos = ip.find('.', pos)) != std::string::npos) {
+        dots++;
+        pos++;
+    }
+    return dots == 3;
+}
+
+void ConfigParser::validateServerParams(const ServerConfig& serverConfig) {
+    if (serverConfig.interface.empty() || !isValidIP(serverConfig.interface)) {
+        throw ConfigError("Invalid or missing host in server configuration: " + serverConfig.interface);
+    }
+
+    for (std::vector<int>::const_iterator it = serverConfig.ports.begin(); it != serverConfig.ports.end(); ++it) {
+        if (*it <= 0 || *it > 65535) {
+            throw ConfigError("Invalid port number: " + intToString(*it));
+        }
+    }
+}
+
+std::string ConfigParser::intToString(int value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+void ConfigParser::validateMethods(const std::vector<std::string>& methods) {
+    static const char* validMethods[] = {"GET", "POST", "DELETE"};
+    for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
+        bool isValid = false;
+        for (size_t i = 0; i < sizeof(validMethods) / sizeof(validMethods[0]); i++) {
+            if (*it == validMethods[i]) {
+                isValid = true;
+                break;
+            }
+        }
+        if (!isValid) {
+            throw ConfigError("Unsupported HTTP method: " + *it);
+        }
+    }
+}
 
 std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string& filename)
 {
-	std::ifstream configFile(filename.c_str());
-	if (!configFile.is_open())
-	{
-			std::string msg("Could not open configuration file !");
-			msg += filename;
-            ConfigError error(msg);
-            LOG(error.what());
-			return std::vector<ServerConfig>();
+    if (!validateSyntax(filename)) {
+        throw ConfigError("Invalid syntax in configuration file.");
     }
 
-	std::string line;
-	ServerConfig currentServer;
-	LocationConfig currentLocation;
-	bool inServerBlock = false;
-	bool inLocationBlock = false;
-	std::string currentLocationPath;
+    std::ifstream configFile(filename.c_str());
+    if (!configFile.is_open()) {
+        std::string msg("Could not open configuration file: ");
+        msg += filename;
+        throw ConfigError(msg);
+    }
 
-	std::vector<ServerConfig> servers;
+    std::string line;
+    ServerConfig currentServer;
+    LocationConfig currentLocation;
+    bool inServerBlock = false;
+    bool inLocationBlock = false;
+    std::string currentLocationPath;
 
-	while (std::getline(configFile, line)) {
-		std::istringstream iss(line);
-		std::string token;
-		iss >> token;
+    std::vector<ServerConfig> servers;
 
-		if (token == "server") {
-			inServerBlock = true;
-			currentServer = ServerConfig();
-			//std::cout << "[CONF]: Found New Server" << std::endl;
+    while (std::getline(configFile, line)) {
+        std::istringstream iss(line);
+        std::string token;
+        iss >> token;
 
-		} else if (token == "location") {
-			inLocationBlock = true;
-			iss >> currentLocationPath;
-			currentLocation = LocationConfig();
-			//std::cout << "[CONF]: Found New Endpoint" << std::endl;
-		} else if (token == "}") {
-			if (inLocationBlock) {
-				inLocationBlock = false;
-				currentServer.locations[currentLocationPath] = currentLocation;
-			} else if (inServerBlock) {
-				inServerBlock = false;
-				servers.push_back(currentServer);
-			}
-		} else if (inServerBlock && (token.size() > 1)) {
-			if (token == "host") {
-				iss >> currentServer.interface;
-			} else if (token == "port") {
-				int	in_port;
-				iss >> in_port;
-				currentServer.ports.push_back(in_port);
-			} else if (token == "server_name") {
-				iss >> currentServer.server_name;
-			} else if (token == "error_page") {
-				int errorCode;
-				std::string errorPage;
-				iss >> errorCode >> errorPage;
-				currentServer.error_pages[errorCode] = errorPage;
-			} else if (token == "client_max_body_size" && !inLocationBlock) {
-				std::string sizeStr;
-				iss >> sizeStr;
-				if (!(sizeStr.empty()))
-					currentServer.client_max_body_size = parseSize(sizeStr);
-				else
-					currentServer.client_max_body_size = parseSize("20K");
-			} else if (inLocationBlock) {
-				if (token == "root") {
-					iss >> currentLocation.root;
-					//std::cout << "[CONF]: Set Root " << currentLocation.root << std::endl;
-				} else if (token == "index") {
-					iss >> currentLocation.index;
-					//std::cout << "[CONF]: Set Index " << currentLocation.index << std::endl;
+        if (token == "server") {
+            if (inServerBlock) {
+                throw ConfigError("Nested 'server' blocks are not allowed.");
+            }
+            inServerBlock = true;
+            currentServer = ServerConfig();
 
-				} else if (token == "autoindex") {
-					std::string value;
-					iss >> value;
-					currentLocation.autoindex = (value == "on");
-					//std::cout << "[CONF]: Set autoIndex " << currentLocation.autoindex << std::endl;
-				} else if (token == "method") {
-					std::string method;
-					while (iss >> method) {
-						currentLocation.methods.push_back(method);
-						//std::cout << "[CONF]: Added allowed method " << method << std::endl;
-					}
-				} else if (token == "allow_upload") {
-					std::string value;
-					iss >> value;
-					currentLocation.allow_upload = (value == "on");
-					//std::cout << "[CONF]: Allow Uppload " << currentLocation.allow_upload << std::endl;
-				} else if (token == "upload_store") {
-					iss >> currentLocation.upload_store;
-					//std::cout << "[CONF]: upload_store " << currentLocation.upload_store << std::endl;
-				} else if (token == "cgi_pass") {
-					iss >> currentLocation.cgi_pass;
-					//std::cout << "[CONF]: cgi-pass " << currentLocation.cgi_pass << std::endl;
-				} else if (token == "client_max_body_size")	{
-					std::string sizeStr;
-					iss >> sizeStr;
-					if (!(sizeStr.empty()))
-						currentLocation.client_max_body_size = parseSize(sizeStr);
-					else
-						currentLocation.client_max_body_size = parseSize("20K");
-				} else if (token == "return") {
+        } else if (token == "location") {
+            if (!inServerBlock) {
+                throw ConfigError("'location' block found outside of a 'server' block.");
+            }
+            inLocationBlock = true;
+            iss >> currentLocationPath;
+            currentLocation = LocationConfig();
+
+        } else if (token == "}") {
+            if (inLocationBlock) {
+                inLocationBlock = false;
+
+                validateMethods(currentLocation.methods);
+                currentServer.locations[currentLocationPath] = currentLocation;
+
+            } else if (inServerBlock) {
+                inServerBlock = false;
+
+                // Validar parámetros del servidor antes de agregarlo a la lista
+                validateServerParams(currentServer);
+                servers.push_back(currentServer);
+            }
+
+        } else if (inServerBlock && token.size() > 1) {
+            // Procesar configuraciones de servidores
+            if (token == "host") {
+                iss >> currentServer.interface;
+
+            } else if (token == "port") {
+                int in_port;
+                iss >> in_port;
+                currentServer.ports.push_back(in_port);
+
+            } else if (token == "server_name") {
+                iss >> currentServer.server_name;
+
+            } else if (token == "error_page") {
+                int errorCode;
+                std::string errorPage;
+                iss >> errorCode >> errorPage;
+                currentServer.error_pages[errorCode] = errorPage;
+
+            } else if (token == "client_max_body_size") {
+                std::string sizeStr;
+                iss >> sizeStr;
+                if (!sizeStr.empty()) {
+                    currentServer.client_max_body_size = parseSize(sizeStr);
+                }
+
+            } else if (inLocationBlock) {
+                // Procesar configuraciones de ubicaciones
+                if (token == "root") {
+                    iss >> currentLocation.root;
+
+                } else if (token == "index") {
+                    iss >> currentLocation.index;
+
+                } else if (token == "autoindex") {
+                    std::string value;
+                    iss >> value;
+                    currentLocation.autoindex = (value == "on");
+
+                } else if (token == "method") {
+                    std::string method;
+                    while (iss >> method) {
+                        currentLocation.methods.push_back(method);
+                    }
+
+                } else if (token == "allow_upload") {
+                    std::string value;
+                    iss >> value;
+                    currentLocation.allow_upload = (value == "on");
+
+                } else if (token == "upload_store") {
+                    iss >> currentLocation.upload_store;
+
+                } else if (token == "cgi_pass") {
+                    iss >> currentLocation.cgi_pass;
+
+                } else if (token == "client_max_body_size") {
+                    std::string sizeStr;
+                    iss >> sizeStr;
+                    if (!sizeStr.empty()) {
+                        currentLocation.client_max_body_size = parseSize(sizeStr);
+                    }
+
+                } else if (token == "return") {
                     int statusCode;
                     std::string redirectUrl;
                     iss >> statusCode >> redirectUrl;
                     currentLocation.redirect = redirectUrl;
                     currentLocation.redirect_type = statusCode;
-                    if (statusCode == 301) {
-                        std::cout << "[CONF]: Set redirect (301) " << currentLocation.redirect << std::endl;
-                    } else if (statusCode == 302) {
-                        std::cout << "[CONF]: Set redirect (302) " << currentLocation.redirect << std::endl;
-                    }
-        
-				}
-			}
-		}
-	}
-	return servers;
+                }
+            }
+        }
+    }
+
+    configFile.close();
+    return servers;
 }
+
 
 size_t ConfigParser::parseSize(const std::string& sizeStr)
 {
