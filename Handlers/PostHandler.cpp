@@ -60,6 +60,7 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
             std::string fileData;
             std::string filename;
             fileData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store, filename);
+            std::string responseBody;
 
             // Check if fileData is empty
             if (request->getBody().empty())
@@ -68,6 +69,21 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
                 response->setBody(readFile("/var/www/error-pages/400.html"));
                 return;
             }
+            struct stat fileStat;
+            if (stat((filename).c_str(), &fileStat) == 0) {
+                LOG_INFO("FILE ALLREADY EXIST");
+                std::string body = "<html><head><title>File Upload</title></head><body>";
+                body += "<h2>File already exists.</h2>";
+                body += "<p><a href='/upload'>Upload another file</a></p>";
+                body += "<p><a href='/'>Go back to home</a></p>";
+                body += "</body></html>";
+
+                // Establecemos la respuesta
+                response->setBody(body);
+                response->setStatusCode(201);  // Respuesta OK
+                return;
+            }
+
 
             // Save the file and check for errors
             if (!saveFile(filename, fileData))
@@ -76,17 +92,17 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
                 response->setBody(readFile("/var/www/error-pages/500.html"));
                 return;
             }
-            response->setHeader("Content-Type", "text/html; charset=UTF-8");
-            std::string responseBody = "<html><body>";
-            responseBody += "<h1>File Uploaded Successfully!</h1>";
-            responseBody += "<p>Your file has been uploaded as: " + filename + "</p>";
-            responseBody += "<script>localStorage.setItem('uploadedFileName', '" + filename + "');</script>";
-            responseBody += "<p><a href='/upload'>Upload another file</a></p>";
-            responseBody += "<p><a href='/'>Go back to home</a></p>";
-            responseBody += "</body></html>";
+                response->setHeader("Content-Type", "text/html; charset=UTF-8");
+                responseBody = "<html><body>";
+                responseBody += "<h1>File Uploaded Successfully!</h1>";
+                responseBody += "<p>Your file has been uploaded as: " + filename + "</p>";
+                responseBody += "<script>localStorage.setItem('uploadedFileName', '" + filename + "');</script>";
+                responseBody += "<p><a href='/upload'>Upload another file</a></p>";
+                responseBody += "<p><a href='/'>Go back to home</a></p>";
+                responseBody += "</body></html>";
 
-            response->setStatusCode(201);
-            response->setBody(responseBody);
+                response->setStatusCode(201);
+                response->setBody(responseBody);
         } else {
             response->setStatusCode(400);
         }
