@@ -23,7 +23,108 @@ PostHandler::~PostHandler()
     
 }
 
-void        PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
+void PostHandler::handleMultipartFormData(const Request* request, Response* response, LocationConfig& locationconfig) {
+    std::string contentType = request->getHeader("Content-Type");
+    size_t boundaryPos = contentType.find("boundary=");
+    if (boundaryPos == std::string::npos) {
+        response->setStatusCode(400);
+        response->setBody(readFile("/var/www/error-pages/400.html"));
+        return;
+    }
+
+    std::string boundary = contentType.substr(boundaryPos + 9); // Longitud de "boundary="
+    std::string filename;
+    std::string fileData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store, filename);
+
+    if (fileData.empty()) {
+        response->setStatusCode(400);
+        response->setBody(readFile("/var/www/error-pages/400.html"));
+        return;
+    }
+
+    if (!saveFile(filename, fileData)) {
+        response->setStatusCode(500);  // Internal Server Error
+        response->setBody(readFile("/var/www/error-pages/500.html"));
+        return;
+    }
+
+    response->setStatusCode(201);  // Created
+    response->setBody("<html><body><h1>File Uploaded Successfully!</h1></body></html>");
+}
+
+void PostHandler::handleUrlFormEncoded(const Request* request, Response* response, LocationConfig& locationconfig) {
+    // Obtener el cuerpo de la solicitud
+    std::string body = request->getBody();
+
+    // Parsear el cuerpo como pares clave-valor
+    std::map<std::string, std::string> formData = parseUrlFormData(body);
+
+    // Si no hay datos, responde con un error
+    if (formData.empty()) {
+        response->setStatusCode(400); // Bad Request
+        response->setBody(readFile("/var/www/error-pages/400.html"));
+        return;
+    }
+
+    // Procesar datos específicos del formulario (ejemplo: almacenar en un archivo)
+    if (formData.find("name") != formData.end() && formData.find("email") != formData.end()) {
+        // Guardar los datos en una base de datos o archivo
+        appendUsertoDatabase(formData, *response, locationconfig);
+        return;
+    }
+
+    // Respuesta genérica para datos no procesados
+    std::string responseBody = "<html><body>";
+    responseBody += "<h1>Formulario Recibido</h1>";
+    for (std::map<std::string, std::string>::const_iterator it = formData.begin(); it != formData.end(); ++it) {
+        responseBody += "<p>" + escapeHtml(it->first) + ": " + escapeHtml(it->second) + "</p>";
+    }
+    responseBody += "</body></html>";
+
+    response->setStatusCode(200); // OK
+    response->setBody(responseBody);
+}
+
+
+void PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) {
+    std::cout << "Received POST request" << std::endl;
+
+    // Verificar si el cuerpo está vacío
+    if (request->getBody().empty()) {
+        LOG("EMPTY BODY POST REQUEST");
+        response->setStatusCode(400);  // Bad Request
+        response->setBody(readFile("/var/www/error-pages/400.html"));
+        return;
+    }
+
+    // Verificar si el cuerpo excede el tamaño máximo permitido
+    size_t maxBodySize = locationconfig.client_max_body_size;
+    if (request->getBody().size() > maxBodySize) {
+        LOG("Request body exceeds maximum allowed size");
+        response->setStatusCode(413);  // Payload Too Large
+        response->setBody(readFile("/var/www/error-pages/413.html"));
+        return;
+    }
+
+    // Manejar multipart/form-data
+    if (request->getHeader("Content-Type").find("multipart/form-data") != std::string::npos) {
+        handleMultipartFormData(request, response, locationconfig);
+        return;
+    }
+
+    // Manejar application/x-www-form-urlencoded
+    if (request->getHeader("Content-Type") == "application/x-www-form-urlencoded") {
+        handleUrlFormEncoded(request, response, locationconfig);
+        return;
+    }
+
+    // Caso por defecto: Responder con el cuerpo recibido
+    response->setStatusCode(200);
+    response->setBody(request->getBody());
+}
+
+
+/*void        PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
 {   
     std::cout << "Received POST request" << std::endl;
     //request->print();
@@ -136,7 +237,7 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
     }
 
    
-}
+}*/
 
 
 

@@ -20,62 +20,98 @@ Request::Request(ClientInfo& info_ref)
 {
 }
 
-bool Request::readData(const size_t& ClientFd, size_t maxSize)
-{
-    char buffer[1046];  // Buffer de talla razonable
+std::string Request::getErrorPagePath(int errorCode) {
+    std::stringstream path;
+    path << "var/www/error-pages/" << errorCode << ".html";
+    return path.str();
+}
+
+void Request::sendErrorPage(const size_t& ClientFd, const std::string& errorPagePath) {
+    std::ifstream errorFile(errorPagePath.c_str());
+    if (!errorFile.is_open()) {
+        LOG_INFO("Error page not found: " + errorPagePath);
+        std::string response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+        send(ClientFd, response.c_str(), response.size(), 0);
+        return;
+    }
+
+    std::stringstream buffer;
+    buffer << errorFile.rdbuf();
+    errorFile.close();
+
+    std::string response = buffer.str();
+    ssize_t bytesSent = send(ClientFd, response.c_str(), response.size(), 0);
+
+    if (bytesSent < 0) {
+        LOG_INFO("Failed to send error page to client.");
+    }
+}
+
+bool Request::readData(const size_t& ClientFd, size_t maxSize) {
+    char buffer[1046];
     size_t totalRead = 0;
     bool headerComplete = false;
     std::string tempBody;
     std::string headers;
 
-    // leer headers del fd
-    while (totalRead < sizeof(buffer) - 1) {
-        ssize_t bytesRead = recv(ClientFd, buffer + totalRead, sizeof(buffer) - totalRead - 1, 0);
-        if (bytesRead <= 0)
-        {
-            LOG_INFO("ADIOS invalid headers read");
-            return false;        
-        }
-        totalRead += bytesRead;
-        
-        // comprobar si hemos llegado al final de los headers
-        char *endHeaders = strstr(buffer, "\r\n\r\n");
-        if (endHeaders != NULL)
-        {
-            headerComplete = true;
-            headers = std::string(buffer, endHeaders - buffer + 4);
-            tempBody += std::string(endHeaders + 4);
-            break;
-        }
-        else
-            throw RequestError("Invalid request format: no header delimiter found");
-    }
+    try {
+        // Leer headers
+        while (totalRead < sizeof(buffer) - 1) {
+            ssize_t bytesRead = recv(ClientFd, buffer + totalRead, sizeof(buffer) - totalRead - 1, 0);
+            if (bytesRead <= 0) {
+                LOG_INFO("Error al leer los headers del cliente");
+                return false;
+            }
+            totalRead += bytesRead;
+            buffer[totalRead] = '\0';
 
-    std::cout << headers << std::endl;
-    //std::cout << "Headers : " << headers << std::endl;
-    if (!headerComplete)
-    {
-        LOG_INFO("ADIOS headers incomplete");
-        return false;        
-    }
-    parseRequest(buffer);
+            char *endHeaders = strstr(buffer, "\r\n\r\n");
+            if (endHeaders != NULL) {
+                headerComplete = true;
+                headers = std::string(buffer, endHeaders - buffer + 4);
+                tempBody += std::string(endHeaders + 4);
+                break;
+            }
+        }
 
-    // Comprobar Transfer-encoding para chunked mode
-    std::string transferEncoding = getHeader("Transfer-Encoding");
-    if (transferEncoding == "chunked")
-        return readChunkedBody(ClientFd);
-    else {
+        if (!headerComplete) {
+            LOG_INFO("Headers incompletos");
+            return false;
+        }
+
+        parseRequest(headers);
+
         size_t contentLength = parseContentLength(headers, maxSize);
-        if (tempBody.size() >= contentLength - 1)
-        {
-            body += tempBody;
-            return true;
+        if (contentLength > maxSize) {
+            std::string errorPagePath = getErrorPagePath(413);
+            sendErrorPage(ClientFd, errorPagePath);
+            close(ClientFd);
+            return false;
         }
-        tempBody.resize(contentLength);
-        return readContentLengthBody(ClientFd, contentLength, tempBody);
+
+        // Leer cuerpo
+        size_t totalBodyRead = 0;
+        while (totalBodyRead < contentLength) {
+            size_t toRead = std::min(contentLength - totalBodyRead, sizeof(buffer));
+            ssize_t bytesRead = recv(ClientFd, buffer, toRead, 0);
+            if (bytesRead <= 0) {
+                LOG_INFO("Error al leer el cuerpo del cliente");
+                return false;
+            }
+            tempBody.append(buffer, bytesRead);
+            totalBodyRead += bytesRead;
+        }
+
+        body += tempBody;
+        return true;
+    } catch (const RequestError& e) {
+        std::string errorPagePath = getErrorPagePath(500);
+        sendErrorPage(ClientFd, errorPagePath);
+        LOG_INFO("Request error: " + std::string(e.what()));
+        return false;
     }
-    return true;
 }
+
 
 void Request::parseRequest(std::string headers) {
     // Parsing status-line
@@ -147,22 +183,25 @@ bool    Request::readContentLengthBody(const size_t& ClientFd, size_t contentLen
     return true;
 }
 
-size_t  Request::parseContentLength(std::string&  headers, size_t max_size)
-{
-    // Parsear Content-Length
+size_t Request::parseContentLength(std::string& headers, size_t max_size) {
     size_t contentLength = 0;
     size_t contentLengthPos = headers.find("Content-Length: ");
     if (contentLengthPos != std::string::npos) {
-        size_t lengthStart = contentLengthPos + 16; // valor de "Content-Length: "
+        size_t lengthStart = contentLengthPos + 16; // Longitud de "Content-Length: "
         size_t lengthEnd = headers.find("\r\n", lengthStart);
         std::string lengthStr = headers.substr(lengthStart, lengthEnd - lengthStart);
         contentLength = static_cast<size_t>(atoi(lengthStr.c_str()));
     }
-    // comprobar que el tamano sea menor que el de la config 
-    if (contentLength > max_size)
+
+    // Verificar si el tamaño excede el máximo permitido
+    if (contentLength > max_size) {
+        std::string errorPage = getErrorPagePath(413); // Ruta a la página de error
+        sendErrorPage(info.pfd.fd, errorPage);         // Enviar la página de error al cliente
         throw RequestError("Request body exceeds maximum allowed size");
+    }
     return contentLength;
 }
+
 
 
 //  Lee datos en formato chunked de un socket

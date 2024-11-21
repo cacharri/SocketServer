@@ -100,31 +100,39 @@ void Server::removeClient(ClientInfo* client)
 }
 
 
-void Server::handleClient(ClientInfo* client)
-{
+void Server::handleClient(ClientInfo* client) {
     try {
         Client clientHandler(client);
-        
-        clientHandler.HandleConnection();
+
+        if (!clientHandler.HandleConnection()) {
+            LOG_INFO("Connection handling failed.");
+            close(client->pfd.fd); // Cerrar la conexión
+            removeClient(client); // Eliminar cliente
+            return;
+        }
+
         analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
         router.route(clientHandler.getRequest(), clientHandler.getResponse());
         setErrorPageFromStatusCode(clientHandler.getResponse());
         sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
-        close(client->pfd.fd);
-        clientHandler.setLastActivity();
-        if (clientHandler.shouldKeepAlive() == false)
-            removeClient(client);
-        
-        // if (handleRedirects())
-        // {
 
-        // }
-    }
-    catch (const std::exception& e) {
+        if (!clientHandler.shouldKeepAlive()) {
+            close(client->pfd.fd);
+            removeClient(client);
+        } else {
+            clientHandler.setLastActivity();
+        }
+    } catch (const std::exception& e) {
+        LOG("Error handling client: " + std::string(e.what()));
+        Response errorResponse;
+        errorResponse.setStatusCode(500);
+        errorResponse.setBody(readFile("var/www/error-pages/500.html"));
+        sendResponse(client->pfd.fd, errorResponse.toString());
+        close(client->pfd.fd);
         removeClient(client);
-        LOG(e.what());
     }
 }
+
 
 
 bool    Server::IsTimeout(ClientInfo* client)

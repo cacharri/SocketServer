@@ -35,12 +35,13 @@ public:
     Request(ClientInfo& info_ref);
 
     bool readData(const size_t& ClientFd, size_t maxSize);
-    size_t  parseContentLength(std::string&  headers, size_t max_size);
     bool    readChunkedBody(const size_t& ClientFd);
     bool    readContentLengthBody(const size_t& ClientFd, size_t contentLength, std::string& tempBody);
 
     void    parseRequest(std::string headers);
-
+    std::string getErrorPagePath(int errorCode);
+    void    sendErrorPage(const size_t& ClientFd, const std::string& errorPagePath);
+    size_t  parseContentLength(std::string& headers, size_t max_size);
 
     // void readStatusLine(const size_t& ClientFd);
     // void readHeaders(const size_t& ClientFd);
