@@ -100,31 +100,36 @@ void Server::removeClient(ClientInfo* client)
 }
 
 
-void Server::handleClient(ClientInfo* client)
-{
+void Server::handleClient(ClientInfo* client) {
     try {
         Client clientHandler(client);
-        
-        clientHandler.HandleConnection();
-        analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
-        router.route(clientHandler.getRequest(), clientHandler.getResponse());
-        setErrorPageFromStatusCode(clientHandler.getResponse());
-        sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
-        close(client->pfd.fd);
-        clientHandler.setLastActivity();
-        if (clientHandler.shouldKeepAlive() == false)
-            removeClient(client);
-        
-        // if (handleRedirects())
-        // {
 
-        // }
-    }
-    catch (const std::exception& e) {
+        if (clientHandler.HandleConnection() == false) {
+            setErrorPageFromStatusCode(clientHandler.getResponse());
+            sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            removeClient(client);
+        }
+        else
+        {
+            analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
+            router.route(clientHandler.getRequest(), clientHandler.getResponse());
+            setErrorPageFromStatusCode(clientHandler.getResponse());
+            sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            if (!clientHandler.shouldKeepAlive())
+                removeClient(client);
+            else
+                clientHandler.setLastActivity();
+        }
+    } catch (const std::exception& e) {
+        LOG("Error handling client: " + std::string(e.what()));
+        Response errorResponse;
+        errorResponse.setStatusCode(500);
+        errorResponse.setBody(readFile("var/www/error-pages/500.html"));
+        sendResponse(client->pfd.fd, errorResponse.toString());
         removeClient(client);
-        LOG(e.what());
     }
 }
+
 
 
 bool    Server::IsTimeout(ClientInfo* client)
@@ -145,19 +150,28 @@ bool    Server::IsTimeout(ClientInfo* client)
     return false;
 }
 
+std::string Server::getErrorPagePath(Response*    response) {
+
+    int errorCode = response->getStatusCode();
+    std::stringstream path;
+    path << "var/www/error-pages/" << errorCode << ".html";
+    return path.str();
+}
+
 void        Server::setErrorPageFromStatusCode(Response*    response)
 {
-    std::string filepath = config.error_pages[response->getStatusCode()];
+    std::string filepath = getErrorPagePath(response);
+    std::cout << filepath << std::endl;
     if (filepath.empty())
         return ;
     std::ifstream file(filepath.c_str());
     if (!file.is_open())
     {
-        LOG("Invalid file error page");
         return ;
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
+    std::cout << buffer.str() << std::endl;
     response->setBody(buffer.str());
 
 }

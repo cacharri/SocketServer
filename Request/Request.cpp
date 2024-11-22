@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 14:05:46 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 15:17:18 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,37 @@ Request::Request(ClientInfo& info_ref)
 {
 }
 
+// std::string Request::getErrorPagePath(int errorCode) {
+//     std::stringstream path;
+//     path << "var/www/error-pages/" << errorCode << ".html";
+//     return path.str();
+// }
+
+// void Request::sendErrorPage(const size_t& ClientFd, const std::string& errorPagePath) {
+//     std::ifstream errorFile(errorPagePath.c_str());
+//     if (!errorFile.is_open()) {
+//         LOG_INFO("Error page not found: " + errorPagePath);
+//         std::string response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+//         send(ClientFd, response.c_str(), response.size(), 0);
+//         return;
+//     }
+
+//     std::stringstream buffer;
+//     buffer << errorFile.rdbuf();
+//     errorFile.close();
+
+//     std::string response = buffer.str();
+//     ssize_t bytesSent = send(ClientFd, response.c_str(), response.size(), 0);
+
+//     if (bytesSent < 0) {
+//         LOG_INFO("Failed to send error page to client.");
+//     }
+// }
 bool Request::readData(const size_t& ClientFd, size_t maxSize)
 {
     std::string buffer;
     buffer.reserve(HEADERS_SIZE);
+
     size_t totalRead = 0;
     size_t chunkSize = 2; // leo 2 bytes por 2 bytes
 
@@ -83,14 +110,12 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
 
         // Handle Content-Length
         if (contentLength > maxSize)
-        {
-            LOG_INFO("Headers exceed maximum allowed size");
             return false;
-        }
 
         return readContentLengthBody(ClientFd, contentLength);
     }
 }
+
 
 void Request::parseRequest(std::string headers) {
     // Parsing status-line
@@ -182,6 +207,7 @@ size_t  Request::parseContentLength()
 
     return contentLength;
 }
+
 
 
 //  Lee datos en formato chunked de un socket

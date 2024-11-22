@@ -91,7 +91,7 @@ void                        ConfigParser::setDefaultErrorPages(ServerConfig& des
 	destination.error_pages[404] = "var/www/error-pages/504.html";
 	destination.error_pages[405] = "var/www/error-pages/504.html";
 	destination.error_pages[408] = "var/www/error-pages/504.html";
-	destination.error_pages[413] = "var/www/error-pages/504.html";
+	destination.error_pages[413] = "var/www/error-pages/413.html";
 	destination.error_pages[414] = "var/www/error-pages/504.html";
 	destination.error_pages[500] = "var/www/error-pages/504.html";
 	destination.error_pages[501] = "var/www/error-pages/504.html";

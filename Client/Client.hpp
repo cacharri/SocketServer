@@ -59,6 +59,7 @@ public:
     ~Client();
 
     bool        HandleConnection();
+    std::string to_string(int value);
 
     Request*    getRequest();
     Response*   getResponse();
@@ -66,7 +67,8 @@ public:
     bool        shouldKeepAlive()const;
     time_t      getLastActivity() const;
     
-    void        setLastActivity() const; 
+    void        setLastActivity() const;
+    void        sendRResponse(int clientSocket, const std::string& response); 
 
     class ClientError : public std::exception {
         private:

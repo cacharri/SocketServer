@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/17 01:36:19 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 15:39:03 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,8 @@ private:
     // Headers functions
     void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
     void        setErrorPageFromStatusCode(Response*    response);
+    std::string getErrorPagePath(Response*    response);
+
     void        sendResponse(int clientSocket, const std::string& response);
     
     // Disable copy constructor and assignment operator

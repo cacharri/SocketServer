@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 12:44:25 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 16:14:20 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,18 +43,6 @@ public:
 
     void    parseRequest(std::string headers);
 
-
-    // void readStatusLine(const size_t& ClientFd);
-    // void readHeaders(const size_t& ClientFd);
-    // bool readBody(const size_t& ClientFd);
-    // bool readContentLengthBody(const size_t& ClientFd, size_t length);
-    // bool readChunkedBody(const size_t& ClientFd);
-
-    // bool HostHeader();
-    // bool ConnectionHeader();
-    // bool ContentLengthHeader();
-    // void ContentTypeHeader();
-    
     // void parse(const std::string& rawRequest);
     void print(void) const;
     

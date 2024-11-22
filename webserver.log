@@ -19,3 +19,11 @@
 [ Sat Nov 16 12:56:21 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
 [ Sat Nov 16 12:56:25 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
 [ Sat Nov 16 13:29:10 2024 ] [ Server/Server.cpp:118 ] Failed to read request data
+[ Thu Nov 21 19:05:07 2024 ] [ Handlers/PostHandler.cpp:55 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:05:07 2024 ] [ Handlers/PostHandler.cpp:55 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:11:44 2024 ] [ Handlers/PostHandler.cpp:55 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:11:44 2024 ] [ Handlers/PostHandler.cpp:55 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:19:08 2024 ] [ Handlers/PostHandler.cpp:94 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:19:08 2024 ] [ Handlers/PostHandler.cpp:94 ] EMPTY BODY POST REQUEST
+[ Thu Nov 21 19:33:40 2024 ] [ Server/Server.cpp:158 ] Invalid file error page
+[ Thu Nov 21 20:53:02 2024 ] [ Handlers/PostHandler.cpp:94 ] EMPTY BODY POST REQUEST
