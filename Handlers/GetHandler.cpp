@@ -3,32 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   GetHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/21 17:54:49 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 14:35:22 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Handlers.hpp"
 #include "../Router/Router.hpp"
-
-std::string     readFile(const std::string& path)
-{
-    std::ifstream file(path.c_str());
-    if (!file.is_open())
-    {
-        std::ifstream error_file("/var/www/error-pages/500.html");
-        if (!error_file.is_open())
-            return "Internal Error";
-        std::stringstream buffer;
-        buffer << error_file.rdbuf();
-        return buffer.str();
-    }
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
 
 std::string formatDateTime(time_t time) {
     struct tm* timeInfo = localtime(&time);
@@ -164,6 +147,8 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
     // fullpath += locationconfig.index;
 
     //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
+    fullpath = urlDecode(fullpath);
+    fullpath = escapeHtml(fullpath);
     LOG_INFO(fullpath);
     if (locationconfig.cgi_pass.empty() == false)
     {

@@ -18,6 +18,7 @@ SRC = main.cpp \
 	Response/Response.cpp \
 	Router/Router.cpp \
 	Headers/HeadersUtils.cpp \
+	Handlers/handlers_utils.cpp \
 	Handlers/GetHandler.cpp \
 	Handlers/PostHandler.cpp \
 	Handlers/cgiHandler.cpp  \

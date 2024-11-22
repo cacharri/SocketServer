@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 18:23:29 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 14:35:41 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,8 @@ private:
     // std::string constructResponseHtml(const std::string& filename, bool success);
 }; 
 
-std::string     readFile(const std::string& path);
+std::string                         urlDecode(const std::string &str);
+std::string                         escapeHtml(const std::string& data);
+std::string                         readFile(const std::string& path);
 
 #endif

@@ -102,7 +102,8 @@ void                        ConfigParser::setDefaultErrorPages(ServerConfig& des
 bool ConfigParser::validateSyntax(const std::string& configFilePath) {
     std::ifstream file(configFilePath.c_str());
     if (!file.is_open()) {
-        throw ConfigError("Configuration file cannot be opened: " + configFilePath);
+        LOG("Configuration file cannot be opened: " + configFilePath);
+        return false;
     }
 
     int openServerBlocks = 0, openLocationBlocks = 0;
@@ -117,7 +118,8 @@ bool ConfigParser::validateSyntax(const std::string& configFilePath) {
     }
     file.close();
     if (openServerBlocks != 0 || openLocationBlocks != 0) {
-        throw ConfigError("Unmatched blocks in configuration file.");
+        LOG("Unmatched blocks in configuration file.");
+        return false;
     }
     return true;
 }
@@ -132,16 +134,24 @@ bool isValidIP(const std::string& ip) {
     return dots == 3;
 }
 
-void ConfigParser::validateServerParams(const ServerConfig& serverConfig) {
-    if (serverConfig.interface.empty() || !isValidIP(serverConfig.interface)) {
-        throw ConfigError("Invalid or missing host in server configuration: " + serverConfig.interface);
+bool    ConfigParser::validateServerParams(const ServerConfig& serverConfig) {
+    if (serverConfig.interface.empty() || !isValidIP(serverConfig.interface))
+    {
+        std::string msg("Invalid or missing host in server configuration: ");
+        msg += serverConfig.interface;
+        LOG(msg);
+        return false;
     }
 
     for (std::vector<int>::const_iterator it = serverConfig.ports.begin(); it != serverConfig.ports.end(); ++it) {
         if (*it <= 0 || *it > 65535) {
-            throw ConfigError("Invalid port number: " + intToString(*it));
+            std::string msg("Invalid port number: ");
+            msg += intToString(*it); 
+            LOG(msg); 
+            return false;
         }
     }
+    return true;
 }
 
 std::string ConfigParser::intToString(int value) {
@@ -150,33 +160,34 @@ std::string ConfigParser::intToString(int value) {
     return oss.str();
 }
 
-void ConfigParser::validateMethods(const std::vector<std::string>& methods) {
+bool    ConfigParser::validateMethods(const std::vector<std::string>& methods) {
     static const char* validMethods[] = {"GET", "POST", "DELETE"};
     for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); ++it) {
-        bool isValid = false;
         for (size_t i = 0; i < sizeof(validMethods) / sizeof(validMethods[0]); i++) {
             if (*it == validMethods[i]) {
-                isValid = true;
-                break;
+                return true;
             }
         }
-        if (!isValid) {
-            throw ConfigError("Unsupported HTTP method: " + *it);
-        }
     }
+    std::string msg("Unsupported HTTP method");
+    LOG(msg);
+    return false;
 }
 
 std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string& filename)
 {
+    std::vector<ServerConfig> servers;
     if (!validateSyntax(filename)) {
-        throw ConfigError("Invalid syntax in configuration file.");
+        LOG("Invalid syntax in configuration file.");
+        return servers;
     }
 
     std::ifstream configFile(filename.c_str());
     if (!configFile.is_open()) {
         std::string msg("Could not open configuration file: ");
         msg += filename;
-        throw ConfigError(msg);
+        LOG(msg);
+        return servers;
     }
 
     std::string line;
@@ -186,7 +197,6 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
     bool inLocationBlock = false;
     std::string currentLocationPath;
 
-    std::vector<ServerConfig> servers;
 
     while (std::getline(configFile, line)) {
         std::istringstream iss(line);
@@ -195,14 +205,16 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 
         if (token == "server") {
             if (inServerBlock) {
-                throw ConfigError("Nested 'server' blocks are not allowed.");
+                LOG("Nested 'server' blocks are not allowed.");
+                servers.clear();
+                return servers;
             }
             inServerBlock = true;
             currentServer = ServerConfig();
 
         } else if (token == "location") {
             if (!inServerBlock) {
-                throw ConfigError("'location' block found outside of a 'server' block.");
+                LOG("'location' block found outside of a 'server' block.");
             }
             inLocationBlock = true;
             iss >> currentLocationPath;
@@ -212,14 +224,22 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
             if (inLocationBlock) {
                 inLocationBlock = false;
 
-                validateMethods(currentLocation.methods);
+                if (validateMethods(currentLocation.methods) == false)
+                {
+                    servers.clear();
+                    return servers;
+                }
                 currentServer.locations[currentLocationPath] = currentLocation;
 
             } else if (inServerBlock) {
                 inServerBlock = false;
 
                 // Validar parámetros del servidor antes de agregarlo a la lista
-                validateServerParams(currentServer);
+                if (validateServerParams(currentServer) == false)
+                {
+                    servers.clear();
+                    return servers;
+                }
                 servers.push_back(currentServer);
             }
 

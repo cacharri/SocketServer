@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/18 03:39:11 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 14:48:21 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,10 +66,10 @@ class ConfigParser {
 		static                   size_t     parseSize(const std::string& sizeStr);
         static  void                        printLocationConfig(const ServerConfig& serverConfig);
         static  bool                        validateSyntax(const std::string& configFilePath);
-        static  void                        validateServerParams(const ServerConfig& serverConfig);
+        static  bool                        validateServerParams(const ServerConfig& serverConfig);
         static  std::string                 intToString(int value);
-        static  void                        validateLocationParams(const LocationConfig& locationConfig);
-        static  void                        validateMethods(const std::vector<std::string>& methods);
+        static  bool                        validateLocationParams(const LocationConfig& locationConfig);
+        static  bool                        validateMethods(const std::vector<std::string>& methods);
 
         class ConfigError: public std::exception
         {

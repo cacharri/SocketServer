@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 18:50:08 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 14:56:15 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -260,61 +260,6 @@ bool PostHandler::saveFile(const std::string& filename, const std::string& data)
     }
 }
 
-
-std::string                         PostHandler::urlDecode(const std::string &str) 
-{
-    std::string result;
-    char ch;
-    int i, ii;
-    for (i = 0; i < str.length(); i++) {
-        if (str[i] == '%') {
-            sscanf(str.substr(i + 1, 2).c_str(), "%x", &ii);
-            ch = static_cast<char>(ii);
-            result += ch;
-            i = i + 2;
-        } else if (str[i] == '+') {
-            result += ' ';
-        } else {
-            result += str[i];
-        }
-    }
-    return result;
-}
-
-std::string                         PostHandler::escapeHtml(const std::string& data) {
-    std::string result;
-    for (size_t i = 0; i < data.length(); ++i) {
-        unsigned char c = data[i];
-        switch (c) {
-            case '&': result += "&amp;"; break;
-            case '<': result += "&lt;"; break;
-            case '>': result += "&gt;"; break;
-            case '"': result += "&quot;"; break;
-            case '\'': result += "&#39;"; break;
-            // Acentos y caracteres especiales
-            case 0xC3:
-                if (i + 1 < data.length()) {
-                    unsigned char nextChar = data[i + 1];
-                    switch (nextChar) {
-                        case 0xA1: result += "&aacute;"; break;  // á
-                        case 0xA9: result += "&eacute;"; break;  // é
-                        case 0xAD: result += "&iacute;"; break;  // í
-                        case 0xB3: result += "&oacute;"; break;  // ó
-                        case 0xBA: result += "&uacute;"; break;  // ú
-                        case 0xB1: result += "&ntilde;"; break;  // ñ
-                        case 0x91: result += "&Ntilde;"; break;  // Ñ
-                        default: result += c; break;
-                    }
-                    i++;  // Salta el siguiente byte del carácter multibyte
-                } else {
-                    result += c;
-                }
-                break;
-            default: result += c; break;
-        }
-    }
-    return result;
-}
 
 
 
