@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/21 18:46:23 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 14:05:46 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,59 +22,74 @@ Request::Request(ClientInfo& info_ref)
 
 bool Request::readData(const size_t& ClientFd, size_t maxSize)
 {
-    char buffer[1046];  // Buffer de talla razonable
+    std::string buffer;
+    buffer.reserve(HEADERS_SIZE);
     size_t totalRead = 0;
-    bool headerComplete = false;
-    std::string tempBody;
-    std::string headers;
+    size_t chunkSize = 2; // leo 2 bytes por 2 bytes
 
-    // leer headers del fd
-    while (totalRead < sizeof(buffer) - 1) {
-        ssize_t bytesRead = recv(ClientFd, buffer + totalRead, sizeof(buffer) - totalRead - 1, 0);
-        if (bytesRead <= 0)
-        {
+    // Primera lectura para leer stausline y headers
+    while (true) {
+        char tempBuffer[chunkSize]; // Buffer pequeno 4byes temporal
+        ssize_t bytesRead = recv(ClientFd, tempBuffer, chunkSize, 0);
+        if (bytesRead <= 0) {
             LOG_INFO("ADIOS invalid headers read");
             return false;        
         }
+
+        // Anadir buffer pequeno al grande
+        buffer.append(tempBuffer, bytesRead);
         totalRead += bytesRead;
-        
-        // comprobar si hemos llegado al final de los headers
-        char *endHeaders = strstr(buffer, "\r\n\r\n");
-        if (endHeaders != NULL)
-        {
-            headerComplete = true;
-            headers = std::string(buffer, endHeaders - buffer + 4);
-            tempBody += std::string(endHeaders + 4);
+
+        // std::string print;
+        // print += tempBuffer[0];
+        // print +=  tempBuffer[1];
+        // std::cout << print << "|" << std::endl;
+        // hay un \r\n\r\n ? hemos llegado al final de los headers
+        if (buffer.find("\r\n\r\n") != std::string::npos) {
+            std::cout << "Found CLRF at " << totalRead << " bytes read" << std::endl;
             break;
         }
-        else
-            throw RequestError("Invalid request format: no header delimiter found");
-    }
+        else if (bytesRead && (tempBuffer[0] == '\r' || tempBuffer[0] == '\n'))
+            chunkSize = 1;
+        else if (bytesRead && (tempBuffer[0] != '\r' || tempBuffer[0] != '\n'))
+            chunkSize = 2;
+        
 
-    std::cout << headers << std::endl;
-    //std::cout << "Headers : " << headers << std::endl;
-    if (!headerComplete)
-    {
-        LOG_INFO("ADIOS headers incomplete");
-        return false;        
+        // Comprobar talla headers
+        if (totalRead >= HEADERS_SIZE) {
+            LOG_INFO("Headers exceed maximum allowed size");
+            return false;
+        }
     }
+    std::cout <<"Buffer \n" << std::endl;
+    std::cout << buffer << std::endl;
+    std::cout << "--------------" << std::endl;
+    // std::cout << "-------------------------\n\n--------------------\n" << std::endl;
+    // // Ponemos bien los headers por si
+    // size_t endHeadersPos = buffer.find("\r\n\r\n");
+    // std::string headers = buffer.substr(0, endHeadersPos + 4); // Include the CRLF
+    //std::cout << headers << std::endl;
+
+
+    // Parse the headers
     parseRequest(buffer);
 
-    // Comprobar Transfer-encoding para chunked mode
+    // Check Transfer-Encoding for chunked mode
     std::string transferEncoding = getHeader("Transfer-Encoding");
-    if (transferEncoding == "chunked")
+    if (transferEncoding == "chunked") {
         return readChunkedBody(ClientFd);
-    else {
-        size_t contentLength = parseContentLength(headers, maxSize);
-        if (tempBody.size() >= contentLength - 1)
+    } else {
+        size_t contentLength = parseContentLength();
+
+        // Handle Content-Length
+        if (contentLength > maxSize)
         {
-            body += tempBody;
-            return true;
+            LOG_INFO("Headers exceed maximum allowed size");
+            return false;
         }
-        tempBody.resize(contentLength);
-        return readContentLengthBody(ClientFd, contentLength, tempBody);
+
+        return readContentLengthBody(ClientFd, contentLength);
     }
-    return true;
 }
 
 void Request::parseRequest(std::string headers) {
@@ -114,53 +129,57 @@ void Request::parseRequest(std::string headers) {
 
             // Almacenar en headers, mapa de strings miembro del objeto Request
             this->headers[key] = value;
+            std::cout << "request headers added " << key << std::endl;
+        }
+        else 
+        {
+            std::cout << "found line in headers i dont know: " << line << std::endl;
         }
     }
 }
 
-bool    Request::readContentLengthBody(const size_t& ClientFd, size_t contentLength, std::string& tempBody)
+bool    Request::readContentLengthBody(const size_t& ClientFd, size_t contentLength)
 {
     // Leer body teniendo en cuenta el COntent-legnht como limite
     size_t totalBodyRead = 0;
-    std::cout << contentLength << std::endl;
+    std::string tempBody(contentLength, '\0'); // Body buffer
+    //std::cout << contentLength << std::endl;
     while (totalBodyRead < contentLength)
     {
-        //std::cout << "loop read body" << std::endl;
+        std::cout << "Voy a leer " << contentLength - totalBodyRead << std::endl;
+        if (contentLength - totalBodyRead < 2)
+            break;
         ssize_t bytesRead = recv(ClientFd, &tempBody[totalBodyRead], contentLength - totalBodyRead, 0);
-        //std::cout << "I read " << bytesRead << "From body" << std::endl;
-        if (bytesRead < 0)
-        {
-            LOG_INFO("ADIOS invalid body read");
-            return false;
-        }
-        else if (bytesRead == 0)
-        {
-            LOG_INFO("finished");
-            break ;
-        }
+        std::cout << "He leido " << bytesRead << " bytes" << std::endl;
         totalBodyRead += bytesRead;
-        std::cout << "Leido: " << totalBodyRead << std::endl;
+        std::cout << "En total llevo : " << totalBodyRead << "\n" <<std::endl;
+        if (bytesRead < 0) {
+            LOG_INFO("Error reading body data");
+            return false;
+        } else if (bytesRead == 0) {
+            LOG_INFO("Connection closed by client before reading complete body");
+            return false; 
+        }
     }
     body += tempBody;
-    std::cout << "tamaño body: " << body.size() << std::endl;
-
+    //std::cout << "tamaño body TOTAL: " << body.size() << std::endl;
     return true;
 }
 
-size_t  Request::parseContentLength(std::string&  headers, size_t max_size)
+size_t  Request::parseContentLength()
 {
+    
     // Parsear Content-Length
     size_t contentLength = 0;
-    size_t contentLengthPos = headers.find("Content-Length: ");
-    if (contentLengthPos != std::string::npos) {
-        size_t lengthStart = contentLengthPos + 16; // valor de "Content-Length: "
-        size_t lengthEnd = headers.find("\r\n", lengthStart);
-        std::string lengthStr = headers.substr(lengthStart, lengthEnd - lengthStart);
-        contentLength = static_cast<size_t>(atoi(lengthStr.c_str()));
+    std::map<std::string, std::string>::iterator header_iter = this->headers.find("Content-Length");
+    
+    if (header_iter != this->headers.end())
+    {
+        std::string  contentLength_Str(header_iter->second);
+        std::cout << "Content-length-value: " << header_iter->second << std::endl;
+        contentLength = static_cast<size_t>(atoi(contentLength_Str.c_str()));
     }
-    // comprobar que el tamano sea menor que el de la config 
-    if (contentLength > max_size)
-        throw RequestError("Request body exceeds maximum allowed size");
+
     return contentLength;
 }
 
@@ -180,10 +199,8 @@ size_t  Request::parseContentLength(std::string&  headers, size_t max_size)
 bool Request::readChunkedBody(const size_t& ClientFd)
 {
     LOG_INFO("Chunked request");
-    std::string tempBody;
-    char buffer[4096];
     size_t totalSize = 0;
-
+    std::string buffer;
     try {
         while (true)
         {
@@ -197,14 +214,14 @@ bool Request::readChunkedBody(const size_t& ClientFd)
                 ssize_t bytesRead = recv(ClientFd, &c, 1, 0);
                 if (bytesRead <= 0)
                     throw RequestError("Error leyendo tamaño del chunk");
-                std::cout << "readChar: " << c << std::endl;
+                //std::cout << "readChar: " << c <<"|"<< std::endl;
 
                 chunkSizeStr += c;
                 if (chunkSizeStr.length() >= 2 && 
                     chunkSizeStr[chunkSizeStr.length() - 2] == '\r' && 
                     chunkSizeStr[chunkSizeStr.length() - 1] == '\n')
                 {
-                    chunkSizeStr = chunkSizeStr.substr(0, chunkSizeStr.length() - 2);
+                    chunkSizeStr = chunkSizeStr.substr(0, chunkSizeStr.length());
                     foundCRLF = true;
                 }
                 //std::cout << "Got chunk of raw Size: " << chunkSizeStr << std::endl;
@@ -232,36 +249,27 @@ bool Request::readChunkedBody(const size_t& ClientFd)
                 throw RequestError("Tamaño del body excede el límite");
 
             // 5. Leer datos del chunk
-            size_t bytesRemaining = chunkSize;
-            std::string chunkData;
-
-            while (bytesRemaining > 0)
+            chunkSize += 2; // Para el \r\n al final contarlo
+            buffer.resize(chunkSize);
+            size_t totalBodyRead = 0;
+            while (totalBodyRead < chunkSize)
             {
-                size_t toRead = (bytesRemaining < sizeof(buffer)) ? bytesRemaining : sizeof(buffer);
-                ssize_t bytesRead = recv(ClientFd, buffer, toRead, 0);
+                std::cout << "Voy a leer " << chunkSize - totalBodyRead << std::endl;
+                if (chunkSize - totalBodyRead <= 1)
+                    break;
+                size_t bytesRead = recv(ClientFd, &buffer[totalBodyRead], chunkSize - totalBodyRead, 0);
                 if (bytesRead <= 0)
                     throw RequestError("Error leyendo datos del chunk");
-                
-
-                chunkData.append(buffer, bytesRead);
-                bytesRemaining -= bytesRead;
+                if (buffer.find_first_of("\r\n") != std::string::npos)
+                    buffer.erase(buffer.find_first_of("\r\n"));                
+                std::cout << "read of chunk; " << buffer << "|" << std::endl;
+                totalBodyRead += bytesRead;
             }
-
-            std::cout << "read of chunk; " << chunkData << std::endl;
-
-            // 6. Leer CRLF después del chunk
-            char crlf[2];
-            ssize_t bytesRead = recv(ClientFd, crlf, 2, 0);
-            if (bytesRead != 2 || crlf[0] != '\r' || crlf[1] != '\n')
-                throw RequestError("CRLF después del chunk inválido");
-
+            
             // 7. Añadir chunk al body
-            tempBody += chunkData;
             totalSize += chunkSize;
+            body.append(buffer);
         }
-        std::cout << "\nAll chunked Data: " << tempBody << std::endl;
-        body = tempBody;
-        
         return true;
     }
     catch (const RequestError& e) {

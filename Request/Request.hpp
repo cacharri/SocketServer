@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/19 14:50:45 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/22 12:44:25 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <sys/socket.h>
 
+#define HEADERS_SIZE 2048
+
 class Request {
 private:
     std::string method;
@@ -35,9 +37,9 @@ public:
     Request(ClientInfo& info_ref);
 
     bool readData(const size_t& ClientFd, size_t maxSize);
-    size_t  parseContentLength(std::string&  headers, size_t max_size);
+    size_t  parseContentLength();
     bool    readChunkedBody(const size_t& ClientFd);
-    bool    readContentLengthBody(const size_t& ClientFd, size_t contentLength, std::string& tempBody);
+    bool    readContentLengthBody(const size_t& ClientFd, size_t contentLength);
 
     void    parseRequest(std::string headers);
 
