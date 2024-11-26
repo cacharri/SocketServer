@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 13:27:17 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/26 17:55:14 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,4 +218,11 @@ std::string Response::getBody() const {
     return body;
 }
 
+std::string Response::getHeaders(const std::string& key) const
+{
+    std::map<std::string, std::string>::const_iterator it = headers.find(key);
+    if (it != headers.end()){
+        return it->second; // Key found, return the value
+    }
+}
 

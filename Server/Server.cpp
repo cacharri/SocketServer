@@ -99,6 +99,11 @@ void Server::removeClient(ClientInfo* client)
         clients.erase(it);
 }
 
+void    Server::handleCGI(CgiProcess* cgi)
+{
+    Client
+    bytesRead = read(pipeOut[0], buffer, sizeof(buffer));
+}
 
 void Server::handleClient(ClientInfo* client) {
     try {
@@ -113,8 +118,22 @@ void Server::handleClient(ClientInfo* client) {
         {
             analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
             router.route(clientHandler.getRequest(), clientHandler.getResponse());
-            setErrorPageFromStatusCode(clientHandler.getResponse());
-            sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            if (clientHandler.getResponse()->getStatusCode() == 42)
+            {
+                CgiProcess cgi_process;
+                cgi_process.owner_client_fd = clientHandler.getResponse()->getHeaderAs<int>("conn_fd");
+                cgi_process.output_pipe_fd.fd = clientHandler.getResponse()->getHeaderAs<int>("piped_fd");
+                cgi_process.output_pipe_fd.events = POLLIN;
+                cgi_process.output_pipe_fd.events = 0;
+                cgi_process.pid = clientHandler.getResponse()->getHeaderAs<pid_t>("pid");
+                cgi_process.start_time = clientHandler.getResponse()->getHeaderAs<time_t>("start_time");
+                cgis.push_back(&cgi_process);
+            }
+            else
+            {
+                setErrorPageFromStatusCode(clientHandler.getResponse());
+                sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            }
             if (!clientHandler.shouldKeepAlive())
                 removeClient(client);
             else
@@ -138,6 +157,24 @@ bool    Server::IsTimeout(ClientInfo* client)
     time_t diff = currentTime - client->lastActivity;
     
     if (!client->keepAlive || diff > CONNECTION_TIMEOUT)
+    {
+        std::string info_message("Client Timeouted: ");
+        std::ostringstream      time_output;
+        time_output << diff;
+        info_message += time_output.str();
+        info_message += " seconds elapsed\n";
+        LOG_INFO(info_message.c_str());
+        return true;
+    }
+    return false;
+}
+
+bool    Server::IsTimeoutCGI(CgiProcess* cgi)
+{
+    time_t currentTime = time(NULL);
+    time_t diff = currentTime - cgi->start_time;
+    
+    if (diff > CONNECTION_TIMEOUT)
     {
         std::string info_message("Client Timeouted: ");
         std::ostringstream      time_output;

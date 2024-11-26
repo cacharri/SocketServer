@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:29:58 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 13:27:07 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/26 18:15:10 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,9 +25,7 @@ private:
     std::string                         statusCodeMessage;
     std::map<std::string, std::string>  headers;
     std::string                         body;
-    
     std::string                         allData;
-    
     std::string	                        resource_extension;
     std::map<int, std::string>          _statusCodesMap;
     std::map<int, std::string>          _errorPageFilesMap;
@@ -50,6 +48,23 @@ public:
     int getStatusCode() const;
     std::string getStatusMessage() const;
     std::string getBody() const;
+    std::string getHeaders(const std::string& key) const;
+    
+    template <typename T>
+    T getHeaderAs(const std::string& key) const
+    {
+        std::map<std::string, std::string>::const_iterator it = headers.find(key);
+        if (it == headers.end()) {
+            throw std::runtime_error("Key not found: " + key);
+        }
+
+        T value;
+        std::istringstream iss(it->second);
+        if (!(iss >> value)) {
+            return ;
+        }
+        return value;
+    }
 };
 
 #endif

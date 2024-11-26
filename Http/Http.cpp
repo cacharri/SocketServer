@@ -147,6 +147,15 @@ void    Http::launch_all()
                 active_fd.revents = 0;
                 master_fds.push_back(active_fd);
             }
+            for (std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin(); 
+                cgi_it != (*srv_it)->cgis.end(); cgi_it++)
+            {
+                pollfd  active_fd;
+                active_fd.fd = (*cgi_it)->output_pipe_fd.fd;
+                active_fd.events = POLLIN;
+                active_fd.revents = 0;
+                master_fds.push_back(active_fd);
+            }
 
         }
         tempflag_printing = master_fds.size();
@@ -216,6 +225,44 @@ void    Http::launch_all()
                 cli_it++;
                 fd_index++;
             }
+            std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin();
+            //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
+            while (cgi_it != (*srv_it)->cgis.end())
+            {
+                if (fd_index >= master_fds.size())
+                {
+                    LOG_INFO("Client has not been polled: Index out of bounds");
+                    break;
+                }
+                if ((*srv_it)->IsTimeoutCGI(*cgi_it))
+                {
+                    close((*cgi_it)->output_pipe_fd.fd);
+                    kill((*cgi_it)->pid, SIGKILL);
+                    delete  *cgi_it;
+                    cgi_it = (*srv_it)->cgis.erase(cgi_it);
+                    // KILL PID
+                    LOG_INFO("Client CGI Timeouted");
+                    continue;
+                }
+                if (master_fds[fd_index].revents & POLLIN)
+                {
+                    handleCGI(*cgi_it);
+                    //read piped fd and send response with the pipe content
+                }
+                else if (master_fds[fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                {
+                    close((*cgi_it)->output_pipe_fd.fd);
+                    kill((*cgi_it)->pid, SIGKILL);
+                    delete  *cgi_it;
+                    cgi_it = (*srv_it)->cgis.erase(cgi_it);
+                    // KILL PID
+                    LOG_INFO("GGI removed");
+                    continue;
+                }
+                cgi_it++;
+                fd_index++;
+            }
+
         }
     }
 }

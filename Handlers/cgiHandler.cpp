@@ -1,20 +1,22 @@
-#include "Handlers.hpp"
-#include <sys/time.h>
-#include <time.h>
+#include "cgiHandler.hpp"
 
-
-CgiHandler::CgiHandler() {}
-
-CgiHandler::~CgiHandler() {}
-
-
-void CgiHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) 
+CgiHandler::CgiHandler()
 {
-    std::string scriptPath = locationconfig.root; // Ruta del archivo
+
+}
+
+CgiHandler::~CgiHandler()
+{
+}
+
+void CgiHandler::handle(const Request* request, Response* response, ClientInfo& clientinfo, LocationConfig& locationconfig) 
+{
+    std::string scriptPath = locationconfig.root; // Ruta del archivo a ejecutar 'greet.py'
     if (locationconfig.root.find(".py") == std::string::npos)
             scriptPath += locationconfig.index;
-    std::map<std::string, std::string> env;
 
+    // crear un entorno
+    std::map<std::string, std::string> env;
     // Configurar las variables de entorno comunes
     env["REDIRECT_STATUS"] = "200"; //seguridad php
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
@@ -23,6 +25,9 @@ void CgiHandler::handle(const Request* request, Response* response, LocationConf
     env["REQUEST_METHOD"] = request->getMethod();
     env["CONTENT_TYPE"] = request->getHeader("Content-Type");
     env["PATH_INFO"] = locationconfig.cgi_pass;//request->getPath();
+    std::ostringstream oss;
+    oss << request->getBody().size();
+    env["CONTENT_LENGTH"] = oss.str();
     // env["QUERY_STRING"] = request->getUri();
     // env["REMOTEaddr"] = to_string(locationconfig->HostHeader.host);
     //env["REMOTE_IDENT"] =
@@ -32,116 +37,81 @@ void CgiHandler::handle(const Request* request, Response* response, LocationConf
     //env["SERVER_PORT"] =
     //env["SERVER_PROTOCOL"] = "HTTP/1.1";
     //env["SERVER_SOFTWARE"]
-   
+
+    // crear un nueva instancia de struct CgiProcess
+    CgiProcess  cgi_process;
+    cgi_process.owner_client_fd = clientinfo.pfd.fd;
+    // Ejecutar el CGI
+    executeCgi(cgi_process, env, request->getBody());
+
+
+    response->setStatusCode(42);
 
     std::ostringstream oss;
-    oss << request->getBody().size();
-    env["CONTENT_LENGTH"] = oss.str();
-
-    // Ejecutar el CGI sin cuerpo
-    std::string output = executeCgi(scriptPath, env, request->getBody());
-
-    response->setHeader("Content-Type", "text/html");
-    response->setBody(output);
-
-    // Establecer el estado de la respuesta
-    response->setStatusCode(200);
-    
-   
+    oss << cgi_process.owner_client_fd;
+    response->setHeader("conn_fd", oss.str());
+    oss.clear();
+    oss << cgi_process.output_pipe_fd.fd;
+    response->setHeader("piped_fd", oss.str());
+    oss.clear();
+    oss << cgi_process.pid;
+    response->setHeader("pid", oss.str());
+    oss.clear();
+    oss << cgi_process.start_time;
+    response->setHeader("start_time", oss.str());
 }
 
 
-// Constantes
-const time_t CGI_TIMEOUT = 5;  // 5 secondes timeout
-
-// Structura para almacenar las informaciones del proceso CGI
-struct CgiProcess {
-    pid_t pid;
-    time_t start_time;
-    
-    CgiProcess() : pid(-1), start_time(0) {}
-};
-
-// Variable global para el proceso en curso
-static CgiProcess current_process;
-
-void handle_alarm(int sig) {
-    (void)sig;  
-    if (current_process.pid > 0) {
-        time_t current_time = time(NULL);
-        time_t elapsed = current_time - current_process.start_time;
-        
-        if (elapsed >= CGI_TIMEOUT) {
-            std::ostringstream oss;
-            oss << elapsed;
-            LOG_INFO("CGI Timeout: Process running for " + oss.str());
-            kill(current_process.pid, SIGKILL);
-        }
-    }
-}
-
-std::string CgiHandler::executeCgi(const std::string& scriptPath, 
+void    CgiHandler::executeCgi(CgiProcess& cgi_process, 
                                  const std::map<std::string, std::string>& env, 
                                  const std::string& inputData) 
 {
-    int pipeIn[2];
-    int pipeOut[2];
+    int pipex[2];
 
-    if (pipe(pipeIn) == -1 || pipe(pipeOut) == -1) {
+    if (pipe(pipex) == -1) {
         LOG("Pipe Error");
-        return "Internal Error";
+        return ;
     }
-
 
     std::vector<char*> envp; // Declarar envp aquí para que esté accesible en ambos bloques
-    // Configurar la gestion de la senal antes del fork
-    struct sigaction sa;
-    sa.sa_handler = handle_alarm;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGALRM, &sa, NULL);
 
     // initializae el tiempo del proceso
-    current_process.start_time = time(NULL);
-    current_process.pid = fork();
+    cgi_process.start_time = time(NULL);
+    cgi_process.output_pipe_fd.fd  = pipex[0];
+    cgi_process.output_pipe_fd.events = POLLIN;
+    cgi_process.output_pipe_fd.revents = 0;
+    cgi_process.pid = fork();
 
-    if (current_process.pid < 0) {
+    if (cgi_process.pid < 0) {
         LOG("Fork failed");
-        return "Internal Error";
+        return ;
     }
-
-    if (current_process.pid == 0) {  // Proceso hijo
+    
+    if (cgi_process.pid == 0) {  // Proceso hijo
         // Configurar la alarma para el timeout
-        alarm(CGI_TIMEOUT);
+        //alarm(CGI_TIMEOUT);
 
-        dup2(pipeIn[0], STDIN_FILENO);
-        dup2(pipeOut[1], STDOUT_FILENO);
+        dup2(pipex[1], STDOUT_FILENO);
 
         // Cerrar los pipes en el hijo
-        close(pipeIn[1]);
-        close(pipeOut[0]);
+        close(pipex[0]);
+        close(pipex[1]);
 
         // Preparar el entorno
-        for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); ++it) {
+        for (std::map<std::string, std::string>::const_iterator it = env.begin(); it != env.end(); ++it)
+        {
             std::string envVar = it->first + "=" + it->second;
             envp.push_back(strdup(envVar.c_str()));
         }
         envp.push_back(NULL); // Terminar el array con NULL
-        
+
         // Argumentos para execve
-
         char* args[3];
-        if (scriptPath.find(".py") != std::string::npos) {
-            args[0] = const_cast<char*>("/usr/bin/python3");
-            args[1] = const_cast<char*>(scriptPath.c_str());
-            args[2] = NULL;
-        } else if (scriptPath.find(".php") != std::string::npos) {
-            args[0] = const_cast<char*>("/usr/bin/php-cgi");
-            args[1] = const_cast<char*>(scriptPath.c_str());
-            args[2] = NULL;
-        }
+        args[0] = const_cast<char*>(env.at("SCRIPT_FILENAME").c_str());
+        args[1] = const_cast<char*>(inputData.c_str());
+        args[2] = NULL;
 
-        execve(args[0], args, &envp[0]);
+        execve(env.at("PATH_INFO").c_str(), args, &envp[0]);
 
         // Si execve falla
         perror("execve falló");  // Imprimir el error específico
@@ -149,61 +119,73 @@ std::string CgiHandler::executeCgi(const std::string& scriptPath,
     }
     
     // Proceso Padre
-    close(pipeIn[0]);
-    close(pipeOut[1]);
+    close(pipex[1]);
+    close(pipex[0]);
 
-    //  Escribir el cuerpo de la solicitud en el pipe
+    // // Leer la salida del script
+    // std::string result;
+    // char buffer[4096];
+    // ssize_t bytesRead;
+    // time_t start_read = time(NULL);
 
-    write(pipeIn[1], inputData.c_str(), inputData.size());
-    close(pipeIn[1]);
+    // while (true) {
+    //     // Comprobar el timeout durante la
+    //     if (time(NULL) - start_read >= CGI_TIMEOUT) {
+    //         kill(current_process.pid, SIGKILL);
+    //         LOG("CGI Timeout during read");
+    //         return "Request Timeouted";
+    //     }
 
-    // Leer la salida del script
-    std::string result;
-    char buffer[4096];
-    ssize_t bytesRead;
-    time_t start_read = time(NULL);
+    //     bytesRead = read(pipeOut[0], buffer, sizeof(buffer));
+    //     if (bytesRead <= 0) break;
+    //     result.append(buffer, bytesRead);
+    // }
 
-    while (true) {
-        // Comprobar el timeout durante la
-        if (time(NULL) - start_read >= CGI_TIMEOUT) {
-            kill(current_process.pid, SIGKILL);
-            LOG("CGI Timeout during read");
-            return "Request Timeouted";
-        }
+    // close(pipeOut[0]); // Cerrar después de leer
 
-        bytesRead = read(pipeOut[0], buffer, sizeof(buffer));
-        if (bytesRead <= 0) break;
-        result.append(buffer, bytesRead);
-    }
-
-    close(pipeOut[0]); // Cerrar después de leer
-
-    // Esperar el fin del proceso con el timeout
-    int status;
-    time_t wait_start = time(NULL);
-    while (true) {
-        pid_t wpid = waitpid(current_process.pid, &status, WNOHANG);
-        if (wpid == current_process.pid) break;
+    // // Esperar el fin del proceso con el timeout
+    // int status;
+    // time_t wait_start = time(NULL);
+    // while (true) {
+    //     pid_t wpid = waitpid(current_process.pid, &status, WNOHANG);
+    //     if (wpid == current_process.pid) break;
         
-        if (time(NULL) - wait_start >= CGI_TIMEOUT) {
-            kill(current_process.pid, SIGKILL);
-            LOG("CGI Timeout waiting for process");
-            return "Request Timeouted";
-        }
-        usleep(1000);  // Evitar sobrecarga de CPU
-    }
+    //     if (time(NULL) - wait_start >= CGI_TIMEOUT) {
+    //         kill(current_process.pid, SIGKILL);
+    //         LOG("CGI Timeout waiting for process");
+    //         return "Request Timeouted";
+    //     }
+    //     usleep(1000);  // Evitar sobrecarga de CPU
+    // }
 
-    // Comprobar si el proceso se han terminado por una alarma
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        return "Request timeouted";
-    }
+    // // Comprobar si el proceso se han terminado por una alarma
+    // if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    //     return "Request timeouted";
+    // }
 
-    // Eliminar encabezados
-    size_t headerEnd = result.find("\r\n\r\n");
-    if (headerEnd != std::string::npos) {
-        result = result.substr(headerEnd + 4);
-    }
+    // // Eliminar encabezados
+    // size_t headerEnd = result.find("\r\n\r\n");
+    // if (headerEnd != std::string::npos) {
+    //     result = result.substr(headerEnd + 4);
+    // }
 
-    return result;
+    // return result;
 }
 
+// Variable global para el proceso en curso
+// static CgiProcess current_process;
+
+// void handle_alarm(int sig) {
+//     (void)sig;  
+//     if (current_process.pid > 0) {
+//         time_t current_time = time(NULL);
+//         time_t elapsed = current_time - current_process.start_time;
+        
+//         if (elapsed >= CGI_TIMEOUT) {
+//             std::ostringstream oss;
+//             oss << elapsed;
+//             LOG_INFO("CGI Timeout: Process running for " + oss.str());
+//             kill(current_process.pid, SIGKILL);
+//         }
+//     }
+// }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 15:39:03 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/26 18:22:22 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ class Response;
 
 #include "../Sockets/MotherSocket.hpp"
 #include "../Config/ConfigParser.hpp"
-
+#include "../Handlers/cgiHandler.hpp"
 #include "../Response/Response.hpp"
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
@@ -63,6 +63,7 @@ class Server : public MotherSocket
 
 public:
     std::vector<ClientInfo*> clients;
+    std::vector<CgiProcess*> cgis;
 
     Server(const ServerConfig& serverConfig);
     ~Server();
@@ -75,7 +76,8 @@ public:
     void        handleClient(ClientInfo* client);
     void        removeClient(ClientInfo* client);
     bool        IsTimeout(ClientInfo* client);
-    
+    bool        IsTimeoutCGI(CgiProcess* cgi);
+
     class ServerError: public std::exception {
         private:
             std::string error_string;
