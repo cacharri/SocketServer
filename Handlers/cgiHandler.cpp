@@ -1,7 +1,4 @@
 #include "Handlers.hpp"
-#include <sys/time.h>
-#include <time.h>
-
 
 CgiHandler::CgiHandler() {}
 

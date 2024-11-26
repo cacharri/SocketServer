@@ -16,11 +16,7 @@
 #include "../Client/Client.hpp"
 
 #include <sys/socket.h>
-#include <string>
-#include <map>
-#include <sstream>
 #include <algorithm>
-#include <sys/socket.h>
 
 #define HEADERS_SIZE 2048
 

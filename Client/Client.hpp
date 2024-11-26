@@ -20,10 +20,7 @@
 
 #include <errno.h>
 #include <poll.h>
-#include <string>
-#include <vector>
 #include <exception>
-#include <sys/time.h>
 
 
 struct ClientInfo {

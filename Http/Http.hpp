@@ -15,10 +15,7 @@
 
 #include "../Server/Server.hpp"
 #include "../Config/ConfigParser.hpp"
-#include "../Logger/Logger.hpp"
-#include <iostream>
 #include <list>
-#include <stdexcept>
 #include <signal.h>
 
 class Http

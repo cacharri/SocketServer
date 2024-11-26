@@ -25,17 +25,7 @@ class Response;
 #include "../Router/Router.hpp"
 #include "../Handlers/Handlers.hpp"
 #include "../Client/Client.hpp"
-#include <sys/stat.h> // For file existence check
-#include <vector>
-#include <poll.h>
-
-#include <algorithm>
-#include <stdexcept>
-#include <iostream>
-#include <cstring>
-#include <unistd.h>
 #include <functional>
-#include <string>
 #include <ctime>
 
 /*

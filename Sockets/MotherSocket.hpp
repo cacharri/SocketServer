@@ -20,7 +20,6 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 class MotherSocket {

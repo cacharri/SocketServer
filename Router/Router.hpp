@@ -17,18 +17,12 @@
 class Request;
 class Response;
 
-#include <string>
-#include <map>
 #include "../Response/Response.hpp"
 #include "../Request/Request.hpp"
-#include "../Logger/Logger.hpp"
 #include "../Config/ConfigParser.hpp"
 #include "../Handlers/Handlers.hpp"
 
-#include <algorithm>
 #include <limits.h>
-#include <unistd.h>
-#include <iostream>
 #include <sys/stat.h>
 #include <cstring>
 #include <cerrno>
