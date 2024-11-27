@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 14:35:22 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 18:27:19 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,7 +154,7 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
     {
         CgiHandler cgi_handler_instance;
         cgi_handler_instance.handle(request, response, locationconfig);
-        response->setStatusCode(201);
+        response->setStatusCode(103);
         LOG_INFO("CGI Resource");
         return ;
     }

@@ -150,13 +150,12 @@ void    Http::launch_all()
             for (std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin(); 
                 cgi_it != (*srv_it)->cgis.end(); cgi_it++)
             {
-                pollfd  active_fd;
-                active_fd.fd = (*cgi_it)->output_pipe_fd.fd;
-                active_fd.events = POLLIN;
-                active_fd.revents = 0;
-                master_fds.push_back(active_fd);
+                pollfd  pipe_fd;
+                pipe_fd.fd = (*cgi_it)->output_pipe_fd.fd;
+                pipe_fd.events = POLLIN;
+                pipe_fd.revents = 0;
+                master_fds.push_back(pipe_fd);
             }
-
         }
         tempflag_printing = master_fds.size();
         if (tempflag_printing != tempflag2_printing2)
@@ -238,7 +237,6 @@ void    Http::launch_all()
                 {
                     close((*cgi_it)->output_pipe_fd.fd);
                     kill((*cgi_it)->pid, SIGKILL);
-                    delete  *cgi_it;
                     cgi_it = (*srv_it)->cgis.erase(cgi_it);
                     // KILL PID
                     LOG_INFO("Client CGI Timeouted");
@@ -246,14 +244,13 @@ void    Http::launch_all()
                 }
                 if (master_fds[fd_index].revents & POLLIN)
                 {
-                    handleCGI(*cgi_it);
+                    (*srv_it)->handleCGIresponse(*cgi_it);
                     //read piped fd and send response with the pipe content
                 }
                 else if (master_fds[fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
                 {
                     close((*cgi_it)->output_pipe_fd.fd);
                     kill((*cgi_it)->pid, SIGKILL);
-                    delete  *cgi_it;
                     cgi_it = (*srv_it)->cgis.erase(cgi_it);
                     // KILL PID
                     LOG_INFO("GGI removed");

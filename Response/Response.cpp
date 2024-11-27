@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/26 17:55:14 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 17:39:15 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ void Response::initStatusCode(void)
 {
     _statusCodesMap[100] = "Continue";
     _statusCodesMap[101] = "Switching Protocols";
+    _statusCodesMap[103] = "Processing request";
     _statusCodesMap[200] = "OK";
     _statusCodesMap[201] = "Created";
     _statusCodesMap[202] = "Accepted";
@@ -224,5 +225,6 @@ std::string Response::getHeaders(const std::string& key) const
     if (it != headers.end()){
         return it->second; // Key found, return the value
     }
+    return "";
 }
 

@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/26 18:22:22 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 17:32:07 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ public:
     void        init();
     void        acceptClient(int listenFd);
     void        handleClient(ClientInfo* client);
+    void        handleCGIresponse(CgiProcess* cgi);
     void        removeClient(ClientInfo* client);
     bool        IsTimeout(ClientInfo* client);
     bool        IsTimeoutCGI(CgiProcess* cgi);
@@ -96,6 +97,7 @@ private:
     void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
     void        setErrorPageFromStatusCode(Response*    response);
     std::string getErrorPagePath(Response*    response);
+    void        IsCgiRequest(Response* res);
 
     void        sendResponse(int clientSocket, const std::string& response);
     

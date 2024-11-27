@@ -9,12 +9,11 @@ CgiHandler::~CgiHandler()
 {
 }
 
-void CgiHandler::handle(const Request* request, Response* response, ClientInfo& clientinfo, LocationConfig& locationconfig) 
+void CgiHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) 
 {
     std::string scriptPath = locationconfig.root; // Ruta del archivo a ejecutar 'greet.py'
     if (locationconfig.root.find(".py") == std::string::npos)
             scriptPath += locationconfig.index;
-
     // crear un entorno
     std::map<std::string, std::string> env;
     // Configurar las variables de entorno comunes
@@ -40,16 +39,14 @@ void CgiHandler::handle(const Request* request, Response* response, ClientInfo& 
 
     // crear un nueva instancia de struct CgiProcess
     CgiProcess  cgi_process;
-    cgi_process.owner_client_fd = clientinfo.pfd.fd;
+    //cgi_process.owner_client_fd = clientinfo.pfd.fd;
     // Ejecutar el CGI
     executeCgi(cgi_process, env, request->getBody());
+    
 
-
-    response->setStatusCode(42);
-
-    std::ostringstream oss;
-    oss << cgi_process.owner_client_fd;
-    response->setHeader("conn_fd", oss.str());
+    response->setStatusCode(103);
+    //oss << cgi_process.owner_client_fd;
+    //response->setHeader("conn_fd", oss.str());
     oss.clear();
     oss << cgi_process.output_pipe_fd.fd;
     response->setHeader("piped_fd", oss.str());
@@ -68,7 +65,8 @@ void    CgiHandler::executeCgi(CgiProcess& cgi_process,
 {
     int pipex[2];
 
-    if (pipe(pipex) == -1) {
+    if (pipe(pipex) == -1)
+    {
         LOG("Pipe Error");
         return ;
     }
@@ -110,6 +108,7 @@ void    CgiHandler::executeCgi(CgiProcess& cgi_process,
         args[0] = const_cast<char*>(env.at("SCRIPT_FILENAME").c_str());
         args[1] = const_cast<char*>(inputData.c_str());
         args[2] = NULL;
+        std::cout << "Executing " << args[0] << std::endl;
 
         execve(env.at("PATH_INFO").c_str(), args, &envp[0]);
 

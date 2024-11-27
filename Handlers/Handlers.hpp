@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/26 15:16:07 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 17:40:17 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ class LocationConfig;
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
 #include "../Config/ConfigParser.hpp"
+#include "../Handlers/cgiHandler.hpp"
 
 class RequestHandler {
 public:

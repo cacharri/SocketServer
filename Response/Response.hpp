@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:29:58 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/26 18:15:10 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 17:38:27 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <stdexcept>
 
 class Response
 {
@@ -55,13 +56,13 @@ public:
     {
         std::map<std::string, std::string>::const_iterator it = headers.find(key);
         if (it == headers.end()) {
-            throw std::runtime_error("Key not found: " + key);
+            throw std::exception();
         }
 
         T value;
         std::istringstream iss(it->second);
         if (!(iss >> value)) {
-            return ;
+            throw std::exception();
         }
         return value;
     }

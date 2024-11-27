@@ -99,10 +99,33 @@ void Server::removeClient(ClientInfo* client)
         clients.erase(it);
 }
 
-void    Server::handleCGI(CgiProcess* cgi)
+void    Server::handleCGIresponse(CgiProcess* cgi)
 {
-    Client
-    bytesRead = read(pipeOut[0], buffer, sizeof(buffer));
+    //Leer la salida del CGI
+    std::string result;
+    char buffer[4096];
+    ssize_t bytesRead;
+    while (42)
+    {
+        bytesRead = read(cgi->output_pipe_fd.fd, buffer, sizeof(buffer));
+        if (bytesRead <= 0)
+                break;
+        result.append(buffer, bytesRead);
+    }
+    int     status;
+    pid_t   wpid = waitpid(cgi->pid, &status, WNOHANG);
+    if (wpid == cgi->pid)
+        return ;
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        LOG("Wait failed");
+        return ;
+    }
+    Response res;
+
+    res.setBody(result);
+    res.setContentType("text/plain");
+    res.setContentLength();
+    sendResponse(, response);
 }
 
 void Server::handleClient(ClientInfo* client) {
@@ -118,22 +141,9 @@ void Server::handleClient(ClientInfo* client) {
         {
             analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
             router.route(clientHandler.getRequest(), clientHandler.getResponse());
-            if (clientHandler.getResponse()->getStatusCode() == 42)
-            {
-                CgiProcess cgi_process;
-                cgi_process.owner_client_fd = clientHandler.getResponse()->getHeaderAs<int>("conn_fd");
-                cgi_process.output_pipe_fd.fd = clientHandler.getResponse()->getHeaderAs<int>("piped_fd");
-                cgi_process.output_pipe_fd.events = POLLIN;
-                cgi_process.output_pipe_fd.events = 0;
-                cgi_process.pid = clientHandler.getResponse()->getHeaderAs<pid_t>("pid");
-                cgi_process.start_time = clientHandler.getResponse()->getHeaderAs<time_t>("start_time");
-                cgis.push_back(&cgi_process);
-            }
-            else
-            {
-                setErrorPageFromStatusCode(clientHandler.getResponse());
-                sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
-            }
+            IsCgiRequest(clientHandler.getResponse());
+            setErrorPageFromStatusCode(clientHandler.getResponse());
+            sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             if (!clientHandler.shouldKeepAlive())
                 removeClient(client);
             else
@@ -185,6 +195,27 @@ bool    Server::IsTimeoutCGI(CgiProcess* cgi)
         return true;
     }
     return false;
+}
+
+void        Server::IsCgiRequest(Response* res)
+{
+    if (res->getStatusCode() == 103)
+    {
+        try
+        {
+            CgiProcess cgi_process;
+            //cgi_process.owner_client_fd = res->getHeaderAs<int>("conn_fd");
+            cgi_process.output_pipe_fd.fd = res->getHeaderAs<int>("piped_fd");
+            cgi_process.output_pipe_fd.events = POLLIN;
+            cgi_process.output_pipe_fd.events = 0;
+            cgi_process.pid = res->getHeaderAs<pid_t>("pid");
+            cgi_process.start_time = res->getHeaderAs<time_t>("start_time");
+            cgis.push_back(&cgi_process);
+        }
+        catch(const std::exception& e){
+            LOG(e.what());
+        }
+    }
 }
 
 std::string Server::getErrorPagePath(Response*    response) {
