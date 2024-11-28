@@ -1,3 +1,11 @@
+## To Do
+- Control error codes (hagamos una lista de los qe controlamos)
+- Control de la entrega del body cuando hay un errorCode
+- Control Headers:
+   - listar los headers de Request que tenemos en cuenta.
+   - Escribir los headers de la respuesta.
+- Compare with nginx
+
 # WEBSERV DOCUMENTATION
 
 ## Table of Contents
@@ -130,20 +138,6 @@ Represents an HTTP response. It constructs and stores response information, incl
 - **getStatusMessage() const**: Returns the status message of the response.
 - **getBody() const**: Returns the body of the response.
 
-## To Do
-- Make post work with json
-- Implement PATH_INFO macro for cgi compilator binary Primer argumento de execve
-- El CGI tiene que ejecutarse en el buen directorio para el acceso al fichero del camino relativo. Ein ? a revisar(frase del subject traducido del frances)
-- Implement DELETE
-- Control memory leaks at error points
-- Control error codes (hagamos una lista de los qe controlamos)
-- Control de la entrega del body cuando hay un errorCode
-- Mejorar ConfigParser en el manejo de error_pages para manejar multiples paginas y error status
-- Control Headers:
-   - Review chunked mode
-   - listar los headers de Request que tenemos en cuenta.
-   - Escribir los headers de la respuesta.
-- Compare with nginx
 
 ## Sources
 - [HTTP Content Negotiation](https://http.dev/content-negotiation)
