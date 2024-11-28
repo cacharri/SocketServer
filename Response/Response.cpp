@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 14:46:08 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 15:52:20 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,6 +166,10 @@ Response::Response()
     initStatusCode();
     initMimesTypes();
     cgi_process = NULL;
+}
+
+Response::~Response()
+{
 }
 
 
