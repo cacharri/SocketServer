@@ -78,6 +78,7 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         newLocConfig.redirect =it->second.redirect;
 		newLocConfig.redirect_type =it->second.redirect_type;
         newLocConfig.client_max_body_size =it->second.client_max_body_size;
+        std::cout << "max body size en copy_server_config_es " << newLocConfig.client_max_body_size << std::endl;
         //std::cout << "New location" << path << " with SIZE " << newLocConfig.client_max_body_size << std::endl;
         destination.locations[path] = newLocConfig;
     }
@@ -221,6 +222,8 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
             inLocationBlock = true;
             iss >> currentLocationPath;
             currentLocation = LocationConfig();
+            //copia el max body size del server al cliente, para cubrir l caso de que no haya max size en upload
+            currentLocation.client_max_body_size = currentServer.client_max_body_size;
 
         } else if (token == "}") {
             if (inLocationBlock) {
