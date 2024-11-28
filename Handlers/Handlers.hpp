@@ -19,19 +19,15 @@ class Response;
 class LocationConfig;
 
 #include <fstream>
-#include <unistd.h>
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <time.h>
 #include <limits.h>
-#include <string>
-#include <cstdlib>
 #include <cstdio>
 #include <cstring>
-#include <sstream>
-#include <vector>
-#include <map>
 
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"

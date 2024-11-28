@@ -2,7 +2,6 @@
 
 CgiHandler::CgiHandler()
 {
-
 }
 
 CgiHandler::~CgiHandler()
