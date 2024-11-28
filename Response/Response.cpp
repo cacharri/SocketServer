@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/11 13:27:17 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 14:46:08 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ void Response::initStatusCode(void)
 {
     _statusCodesMap[100] = "Continue";
     _statusCodesMap[101] = "Switching Protocols";
+    _statusCodesMap[103] = "Processing request";
     _statusCodesMap[200] = "OK";
     _statusCodesMap[201] = "Created";
     _statusCodesMap[202] = "Accepted";
@@ -164,6 +165,7 @@ Response::Response()
 {
     initStatusCode();
     initMimesTypes();
+    cgi_process = NULL;
 }
 
 
@@ -190,6 +192,23 @@ void Response::setContentLength()
     std::string value = oss.str();
     setHeader("Content-Length", value);
 }
+void Response::setCgiProcess(CgiProcess* process) {
+    if (cgi_process != NULL) {
+        delete cgi_process;
+    }
+    if (process) {
+        cgi_process = new CgiProcess();  // Create new CgiProcess
+        // Copy all members
+        cgi_process->client_fd = process->client_fd;
+        cgi_process->output_pipe_fd.fd = process->output_pipe_fd.fd;  // pollfd is a struct, copied by value
+        cgi_process->output_pipe_fd.events = process->output_pipe_fd.events;  // pollfd is a struct, copied by value
+        cgi_process->output_pipe_fd.revents = process->output_pipe_fd.revents;  // pollfd is a struct, copied by value
+        cgi_process->pid = process->pid;
+        cgi_process->start_time = process->start_time;
+    } else {
+        cgi_process = NULL;
+    }
+}
 
 std::string Response::toString() const
 {
@@ -204,6 +223,10 @@ std::string Response::toString() const
     return res.str();
 }
 
+CgiProcess* Response::getCgiProcess() const
+{
+    return cgi_process;    
+}
 
 // Getters implementation
 int Response::getStatusCode() const {
@@ -218,4 +241,12 @@ std::string Response::getBody() const {
     return body;
 }
 
+std::string Response::getHeaders(const std::string& key) const
+{
+    std::map<std::string, std::string>::const_iterator it = headers.find(key);
+    if (it != headers.end()){
+        return it->second; // Key found, return the value
+    }
+    return "";
+}
 

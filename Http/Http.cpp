@@ -99,7 +99,6 @@ void Http::setupSignalHandlers(Http* http)
 
 void    Http::launch_all()
 {
-    
     std::list<Server*>::iterator it = servers.begin();
     if (it == servers.end())
         return ;
@@ -112,7 +111,7 @@ void    Http::launch_all()
     }
     LOG_INFO("All servers are launching... Press CTRL+C to quit");
 
-    std::vector<pollfd> master_fds;
+    std::vector<pollfd> master_fds; // SOCKET_PASSIVO - FDCGI- FDcliente
     
     size_t num_servers = 0;
     for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
@@ -133,22 +132,50 @@ void    Http::launch_all()
     size_t tempflag2_printing2 = 0;
 
     while (42)
-    {        
-        master_fds.resize(num_servers); // permite reiniciar el buffer de los sockets para poll. En el siguiente loop se cargaran los nuevos Fds gracias a accepClient.
-
+    {
+        // repopular a partir de los socket pasivos
+        master_fds.resize(num_servers);
+        size_t total_clients = 0;
+        // Iterar en nuestros vectores para repopular master_fds con socket_activos y fd de pipes.
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
+            // 1. Anadir Fd del pipe de un proceso CGI
             for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
                 cli_it != (*srv_it)->clients.end(); cli_it++)
             {
-                pollfd  active_fd;
+                pollfd active_fd;
                 active_fd.fd = (*cli_it)->pfd.fd;
                 active_fd.events = POLLIN;
                 active_fd.revents = 0;
                 master_fds.push_back(active_fd);
+                total_clients++;
             }
-
+            for (std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin(); 
+                cgi_it != (*srv_it)->cgis.end();)
+            {
+                std::cout << "New CGI PID: " << (*cgi_it)->pid << " of Client " << (*cgi_it)->client_fd << std::endl;
+                if ((*srv_it)->IsTimeoutCGI(*cgi_it))
+                {
+                    kill((*cgi_it)->pid, SIGKILL);  // Force kill
+                    // Clean up resources
+                    close((*cgi_it)->output_pipe_fd.fd);
+                    delete *cgi_it;
+                    cgi_it = (*srv_it)->cgis.erase(cgi_it);
+                    std::cout << "Se borro el cgiprocess por un timeout" << std::endl;
+                    continue;
+                }
+                pollfd pipe_fd;
+                pipe_fd.fd = (*cgi_it)->output_pipe_fd.fd;
+                //std::cout << "New fd " << pipe_fd.fd << " CGI to master_fds" << std::endl;
+                pipe_fd.events = POLLIN;
+                pipe_fd.revents = 0;
+                master_fds.push_back(pipe_fd);
+                ++cgi_it;
+            }
         }
+
+
+        // Log FD count if changed
         tempflag_printing = master_fds.size();
         if (tempflag_printing != tempflag2_printing2)
         {
@@ -159,8 +186,8 @@ void    Http::launch_all()
         }
         tempflag2_printing2 = tempflag_printing;
 
+        // Poll all FDs
         int poll_count = poll(&master_fds[0], master_fds.size(), 1000);
-        
         if (poll_count < 0)
         {
             if (errno != EINTR)
@@ -168,24 +195,100 @@ void    Http::launch_all()
             continue;
         }
 
-
+        // Reset fd_index for handling events
         size_t fd_index = 0;
-        // Controlar los eventos en los socketPassivos de los servidores.
+        size_t cgi_index = num_servers + total_clients;
+        // 1. Handle passive socket events (new connections) Y CGI
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
+            std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin();
+            while (cgi_it != (*srv_it)->cgis.end())
+            {
+                if (cgi_index >= master_fds.size())
+                {
+                    LOG_INFO("CGI has not been polled: Index out of bounds");
+                    break;
+                }
+
+                if (master_fds[cgi_index].revents & POLLIN)
+                {
+                    LOG_INFO("CGI pipe has data available");
+                    // Leer datos en primero antes de comprobar el stauts del proceso
+                    (*srv_it)->handleCGIresponse(*cgi_it);
+                    
+                    int status;
+                    pid_t result = waitpid((*cgi_it)->pid, &status, WNOHANG);
+                    
+                    if (result > 0)
+                    {
+                        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+                            LOG_INFO("CGI process finished successfully");
+                        } else {
+                            std::ostringstream out;
+                            out << WEXITSTATUS(status);
+                            LOG_INFO("CGI process failed with status: " + out.str());
+                            Response errorResponse;
+                            errorResponse.setStatusCode(500);
+                            errorResponse.setBody("CGI execution failed");
+                            errorResponse.setContentType("text/plain");
+                            (*srv_it)->sendResponse((*cgi_it)->client_fd, errorResponse.toString());
+                        }
+                        close((*cgi_it)->output_pipe_fd.fd);
+                        delete *cgi_it;
+                        cgi_it = (*srv_it)->cgis.erase(cgi_it);
+                    }
+                    else if (result == 0)
+                    {
+                        LOG_INFO("CGI process still running");
+                        ++cgi_it;
+                    }
+                    else
+                    {
+                        LOG_INFO("CGI waitpid error");
+                        ++cgi_it;
+                    }
+                }
+                else if (master_fds[cgi_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                {    
+                    // Comprobar que no haya datos que leer aun
+                    (*srv_it)->handleCGIresponse(*cgi_it);
+                    
+                    LOG_INFO("CGI pipe closed");
+                    close((*cgi_it)->output_pipe_fd.fd);
+                    
+                    // COmprobar si el proceso sigue corriendo
+                    int status;
+                    pid_t result = waitpid((*cgi_it)->pid, &status, WNOHANG);
+                    if (result == 0)
+                        kill((*cgi_it)->pid, SIGTERM);
+                        
+                    delete *cgi_it;
+                    cgi_it = (*srv_it)->cgis.erase(cgi_it);
+                }
+                else
+                {
+                    ++cgi_it;
+                }
+                ++cgi_index;
+            }
             std::vector<int> server_fds = (*srv_it)->getPassiveSocketFd();
             for (std::vector<int>::iterator fd_it = server_fds.begin(); fd_it != server_fds.end(); fd_it++, fd_index++)
             {
                 if (master_fds[fd_index].revents & POLLIN)
+                {
                     (*srv_it)->acceptClient(*fd_it);
+                }
+                else if (master_fds[fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
+                {
+                    LOG_INFO("Passive socket error");
+                }
             }
         }
-        
-        // Despues Controlar clientes anadidos (sockets activos) en todos los servidores. (partiendo  del iterador master_fd_index para acceder a los socket activos en mastr_fds)
+
+        // 2. Handle active client events
         for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
         {
             std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin();
-            //std::cout << "fd of client: " << (*cli_it)->pfd.fd << std::endl;
             while (cli_it != (*srv_it)->clients.end())
             {
                 if (fd_index >= master_fds.size())
@@ -193,27 +296,45 @@ void    Http::launch_all()
                     LOG_INFO("Client has not been polled: Index out of bounds");
                     break;
                 }
+
                 if ((*srv_it)->IsTimeout(*cli_it))
                 {
-                    close((*cli_it)->pfd.fd);
-                    delete  *cli_it;
-                    cli_it = (*srv_it)->clients.erase(cli_it);
-                    LOG_INFO("Client Timeouted");
-                    continue;
+                    // Check if client has active CGI processes
+                    bool hasCGI = false;
+                    for (std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin(); 
+                         cgi_it != (*srv_it)->cgis.end(); ++cgi_it)
+                    {
+                        if ((*cgi_it)->client_fd == (*cli_it)->pfd.fd) {
+                            hasCGI = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!hasCGI) {
+                        close((*cli_it)->pfd.fd);
+                        delete *cli_it;
+                        cli_it = (*srv_it)->clients.erase(cli_it);
+                        LOG_INFO("Client Timeouted");
+                        continue;
+                    }
                 }
+
                 if (master_fds[fd_index].revents & POLLIN)
                 {
-                    (*srv_it)->handleClient(*cli_it); // try catch error & removing pollfd from master_fds if crash;
+                    (*srv_it)->handleClient(*cli_it);
+                    ++cli_it;
                 }
                 else if (master_fds[fd_index].revents & (POLLERR | POLLHUP | POLLNVAL))
                 {
                     close((*cli_it)->pfd.fd);
-                    delete  *cli_it;
+                    delete *cli_it;
                     cli_it = (*srv_it)->clients.erase(cli_it);
-                    LOG_INFO("Conexion Removed");
-                    continue;
+                    LOG_INFO("Connection Removed");
                 }
-                cli_it++;
+                else
+                {
+                    ++cli_it;
+                }
                 fd_index++;
             }
         }

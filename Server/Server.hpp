@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 15:39:03 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 15:35:59 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ class Response;
 
 #include "../Sockets/MotherSocket.hpp"
 #include "../Config/ConfigParser.hpp"
-
+#include "../Handlers/cgiHandler.hpp"
 #include "../Response/Response.hpp"
 #include "../Request/Request.hpp"
 #include "../Router/Router.hpp"
@@ -53,6 +53,7 @@ class Server : public MotherSocket
 
 public:
     std::vector<ClientInfo*> clients;
+    std::vector<CgiProcess*> cgis;
 
     Server(const ServerConfig& serverConfig);
     ~Server();
@@ -62,10 +63,13 @@ public:
     //void        launch();
     void        init();
     void        acceptClient(int listenFd);
+    void        sendResponse(int clientSocket, const std::string& response);
     void        handleClient(ClientInfo* client);
+    void        handleCGIresponse(CgiProcess* cgi);
     void        removeClient(ClientInfo* client);
     bool        IsTimeout(ClientInfo* client);
-    
+    bool        IsTimeoutCGI(CgiProcess* cgi);
+
     class ServerError: public std::exception {
         private:
             std::string error_string;
@@ -78,14 +82,15 @@ public:
 private:
     Router                  router;
     ServerConfig            config;
-    static const time_t CONNECTION_TIMEOUT = 10; // 10 secondes por ejemplo
+    static const time_t CONNECTION_TIMEOUT = 3;  
+    static const time_t CGI_TIMEOUT = 2;      
 
     // Headers functions
     void        analyzeBasicHeaders(const Request* request, Response* response, ClientInfo* client);
     void        setErrorPageFromStatusCode(Response*    response);
     std::string getErrorPagePath(Response*    response);
+    bool        IsCgiRequest(Response* res);
 
-    void        sendResponse(int clientSocket, const std::string& response);
     
     // Disable copy constructor and assignment operator
     Server(const Server&);

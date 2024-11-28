@@ -91,12 +91,11 @@ bool Client::HandleConnection() {
         LOG_INFO("Reading data from request...");
         if (!request->readData(session_info->pfd.fd, session_info->client_max_body_size)) {
             LOG_INFO("Failed to read request data.");
-            response->setStatusCode(413);
-
+            response->setStatusCode(400);
+            request->print();
             return false; // Indicar fallo
         }
         LOG_INFO("Request data read successfully.");
-        
         return true;
     } catch (const std::exception& e) {
         LOG("Exception caught during client handling: " + std::string(e.what()));

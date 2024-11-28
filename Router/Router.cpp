@@ -38,6 +38,7 @@ void    Router::addRoute(const std::string& path, const LocationConfig& location
     config->endpointdata.cgi_pass = locationconfig.cgi_pass;
     config->endpointdata.redirect = locationconfig.redirect;
     config->endpointdata.redirect_type = locationconfig.redirect_type;
+    config->endpointdata.client_max_body_size = locationconfig.client_max_body_size;
     config->handler = requesthandler;
 
     routes[path].push_back(config);
@@ -116,14 +117,13 @@ void Router::route(const Request* request, Response* response)
          it != routes.end(); ++it)
     {
         const std::string& location_path = it->first;
-        LocationConfig& loc_config = it->second[0]->endpointdata;
-
         // Match exacto del endpoint
         if (request->getUri() == location_path)
         {
             best_match_config = it->second[0];
+            best_match_config->endpointdata = it->second[0]->endpointdata;
             best_match_path = location_path;
-            remaining_path = loc_config.index;
+            remaining_path = it->second[0]->endpointdata.index;
             break;
         }
         
@@ -134,6 +134,7 @@ void Router::route(const Request* request, Response* response)
             {
                 best_match_length = location_path.length();
                 best_match_config = it->second[0];
+                best_match_config->endpointdata = it->second[0]->endpointdata;
                 best_match_path = location_path;
                 remaining_path = request->getUri().substr(location_path.length());
             }

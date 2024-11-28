@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Handlers.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/20 20:09:58 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 15:09:10 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/27 17:40:17 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class LocationConfig;
 #include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
 #include "../Config/ConfigParser.hpp"
+#include "../Handlers/cgiHandler.hpp"
 
 class RequestHandler {
 public:
@@ -62,17 +63,6 @@ class PostHandler : public RequestHandler
             void                                handleMultipartFormData(const Request* request, Response* response, LocationConfig& locationconfig);
             void                                handleUrlFormEncoded(const Request* request, Response* response, LocationConfig& locationconfig);
 };
-
-class CgiHandler : public RequestHandler 
-{
-public:
-    CgiHandler();
-    virtual ~CgiHandler();
-    virtual void handle(const Request* request, Response* response, LocationConfig& locationconfig);
-private:
-    std::string executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData );
-};
-
 
 class DeleteHandler : public RequestHandler {
 public:

@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 14:48:21 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 15:05:34 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,37 @@ struct LocationConfig {
     int                         redirect_type;
 
     LocationConfig(): autoindex(false), allow_upload(false), client_max_body_size(8192), redirect_type(0) {};
+    
+    // Copy constructor for deep copy
+    LocationConfig(const LocationConfig& other) {
+        root = other.root;
+        index = other.index;
+        autoindex = other.autoindex;
+        methods = other.methods;  // vector has its own copy constructor
+        allow_upload = other.allow_upload;
+        upload_store = other.upload_store;
+        client_max_body_size = other.client_max_body_size;
+        cgi_pass = other.cgi_pass;
+        redirect = other.redirect;
+        redirect_type = other.redirect_type;
+    }
+
+    // Assignment operator for deep copy
+    LocationConfig& operator=(const LocationConfig& other) {
+        if (this != &other) {
+            root = other.root;
+            index = other.index;
+            autoindex = other.autoindex;
+            methods = other.methods;  // vector handles its own deep copy
+            allow_upload = other.allow_upload;
+            upload_store = other.upload_store;
+            client_max_body_size = other.client_max_body_size;
+            cgi_pass = other.cgi_pass;
+            redirect = other.redirect;
+            redirect_type = other.redirect_type;
+        }
+        return *this;
+    }
 };
 
 struct ServerConfig {

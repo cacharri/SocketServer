@@ -3,6 +3,7 @@
 import os
 import socket
 from time import sleep
+
 current_user = socket.gethostname()
 
 html_content = f"""
@@ -18,5 +19,5 @@ html_content = f"""
 """
 
 
-print(html_content)
 sleep(2)
+print(html_content)
