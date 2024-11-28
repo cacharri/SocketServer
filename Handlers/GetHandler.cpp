@@ -182,8 +182,10 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
                 response->setHeader("Content-Type", "text/html");
                 LOG_INFO("AUTOINDEX resource");
             } else {
-                LOG_INFO("Forbidden resource");
                 response->setStatusCode(403);
+                response->setBody("<html><body><h1>403 Forbidden</h1></body></html>");
+                response->setHeader("Content-Type", "text/html");
+                LOG_INFO("Forbidden resource: autoindex disabled");
             }
             return ;
         }

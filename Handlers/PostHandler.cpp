@@ -1,16 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   PostHandler.cpp                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 15:03:58 by smagniny         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-
 #include "Handlers.hpp"
 
 PostHandler::PostHandler()
@@ -110,9 +97,11 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
     if (contentType.empty())
     {
         //std::cout << "yooo2" << std::endl;
-        response->setStatusCode(200);
+        response->setStatusCode(201);
         std::cout << request->getBody() << std::endl;
         response->setBody(request->getBody());
+        LOG_INFO("201 Created - Request processed successfully without Content-Type");
+        return ;
     }
     else if (contentType.find("multipart/form-data") != std::string::npos)
     {
@@ -176,6 +165,7 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
 
             response->setStatusCode(201);
             response->setBody(responseBody);
+            LOG_INFO("201 Created - File uploaded successfully");
         
     }
     else if (contentType == "application/x-www-form-urlencoded") {
@@ -302,6 +292,11 @@ void    PostHandler::appendUsertoDatabase(std::map<std::string, std::string>& fo
             csvFile << "\"" << name << "\",\"" << email << "\",\"" << age << "\",\"" << gender << "\",\"" << comments << "\"" << std::endl;
             csvFile.close();
             std::cout << "Datos guardados en " << upload_path << std::endl;
+            response.setStatusCode(201);
+            response.setHeader("Content-Type", "text/html; charset=UTF-8");
+            response.setBody("<html><body><h1>Formulario guardado exitosamente</h1></body></html>");
+            LOG_INFO("201 Created - Form data saved successfully");
+            return;
         }
         else
         {

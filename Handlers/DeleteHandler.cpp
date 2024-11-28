@@ -56,32 +56,47 @@ void DeleteHandler::remove_file_or_dir(Response* response, const LocationConfig&
         fullpath.append(cwd);
 
     fullpath += Locationconfig.root;
-
-    
+    LOG_INFO("Attempting to delete: " + fullpath);
     std::cout << fullpath << std::endl;
     struct stat fileStat;
     if (stat(fullpath.c_str(), &fileStat) != 0) {
-        response->setStatusCode(403);
+        if (errno == ENOENT) {
+            response->setStatusCode(404);
+            LOG_INFO("404 Not Found - File or directory does not exist");
+        } else {
+            response->setStatusCode(403);
+            LOG_INFO("403 Forbidden - Access denied to file or directory");
+        }
         return;
     }
-
-
     if (S_ISDIR(fileStat.st_mode)) {
         if (rmdir(fullpath.c_str()) == 0)
         {
             response->setBody("<html><body><h1>Directory Removed Successfully!</h1><p><a href='/delete'>Delete another file</a></p><p><a href='/'>Go back to home</a></p></body></html>");
-            response->setStatusCode(201);
-        }
-        else
+            response->setStatusCode(204);
+            LOG_INFO("204 No Content - Recurso eliminado correctamente");
+            return ;
+        } 
+        else if (errno == ENOTEMPTY) {
             response->setStatusCode(403);
+            response->setBody("<html><body><h1>Directory is not empty</h1></body></html>");
+            LOG_INFO("403 Forbidden - Directory not empty");
+        } 
+        else {
+            response->setStatusCode(403);
+            LOG_INFO("403 Forbidden - Failed to remove directory");
     } else {
         if (remove(fullpath.c_str()) == 0)
         {
             response->setBody("<html><body><h1>File Removed Successfully!</h1><p><a href='/delete'>Delete another file</a></p><p><a href='/'>Go back to home</a></p></body></html>");
-            response->setStatusCode(201);
+            response->setStatusCode(204);
+            LOG_INFO("204 No Content - Recurso eliminado correctamente");
+            return ;
         }
         else
-            response->setStatusCode(403);
+            response->setStatusCode(500);
+            response->setBody("<html><body><h1>Internal Server Error</h1></body></html>");
+            LOG_INFO("500 Internal Server Error - Failed to remove file");
     }
 }
 
