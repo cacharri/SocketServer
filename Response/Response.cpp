@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/27 17:39:15 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 14:46:08 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,6 +165,7 @@ Response::Response()
 {
     initStatusCode();
     initMimesTypes();
+    cgi_process = NULL;
 }
 
 
@@ -191,6 +192,23 @@ void Response::setContentLength()
     std::string value = oss.str();
     setHeader("Content-Length", value);
 }
+void Response::setCgiProcess(CgiProcess* process) {
+    if (cgi_process != NULL) {
+        delete cgi_process;
+    }
+    if (process) {
+        cgi_process = new CgiProcess();  // Create new CgiProcess
+        // Copy all members
+        cgi_process->client_fd = process->client_fd;
+        cgi_process->output_pipe_fd.fd = process->output_pipe_fd.fd;  // pollfd is a struct, copied by value
+        cgi_process->output_pipe_fd.events = process->output_pipe_fd.events;  // pollfd is a struct, copied by value
+        cgi_process->output_pipe_fd.revents = process->output_pipe_fd.revents;  // pollfd is a struct, copied by value
+        cgi_process->pid = process->pid;
+        cgi_process->start_time = process->start_time;
+    } else {
+        cgi_process = NULL;
+    }
+}
 
 std::string Response::toString() const
 {
@@ -205,6 +223,10 @@ std::string Response::toString() const
     return res.str();
 }
 
+CgiProcess* Response::getCgiProcess() const
+{
+    return cgi_process;    
+}
 
 // Getters implementation
 int Response::getStatusCode() const {

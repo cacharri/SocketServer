@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 15:17:18 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 11:04:40 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -304,6 +304,16 @@ bool Request::readChunkedBody(const size_t& ClientFd)
     }
 }
 
+
+ClientInfo& Request::getClientInfo() const
+{
+    return info;
+}
+
+int Request::getClientFd() const
+{ 
+    return info.pfd.fd;
+}
 
 std::string Request::getMethod() const
 {

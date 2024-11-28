@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   PostHandler.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 19:15:28 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/27 18:19:39 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 15:03:58 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,6 +99,7 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
     //request->print();
     // Verificar si el cuerpo excede el tamaño máximo permitido
     size_t maxBodySize = locationconfig.client_max_body_size;
+    
     if (request->getBody().size() > maxBodySize) {
         LOG("Request body exceeds maximum allowed size");
         response->setStatusCode(413);  // Payload Too Large
@@ -198,19 +199,18 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
         else
             appendUsertoDatabase(formData, *response, locationconfig);
     }
-    else if ((!locationconfig.cgi_pass.empty()))
-    {
-        CgiHandler cgi_handler_instance;
-        cgi_handler_instance.handle(request, response, locationconfig);
-        response->setStatusCode(201);
-        return ;
-    }
     else
     {
         response->setStatusCode(200);
         //std::cout << request->getBody() << std::endl;
         response->setBody(request->getBody());
     }  
+    if ((!locationconfig.cgi_pass.empty()))
+    {
+        CgiHandler cgi_handler_instance;
+        cgi_handler_instance.handle(request, response, locationconfig, request->getClientFd());
+        return ;
+    }
 }
 
 

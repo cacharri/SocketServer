@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/27 18:27:19 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 14:46:08 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,23 +140,15 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
         fullpath.assign(cwd);
     
     fullpath += locationconfig.root;
-    // if (fullpath[fullpath.length()-1] != '/' && locationconfig.index[0] != '/')
-    //     fullpath += '/';
-    // else if (fullpath[fullpath.length()-1] == '/' && locationconfig.index[0] == '/')
-    //     fullpath.resize(fullpath.size() - 1);
-    // fullpath += locationconfig.index;
-
-    //std::cout << " cgi_pass:: " << locationconfig.cgi_pass << std::endl;
     fullpath = urlDecode(fullpath);
     fullpath = escapeHtml(fullpath);
     LOG_INFO(fullpath);
-    if (locationconfig.cgi_pass.empty() == false)
+    if (!locationconfig.cgi_pass.empty())
     {
         CgiHandler cgi_handler_instance;
-        cgi_handler_instance.handle(request, response, locationconfig);
-        response->setStatusCode(103);
+        cgi_handler_instance.handle(request, response, locationconfig, request->getClientFd());
         LOG_INFO("CGI Resource");
-        return ;
+        return;
     }
     else if (!locationconfig.redirect.empty())
     {

@@ -68,15 +68,17 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         const LocationConfig& locConfig = it->second;
 
         LocationConfig newLocConfig;
-        newLocConfig.root = locConfig.root;
-        newLocConfig.index = locConfig.index;
-        newLocConfig.autoindex = locConfig.autoindex;
-        newLocConfig.methods = locConfig.methods; // shallow copy
-        newLocConfig.allow_upload = locConfig.allow_upload;
-        newLocConfig.upload_store = locConfig.upload_store;
-        newLocConfig.cgi_pass = locConfig.cgi_pass;
-        newLocConfig.redirect = locConfig.redirect;
-		newLocConfig.redirect_type = locConfig.redirect_type;
+        newLocConfig.root =it->second.root;
+        newLocConfig.index =it->second.index;
+        newLocConfig.autoindex =it->second.autoindex;
+        newLocConfig.methods =it->second.methods; // shallow copy
+        newLocConfig.allow_upload =it->second.allow_upload;
+        newLocConfig.upload_store =it->second.upload_store;
+        newLocConfig.cgi_pass =it->second.cgi_pass;
+        newLocConfig.redirect =it->second.redirect;
+		newLocConfig.redirect_type =it->second.redirect_type;
+        newLocConfig.client_max_body_size =it->second.client_max_body_size;
+        //std::cout << "New location" << path << " with SIZE " << newLocConfig.client_max_body_size << std::endl;
         destination.locations[path] = newLocConfig;
     }
 
@@ -243,7 +245,7 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
                 servers.push_back(currentServer);
             }
 
-        } else if (inServerBlock && token.size() > 1) {
+        } else if (inServerBlock && !inLocationBlock && token.size() > 1) {
             // Procesar configuraciones de servidores
             if (token == "host") {
                 iss >> currentServer.interface;
@@ -265,11 +267,14 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
             } else if (token == "client_max_body_size") {
                 std::string sizeStr;
                 iss >> sizeStr;
+                std::cout <<"Server MAxSize: "<< sizeStr << std::endl;
                 if (!sizeStr.empty()) {
                     currentServer.client_max_body_size = parseSize(sizeStr);
                 }
 
-            } else if (inLocationBlock) {
+            }
+        }
+        else if (inLocationBlock) {
                 // Procesar configuraciones de ubicaciones
                 if (token == "root") {
                     iss >> currentLocation.root;
@@ -302,6 +307,7 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
                 } else if (token == "client_max_body_size") {
                     std::string sizeStr;
                     iss >> sizeStr;
+                    std::cout << "Location Size:"<< sizeStr << std::endl;
                     if (!sizeStr.empty()) {
                         currentLocation.client_max_body_size = parseSize(sizeStr);
                     }
@@ -313,7 +319,6 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
                     currentLocation.redirect = redirectUrl;
                     currentLocation.redirect_type = statusCode;
                 }
-            }
         }
     }
 

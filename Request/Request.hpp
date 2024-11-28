@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 22:28:40 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/22 16:14:20 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/28 15:33:44 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,8 @@ public:
     std::string getPath() const;
     // Setter
     void setBody(const std::string& request_body);
+    ClientInfo& getClientInfo() const;
+    int getClientFd() const;
 
     class RequestError : public std::exception {
         private:

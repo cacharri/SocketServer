@@ -21,6 +21,14 @@ Server::~Server()
         i++;
     }
     clients.clear();
+    i = 0;
+    while (i < cgis.size())
+    {
+        LOG_INFO("Deleting one CGI");
+        delete cgis[i];
+        i++;
+    }
+    cgis.clear();
 }
 
 // --------------------------------- CORE FUNCTIONALITIES ------------------------------------------
@@ -101,31 +109,71 @@ void Server::removeClient(ClientInfo* client)
 
 void    Server::handleCGIresponse(CgiProcess* cgi)
 {
-    //Leer la salida del CGI
+    if (cgi->output_pipe_fd.fd < 0) {
+        LOG_INFO("Invalid pipe file descriptor");
+        return;
+    }
+
+    std::cout << "Attempting to read from pipe fd: " << cgi->output_pipe_fd.fd << std::endl;
+
     std::string result;
     char buffer[4096];
     ssize_t bytesRead;
-    while (42)
-    {
-        bytesRead = read(cgi->output_pipe_fd.fd, buffer, sizeof(buffer));
-        if (bytesRead <= 0)
-                break;
-        result.append(buffer, bytesRead);
-    }
-    int     status;
-    pid_t   wpid = waitpid(cgi->pid, &status, WNOHANG);
-    if (wpid == cgi->pid)
-        return ;
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        LOG("Wait failed");
-        return ;
-    }
-    Response res;
+    bool hasData = false;
 
-    res.setBody(result);
-    res.setContentType("text/plain");
-    res.setContentLength();
-    sendResponse(, response);
+    // Comprobar validez del FD
+    if (fcntl(cgi->output_pipe_fd.fd, F_GETFL) == -1) {
+        LOG_INFO("Pipe fd is invalid or closed");
+        return;
+    }
+
+    while (true) {
+        bytesRead = read(cgi->output_pipe_fd.fd, buffer, sizeof(buffer));
+        
+        if (bytesRead > 0) {
+            result.append(buffer, bytesRead);
+            hasData = true;
+            std::cout << "Read " << bytesRead << " bytes from CGI pipe" << std::endl;
+            continue;
+        }
+        
+        if (bytesRead == 0) {
+            // End of file
+            LOG_INFO("Reached end of CGI pipe");
+            break;
+        }
+        
+        if (bytesRead < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                LOG_INFO("No more data available right now");
+                if (!hasData) {
+                    return; // esperar hasta proximo loop
+                }
+                break;
+            } else {
+                // Real error
+                LOG_INFO("Error reading from CGI pipe: " + std::string(strerror(errno)));
+                break;
+            }
+        }
+    }
+
+    // If we got any data, send it to the client
+    if (hasData) {
+        LOG_INFO("CGI output received " + result);
+        Response response;
+        response.setStatusCode(200);
+        response.setBody(result);
+        response.setContentType("text/html");
+        sendResponse(cgi->client_fd, response.toString());
+    } else {
+        LOG_INFO("No CGI output received");
+        Response response;
+        response.setStatusCode(500);
+        response.setBody("CGI execution failed - No output received");
+        response.setContentType("text/plain");
+        sendResponse(cgi->client_fd, response.toString());
+    }
 }
 
 void Server::handleClient(ClientInfo* client) {
@@ -141,9 +189,11 @@ void Server::handleClient(ClientInfo* client) {
         {
             analyzeBasicHeaders(clientHandler.getRequest(), clientHandler.getResponse(), client);
             router.route(clientHandler.getRequest(), clientHandler.getResponse());
-            IsCgiRequest(clientHandler.getResponse());
-            setErrorPageFromStatusCode(clientHandler.getResponse());
-            sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            if (IsCgiRequest(clientHandler.getResponse()) == false)
+            {
+                setErrorPageFromStatusCode(clientHandler.getResponse());
+                sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
+            }
             if (!clientHandler.shouldKeepAlive())
                 removeClient(client);
             else
@@ -166,6 +216,13 @@ bool    Server::IsTimeout(ClientInfo* client)
     time_t currentTime = time(NULL);
     time_t diff = currentTime - client->lastActivity;
     
+    // Don't timeout clients with active CGI processes
+    for (std::vector<CgiProcess*>::const_iterator it = cgis.begin(); it != cgis.end(); ++it) {
+        if ((*it)->client_fd == client->pfd.fd) {
+            return false;  // Client has an active CGI process
+        }
+    }
+    
     if (!client->keepAlive || diff > CONNECTION_TIMEOUT)
     {
         std::string info_message("Client Timeouted: ");
@@ -184,38 +241,33 @@ bool    Server::IsTimeoutCGI(CgiProcess* cgi)
     time_t currentTime = time(NULL);
     time_t diff = currentTime - cgi->start_time;
     
-    if (diff > CONNECTION_TIMEOUT)
+    if (diff > CGI_TIMEOUT)
     {
-        std::string info_message("Client Timeouted: ");
-        std::ostringstream      time_output;
-        time_output << diff;
-        info_message += time_output.str();
-        info_message += " seconds elapsed\n";
-        LOG_INFO(info_message.c_str());
+        std::ostringstream info_message;
+        info_message << "CGI Timeouted after " << diff << " seconds for client " << cgi->client_fd;
+        LOG_INFO(info_message.str());
+        
+        // Send timeout response to client
+        Response timeoutResponse;
+        timeoutResponse.setStatusCode(504);  // Gateway Timeout
+        timeoutResponse.setBody("CGI process timed out");
+        timeoutResponse.setContentType("text/plain");
+        sendResponse(cgi->client_fd, timeoutResponse.toString());
+        
         return true;
     }
     return false;
 }
 
-void        Server::IsCgiRequest(Response* res)
+bool        Server::IsCgiRequest(Response* res)
 {
-    if (res->getStatusCode() == 103)
+    if (res->getStatusCode() == 103 && res->getCgiProcess() != NULL)
     {
-        try
-        {
-            CgiProcess cgi_process;
-            //cgi_process.owner_client_fd = res->getHeaderAs<int>("conn_fd");
-            cgi_process.output_pipe_fd.fd = res->getHeaderAs<int>("piped_fd");
-            cgi_process.output_pipe_fd.events = POLLIN;
-            cgi_process.output_pipe_fd.events = 0;
-            cgi_process.pid = res->getHeaderAs<pid_t>("pid");
-            cgi_process.start_time = res->getHeaderAs<time_t>("start_time");
-            cgis.push_back(&cgi_process);
-        }
-        catch(const std::exception& e){
-            LOG(e.what());
-        }
+        cgis.push_back(res->getCgiProcess()); 
+        std::cout << "New Cgi appended to server" << std::endl;
+        return true;
     }
+    return false;
 }
 
 std::string Server::getErrorPagePath(Response*    response) {
