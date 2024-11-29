@@ -87,7 +87,6 @@ bool Client::HandleConnection() {
         if (!request) {
             request = new Request(*session_info);
         }
-
         LOG_INFO("Reading data from request...");
         if (!request->readData(session_info->pfd.fd, session_info->client_max_body_size)) {
             LOG_INFO("Failed to read request data.");

@@ -27,3 +27,6 @@
 [ Thu Nov 21 19:19:08 2024 ] [ Handlers/PostHandler.cpp:94 ] EMPTY BODY POST REQUEST
 [ Thu Nov 21 19:33:40 2024 ] [ Server/Server.cpp:158 ] Invalid file error page
 [ Thu Nov 21 20:53:02 2024 ] [ Handlers/PostHandler.cpp:94 ] EMPTY BODY POST REQUEST
+[ Fri Nov 29 13:14:21 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format
+[ Fri Nov 29 13:14:27 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format
+[ Fri Nov 29 13:17:18 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format

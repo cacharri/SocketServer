@@ -58,10 +58,14 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
     while (true) {
         char tempBuffer[chunkSize]; // Buffer pequeno 4byes temporal
         ssize_t bytesRead = recv(ClientFd, tempBuffer, chunkSize, 0);
-        if (bytesRead <= 0) {
-            LOG_INFO("ADIOS invalid headers read");
-            return false;        
-        }
+    if (bytesRead == 0) {
+        LOG_INFO("Client closed connection.");
+        return false;
+    }
+    if (bytesRead < 0) {
+        LOG_INFO("No more data available right now.");
+        return false;
+    }
 
         // Anadir buffer pequeno al grande
         buffer.append(tempBuffer, bytesRead);
