@@ -78,7 +78,7 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         newLocConfig.redirect =it->second.redirect;
 		newLocConfig.redirect_type =it->second.redirect_type;
         newLocConfig.client_max_body_size =it->second.client_max_body_size;
-        std::cout << "max body size en copy_server_config_es " << newLocConfig.client_max_body_size << std::endl;
+        //std::cout << "max body size en copy_server_config_es " << newLocConfig.client_max_body_size << std::endl;
         //std::cout << "New location" << path << " with SIZE " << newLocConfig.client_max_body_size << std::endl;
         destination.locations[path] = newLocConfig;
     }
@@ -88,18 +88,20 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 
 void                        ConfigParser::setDefaultErrorPages(ServerConfig& destination)
 {
+    destination.error_pages[103] = "var/www/error-pages/103.html";
+	destination.error_pages[201] = "var/www/error-pages/201.html";
 	destination.error_pages[204] = "var/www/error-pages/204.html";
-	destination.error_pages[400] = "var/www/error-pages/504.html";
-	destination.error_pages[403] = "var/www/error-pages/504.html";
-	destination.error_pages[404] = "var/www/error-pages/504.html";
-	destination.error_pages[405] = "var/www/error-pages/504.html";
-	destination.error_pages[408] = "var/www/error-pages/504.html";
+	destination.error_pages[400] = "var/www/error-pages/400.html";
+	destination.error_pages[403] = "var/www/error-pages/403.html";
+	destination.error_pages[404] = "var/www/error-pages/404.html";
+	destination.error_pages[405] = "var/www/error-pages/405.html";
+	destination.error_pages[408] = "var/www/error-pages/408.html";
 	destination.error_pages[413] = "var/www/error-pages/413.html";
-	destination.error_pages[414] = "var/www/error-pages/504.html";
-	destination.error_pages[500] = "var/www/error-pages/504.html";
-	destination.error_pages[501] = "var/www/error-pages/504.html";
-	destination.error_pages[502] = "var/www/error-pages/504.html";
-	destination.error_pages[503] = "var/www/error-pages/504.html";
+	destination.error_pages[414] = "var/www/error-pages/414.html";
+	destination.error_pages[500] = "var/www/error-pages/500.html";
+	destination.error_pages[501] = "var/www/error-pages/501.html";
+	destination.error_pages[502] = "var/www/error-pages/502.html";
+	destination.error_pages[503] = "var/www/error-pages/503.html";
 	destination.error_pages[504] = "var/www/error-pages/504.html";
 }
 bool ConfigParser::validateSyntax(const std::string& configFilePath) {

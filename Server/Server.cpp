@@ -113,9 +113,7 @@ void    Server::handleCGIresponse(CgiProcess* cgi)
         LOG_INFO("Invalid pipe file descriptor");
         return;
     }
-
-    std::cout << "Attempting to read from pipe fd: " << cgi->output_pipe_fd.fd << std::endl;
-
+    //std::cout << "Attempting to read from pipe fd: " << cgi->output_pipe_fd.fd << std::endl;
     std::string result;
     char buffer[4096];
     ssize_t bytesRead;
@@ -192,6 +190,7 @@ void Server::handleClient(ClientInfo* client) {
             if (IsCgiRequest(clientHandler.getResponse()) == false)
             {
                 setErrorPageFromStatusCode(clientHandler.getResponse());
+                clientHandler.getResponse()->setHeader("Server", this->config.server_name);
                 sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             }
             if (!clientHandler.shouldKeepAlive())
@@ -270,28 +269,28 @@ bool        Server::IsCgiRequest(Response* res)
     return false;
 }
 
-std::string Server::getErrorPagePath(Response*    response) {
-
-    int errorCode = response->getStatusCode();
-    std::stringstream path;
-    path << "var/www/error-pages/" << errorCode << ".html";
-    return path.str();
-}
 
 void        Server::setErrorPageFromStatusCode(Response*    response)
 {
-    std::string filepath = getErrorPagePath(response);
-    std::cout << filepath << std::endl;
+    int errorCode = response->getStatusCode();
+    std::map<int, std::string>::iterator iter = this->config.error_pages.find(errorCode);
+    std::string filepath;
+    if (iter != this->config.error_pages.end()) {
+        filepath = iter->second;
+    } else {
+        return ;
+    }
+
+    LOG_INFO(filepath);
+    //std::cout << "filepath << std::endl;
     if (filepath.empty())
         return ;
     std::ifstream file(filepath.c_str());
     if (!file.is_open())
-    {
         return ;
-    }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    std::cout << buffer.str() << std::endl;
+    //std::cout << buffer.str() << std::endl;
     response->setBody(buffer.str());
 
 }
