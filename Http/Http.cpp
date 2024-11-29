@@ -182,7 +182,7 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
         {
             if (cgi_index >= master_fds.size())
             {
-                LOG_INFO("CGI has not been polled: Index out of bounds");
+                //LOG_INFO("CGI has not been polled: Index out of bounds");
                 break;
             }
 
@@ -220,7 +220,7 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
                     close((*cgi_it)->client_fd);
                     delete *cgi_it;
                     cgi_it = (*srv_it)->cgis.erase(cgi_it);
-                    LOG_INFO("CGI process still running");
+                    LOG_INFO("No more CGI process");
                     ++cgi_it;
                 }
                 else

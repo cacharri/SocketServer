@@ -18,6 +18,4 @@ html_content = f"""
 </html>
 """
 
-
-sleep(2)
 print(html_content)

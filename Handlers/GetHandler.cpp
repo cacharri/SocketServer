@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 18:05:09 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 18:44:40 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,6 @@ std::string generateAutoIndex(const std::string& directory) {
     } else {
         // Error al abrir el directorio
         autoindexHtml = "<html><body><h1>Error: Cannot open directory</h1></body></html>";
-        std::cerr << "Error al abrir el directorio: " << strerror(errno) << std::endl;
     }
 
     autoindexHtml += "</table></body></html>";

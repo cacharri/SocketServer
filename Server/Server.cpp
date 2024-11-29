@@ -135,24 +135,10 @@ void    Server::handleCGIresponse(CgiProcess* cgi)
             continue;
         }
         
-        if (bytesRead == 0) {
+        if (bytesRead <= 0) {
             // End of file
             LOG_INFO("Reached end of CGI pipe");
             break;
-        }
-        
-        if (bytesRead < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                LOG_INFO("No more data available right now");
-                if (!hasData) {
-                    return; // esperar hasta proximo loop
-                }
-                break;
-            } else {
-                // Real error
-                LOG_INFO("Error reading from CGI pipe: " + std::string(strerror(errno)));
-                break;
-            }
         }
     }
 
