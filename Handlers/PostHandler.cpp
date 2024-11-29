@@ -58,6 +58,19 @@ void PostHandler::handleUrlFormEncoded(const Request* request, Response* respons
         response->setBody(body);
         return;
     }
+    if (request->getUri() == "/delete" && !(urlDecode(formData["archivo"]).empty()) && !(urlDecode(formData["boton"]).empty()) ) {
+        DeleteHandler   deleteHandler;
+        std::string     filepath(urlDecode(formData["archivo"]));
+        
+        if (locationconfig.root[locationconfig.root.length()-1] != '/' && filepath[0] != '/')
+            locationconfig.root += std::string("/");
+        else if (locationconfig.root[locationconfig.root.length()-1] == '/' && filepath[0] == '/')
+            locationconfig.root.resize(locationconfig.root.size() - 1);
+            
+        locationconfig.root += filepath;
+        deleteHandler.remove_file_or_dir(response, locationconfig);
+        return;
+    }
 
     // Respuesta con los datos procesados
     std::string responseBody = "<html><body>";
@@ -98,7 +111,8 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
         return;
     }
 
-    if (contentType == "application/x-www-form-urlencoded") {
+    if (contentType == "application/x-www-form-urlencoded")
+    {
         handleUrlFormEncoded(request, response, locationconfig);
         return;
     }
@@ -109,7 +123,6 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
         cgi_handler_instance.handle(request, response, locationconfig, request->getClientFd());
         return;
     }
-
     response->setStatusCode(200);
     response->setBody(request->getBody());
     LOG_INFO("200 OK - Request processed successfully");
