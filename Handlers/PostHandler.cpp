@@ -69,6 +69,9 @@ void PostHandler::handleUrlFormEncoded(const Request* request, Response* respons
             
         locationconfig.root += filepath;
         deleteHandler.remove_file_or_dir(response, locationconfig);
+        response->setStatusCode(201);
+        response->setBody("<html><body><h1>File Deleted Succesfully! </h1><p><a href='delete'>delete another file </a</p><p><a href='/'>GO back home</a></p></body></html>");
+
         return;
     }
 

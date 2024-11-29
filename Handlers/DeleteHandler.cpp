@@ -109,6 +109,8 @@ void DeleteHandler::handle(const Request* request, Response* response, LocationC
     LOG_INFO("DELETE request on route;");
     LOG_INFO(request->getUri());
     remove_file_or_dir(response, locationconfig);
+    response->setStatusCode(201);
+    response->setBody("<html><body><h1>File Deleted Succesfully! </h1><p><a href='delete'>delete another file </a</p><p><a href='/'>GO back home</a></p></body></html>");
 }
 
 
