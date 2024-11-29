@@ -90,6 +90,7 @@ private:
     void        setErrorPageFromStatusCode(Response*    response);
     std::string getErrorPagePath(Response*    response);
     bool        IsCgiRequest(Response* res);
+    std::string getFormattedDate();
 
     
     // Disable copy constructor and assignment operator

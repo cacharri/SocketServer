@@ -174,6 +174,20 @@ void    Server::handleCGIresponse(CgiProcess* cgi)
     }
 }
 
+std::string Server::getFormattedDate() {
+    std::time_t now = std::time(NULL);
+    struct tm gm_time;
+    gmtime_r(&now, &gm_time);
+
+    char buffer[100];
+    if (std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", &gm_time)) {
+        return std::string(buffer);
+    } else {
+        return "Invalid Date";
+    }
+}
+
+
 void Server::handleClient(ClientInfo* client) {
     try {
         Client clientHandler(client);
@@ -191,7 +205,8 @@ void Server::handleClient(ClientInfo* client) {
             {
                 setErrorPageFromStatusCode(clientHandler.getResponse());
                 clientHandler.getResponse()->setHeader("Server", this->config.server_name);
-                //clientHandler.getResponse()->setHeader("Date", this->config.server_name); hacer funcion para el tiempo
+                clientHandler.getResponse()->setHeader("Date", getFormattedDate());
+
                 sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             }
 
@@ -204,7 +219,7 @@ void Server::handleClient(ClientInfo* client) {
         LOG("Error handling client: " + std::string(e.what()));
         Response errorResponse;
         errorResponse.setStatusCode(500);
-        setErrorPageFromStatusCode(&errorResponse);
+        errorResponse.setBody(readFile("var/www/error-pages/500.html"));
         sendResponse(client->pfd.fd, errorResponse.toString());
         removeClient(client);
     }
