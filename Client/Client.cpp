@@ -60,20 +60,6 @@ time_t Client::getLastActivity() const {
     return session_info ? session_info->lastActivity : 0;
 }
 
-void Client::sendRResponse(int clientSocket, const std::string& response)
-{
-    ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), MSG_CONFIRM);
-    if (bytesSent < 0)
-    {
-        try {
-            throw std::runtime_error("Failed to send response!");
-        } catch (const std::exception& e) {
-            LOG_EXCEPTION(e); // Aquí se usa 'e' en lugar de 'error'
-}
-
-    }
-}
-
 bool Client::HandleConnection() {
     try {
         LOG_INFO("Starting to handle connection for FD: " + to_string(session_info->pfd.fd));
@@ -89,9 +75,8 @@ bool Client::HandleConnection() {
         }
         LOG_INFO("Reading data from request...");
         if (!request->readData(session_info->pfd.fd, session_info->client_max_body_size)) {
-            LOG_INFO("Failed to read request data.");
+            //LOG_INFO("Failed to read request data.");
             response->setStatusCode(400);
-            request->print();
             return false; // Indicar fallo
         }
         LOG_INFO("Request data read successfully.");

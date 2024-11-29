@@ -105,6 +105,7 @@ void        PostHandler::handle(const Request* request, Response* response, Loca
     if (contentType.empty()) {
         LOG_INFO("Processing request without Content-Type");
         response->setStatusCode(201);  // Created
+        //LOG_INFO(request->getBody());
         response->setBody(request->getBody());
         return;
     }

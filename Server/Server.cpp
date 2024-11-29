@@ -206,7 +206,6 @@ void Server::handleClient(ClientInfo* client) {
                 setErrorPageFromStatusCode(clientHandler.getResponse());
                 clientHandler.getResponse()->setHeader("Server", this->config.server_name);
                 clientHandler.getResponse()->setHeader("Date", getFormattedDate());
-
                 sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             }
 
@@ -268,7 +267,6 @@ bool    Server::IsTimeoutCGI(CgiProcess* cgi)
         timeoutResponse.setBody("CGI process timed out");
         timeoutResponse.setContentType("text/plain");
         sendResponse(cgi->client_fd, timeoutResponse.toString());
-        
         return true;
     }
     return false;
@@ -294,10 +292,10 @@ void        Server::setErrorPageFromStatusCode(Response*    response)
 
     if (iter != this->config.error_pages.end()) {
         filepath = iter->second; // Found: get the value associated with the key
-    } else {
-        LOG_INFO("No hay página de error");
-    }
-    LOG_INFO(filepath);
+    } else
+        return ;
+        
+    //LOG_INFO("No hay página de error");
     //std::cout << "filepath << std::endl;
     if (filepath.empty())
         return ;
@@ -311,10 +309,7 @@ void        Server::setErrorPageFromStatusCode(Response*    response)
 
 }
 
-
-
 //-------------------------------- EXCEPTION HANDLING ------------------------------------
-
 
 Server::ServerError::ServerError(const std::string& error): error_string(error)
 {

@@ -263,7 +263,7 @@ void    Http::Clients_events(size_t& fd_index, std::vector<pollfd>& master_fds)
         {
             if (fd_index >= master_fds.size())
             {
-                LOG_INFO("Client has not been polled: Index out of bounds");
+                //LOG_INFO("Client has not been polled: Index out of bounds");
                 break;
             }
 

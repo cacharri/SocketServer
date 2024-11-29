@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/29 23:02:59 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/06 14:01:15 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 18:02:42 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ public:
     time_t      getLastActivity() const;
     
     void        setLastActivity() const;
-    void        sendRResponse(int clientSocket, const std::string& response); 
 
     class ClientError : public std::exception {
         private:

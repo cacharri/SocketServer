@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 16:45:41 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 18:05:29 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         // std::cout << print << "|" << std::endl;
         // hay un \r\n\r\n ? hemos llegado al final de los headers
         if (buffer.find("\r\n\r\n") != std::string::npos) {
-            std::cout << "Found CLRF at " << totalRead << " bytes read" << std::endl;
+            //std::cout << "Found CLRF at " << totalRead << " bytes read" << std::endl;
             break;
         }
         else if (bytesRead && (tempBuffer[0] == '\r' || tempBuffer[0] == '\n'))
@@ -92,9 +92,9 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
             return false;
         }
     }
-    std::cout <<"Buffer \n" << std::endl;
-    std::cout << buffer << std::endl;
-    std::cout << "--------------" << std::endl;
+    //std::cout <<"Buffer \n" << std::endl;
+    //std::cout << buffer << std::endl;
+    //std::cout << "--------------" << std::endl;
     // std::cout << "-------------------------\n\n--------------------\n" << std::endl;
     // // Ponemos bien los headers por si
     // size_t endHeadersPos = buffer.find("\r\n\r\n");
@@ -157,12 +157,12 @@ void Request::parseRequest(std::string headers) {
 
             // Almacenar en headers, mapa de strings miembro del objeto Request
             this->headers[key] = value;
-            std::cout << "request headers added " << key << std::endl;
+            //std::cout << "request headers added " << key << std::endl;
         }
-        else 
-        {
-            std::cout << "found line in headers i dont know: " << line << std::endl;
-        }
+        // else 
+        // {
+        //     //std::cout << "found line in headers i dont know: " << line << std::endl;
+        // }
     }
 }
 
@@ -204,7 +204,7 @@ size_t  Request::parseContentLength()
     if (header_iter != this->headers.end())
     {
         std::string  contentLength_Str(header_iter->second);
-        std::cout << "Content-length-value: " << header_iter->second << std::endl;
+        //std::cout << "Content-length-value: " << header_iter->second << std::endl;
         contentLength = static_cast<size_t>(atoi(contentLength_Str.c_str()));
     }
 
@@ -283,7 +283,7 @@ bool Request::readChunkedBody(const size_t& ClientFd)
             size_t totalBodyRead = 0;
             while (totalBodyRead < chunkSize)
             {
-                std::cout << "Voy a leer " << chunkSize - totalBodyRead << std::endl;
+                //std::cout << "Voy a leer " << chunkSize - totalBodyRead << std::endl;
                 if (chunkSize - totalBodyRead <= 1)
                     break;
                 size_t bytesRead = recv(ClientFd, &buffer[totalBodyRead], chunkSize - totalBodyRead, 0);
@@ -291,7 +291,7 @@ bool Request::readChunkedBody(const size_t& ClientFd)
                     throw RequestError("Error leyendo datos del chunk");
                 if (buffer.find_first_of("\r\n") != std::string::npos)
                     buffer.erase(buffer.find_first_of("\r\n"));                
-                std::cout << "read of chunk; " << buffer << "|" << std::endl;
+                //std::cout << "read of chunk; " << buffer << "|" << std::endl;
                 totalBodyRead += bytesRead;
             }
             

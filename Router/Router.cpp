@@ -172,7 +172,7 @@ void Router::route(const Request* request, Response* response)
     RouteConfig* route_config = HasValidMethod(routes[best_match_path], request->getMethod());
     if (request->getMethod() != "GET" && request->getMethod() != "POST" && request->getMethod() != "DELETE")
     {
-        response->setStatusCode(501);
+        response->setStatusCode(405);
         return ;
     }
     else if (route_config)

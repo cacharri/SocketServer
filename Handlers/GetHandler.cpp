@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GetHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 14:46:08 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 18:05:09 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,7 @@ GetHandler::~GetHandler()
 
 
 void GetHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig) {
-    std::cout << "Received GET request" << std::endl;
+    //std::cout << "Received GET request" << std::endl;
     char cwd[PATH_MAX];
     std::string fullpath(cwd);
     if (getcwd(cwd, sizeof(cwd)) != NULL)
