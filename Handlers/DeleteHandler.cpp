@@ -85,7 +85,9 @@ void DeleteHandler::remove_file_or_dir(Response* response, const LocationConfig&
         else {
             response->setStatusCode(403);
             LOG_INFO("403 Forbidden - Failed to remove directory");
-    } else {
+        }
+    }
+    else {
         if (remove(fullpath.c_str()) == 0)
         {
             response->setBody("<html><body><h1>File Removed Successfully!</h1><p><a href='/delete'>Delete another file</a></p><p><a href='/'>Go back to home</a></p></body></html>");
