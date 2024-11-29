@@ -149,13 +149,22 @@ void Router::route(const Request* request, Response* response)
 
     // Construir el path relativo
     std::string full_path = best_match_config->endpointdata.root;
+
     if (!remaining_path.empty())
     {
         if (full_path[full_path.length()-1] != '/' && ( remaining_path.empty() || remaining_path[0] != '/' ) ) 
             full_path += '/';
         else if (full_path[full_path.length()-1] == '/' && remaining_path[0] == '/')
-            full_path.resize(full_path.size() - 1);    
+            full_path.resize(full_path.size() - 1);
+        else if (remaining_path == "/")
+            remaining_path.clear();
         full_path += remaining_path;
+    }
+    if (request->getMethod() == "DELETE" && remaining_path.empty())
+    {
+        LOG_INFO("Invalid DELETE on root dir");
+        response->setStatusCode(403);
+        return ;
     }
     // pasar una copia de LocationConfig con el root relativo enrutado
     LocationConfig temp_config = best_match_config->endpointdata;
