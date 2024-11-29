@@ -52,18 +52,16 @@ const char * Http::ServerError::what() const throw()
 }
 
 // METHODOS
-void    Http::configure(const std::string&  configfile)
+bool    Http::configure(const std::string&  configfile)
 {
     std::vector<ServerConfig> serverConfigs = ConfigParser::parseServerConfigFile(configfile);
 
     if (serverConfigs.empty())
     {
         LOG("Configuration file does not have a valid Server Configuration.");
-        return ;
+        return false;
     }
-    
-    try{
-        
+    try{ 
         for (std::vector<ServerConfig>::const_iterator it = serverConfigs.begin(); it != serverConfigs.end(); ++it) {
             Server* server = new Server(*it);
             servers.push_back(server);
@@ -71,9 +69,11 @@ void    Http::configure(const std::string&  configfile)
 
     } catch (const std::exception& e) {
         LOG(e.what());
+        return false; 
     }
     if (servers.empty())
         LOG("No servers could be started.");
+    return true;
 
 }
 
@@ -256,7 +256,6 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
 
 void    Http::Clients_events(size_t& fd_index, std::vector<pollfd>& master_fds)
 {
-    // 2. Handle active client events
     for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
     {
         std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin();
@@ -340,6 +339,7 @@ void    Http::launch_all()
     } catch (std::exception& e){
         delete (*it);
         servers.erase(it);
+        return ;
     }
     LOG_INFO("All servers are launching... Press CTRL+C to quit");
 
@@ -371,8 +371,6 @@ void    Http::launch_all()
         CGI_events(cgi_index, master_fds);
         Server_events(fd_index, master_fds);
         Clients_events(fd_index, master_fds);
-
-        
     }
 }
 

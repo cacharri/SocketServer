@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/02 22:10:25 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 14:30:21 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 15:41:24 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ public:
             virtual ~ServerError() throw();
     };
 
-    void    configure(const std::string&  configfile);
+    bool    configure(const std::string&  configfile);
     void    launch_all();
     void    free_servers();
     void    quitSignal();

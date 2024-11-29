@@ -202,7 +202,7 @@ void Server::handleClient(ClientInfo* client) {
         LOG("Error handling client: " + std::string(e.what()));
         Response errorResponse;
         errorResponse.setStatusCode(500);
-        errorResponse.setBody(readFile("var/www/error-pages/500.html"));
+        setErrorPageFromStatusCode(&errorResponse);
         sendResponse(client->pfd.fd, errorResponse.toString());
         removeClient(client);
     }
