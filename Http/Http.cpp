@@ -216,6 +216,10 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
                 }
                 else if (result == 0)
                 {
+                    close((*cgi_it)->output_pipe_fd.fd);
+                    close((*cgi_it)->client_fd);
+                    delete *cgi_it;
+                    cgi_it = (*srv_it)->cgis.erase(cgi_it);
                     LOG_INFO("CGI process still running");
                     ++cgi_it;
                 }
@@ -238,7 +242,6 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
                 pid_t result = waitpid((*cgi_it)->pid, &status, WNOHANG);
                 if (result == 0)
                     kill((*cgi_it)->pid, SIGTERM);
-                    
                 delete *cgi_it;
                 cgi_it = (*srv_it)->cgis.erase(cgi_it);
             }
@@ -277,7 +280,6 @@ void    Http::Clients_events(size_t& fd_index, std::vector<pollfd>& master_fds)
                         break;
                     }
                 }
-                
                 if (!hasCGI) {
                     close((*cli_it)->pfd.fd);
                     delete *cli_it;
