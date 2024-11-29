@@ -275,9 +275,10 @@ bool        Server::IsCgiRequest(Response* res)
 void        Server::setErrorPageFromStatusCode(Response*    response)
 {
     int errorCode = response->getStatusCode();
-    std::string filepath = this->config.error_pages.at(errorCode);
+
+    std::string filepath = this->config.error_pages[errorCode];
     //std::cout << "From errorCode page is " << filepath << std::endl;
-  
+
     LOG_INFO(filepath);
     //std::cout << "filepath << std::endl;
     if (filepath.empty())
