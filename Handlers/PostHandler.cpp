@@ -34,7 +34,12 @@ void PostHandler::handleMultipartFormData(const Request* request, Response* resp
         response->setBody("<html><body><h1>Internal Server Error - Failed to Save File</h1></body></html>");
         return;
     }
-
+    else
+    {
+        response->setStatusCode(201);
+        response->setBody("<html><body><h1>File Uploaded Succesfully! </h1><p><a href='upload'>upload another file </a</p><p><a href='/'>GO back home</a></p></body></html>");
+        return;
+    }
     // Responder con el mismo cuerpo enviado por el cliente
     response->setStatusCode(201);
     response->setBody(request->getBody());
