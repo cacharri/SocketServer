@@ -66,15 +66,16 @@ void PostHandler::handleUrlFormEncoded(const Request* request, Response* respons
     response->setBody(responseBody);
 }
 
-void PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
-{
-    LOG_INFO("Received POST request");
-
+void        PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
+{   
+    //std::cout << "Received POST request" << std::endl;
+    //request->print();
+    // Verificar si el cuerpo excede el tamaño máximo permitido
     size_t maxBodySize = locationconfig.client_max_body_size;
     if (request->getBody().size() > maxBodySize) {
         LOG("Request body exceeds maximum allowed size");
         response->setStatusCode(413);  // Payload Too Large
-        response->setBody("<html><body><h1>Payload Too Large</h1></body></html>");
+
         return;
     }
 
