@@ -30,3 +30,4 @@
 [ Fri Nov 29 13:14:21 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format
 [ Fri Nov 29 13:14:27 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format
 [ Fri Nov 29 13:17:18 2024 ] [ Client/Client.cpp:101 ] Exception caught during client handling: Invalid status line format
+[ Fri Nov 29 15:47:20 2024 ] [ Request/Request.cpp:306 ] Error en lectura chunked: Error leyendo tamaño del chunk

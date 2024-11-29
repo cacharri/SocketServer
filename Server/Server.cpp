@@ -191,8 +191,10 @@ void Server::handleClient(ClientInfo* client) {
             {
                 setErrorPageFromStatusCode(clientHandler.getResponse());
                 clientHandler.getResponse()->setHeader("Server", this->config.server_name);
+                //clientHandler.getResponse()->setHeader("Date", this->config.server_name); hacer funcion para el tiempo
                 sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             }
+
             if (!clientHandler.shouldKeepAlive())
                 removeClient(client);
             else

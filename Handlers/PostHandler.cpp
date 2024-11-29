@@ -15,6 +15,7 @@ void PostHandler::handleMultipartFormData(const Request* request, Response* resp
     size_t boundaryPos = contentType.find("boundary=");
     if (boundaryPos == std::string::npos) {
         response->setStatusCode(400);
+        response->setBody("<html><body><h1>Bad Request - Missing Boundary</h1></body></html>");
         return;
     }
 
@@ -24,16 +25,19 @@ void PostHandler::handleMultipartFormData(const Request* request, Response* resp
 
     if (fileData.empty()) {
         response->setStatusCode(400);
+        response->setBody("<html><body><h1>Bad Request - Invalid Multipart Data</h1></body></html>");
         return;
     }
 
     if (!saveFile(filename, fileData)) {
         response->setStatusCode(500);  // Internal Server Error
+        response->setBody("<html><body><h1>Internal Server Error - Failed to Save File</h1></body></html>");
         return;
     }
 
-    response->setStatusCode(201);  // Created
-    response->setBody("<html><body><h1>File Uploaded Successfully!</h1></body></html>");
+    // Responder con el mismo cuerpo enviado por el cliente
+    response->setStatusCode(201);
+    response->setBody(request->getBody());
 }
 
 void PostHandler::handleUrlFormEncoded(const Request* request, Response* response, LocationConfig& locationconfig) {
@@ -43,32 +47,14 @@ void PostHandler::handleUrlFormEncoded(const Request* request, Response* respons
     // Parsear el cuerpo como pares clave-valor
     std::map<std::string, std::string> formData = parseUrlFormData(body);
 
-    // Si no hay datos, responde con un error
+    // Si no hay datos, responde con el mismo cuerpo recibido
     if (formData.empty()) {
-        response->setStatusCode(400); // Bad Request
-        return;
-    }
-    if (request->getUri() == "/delete" && !(urlDecode(formData["archivo"]).empty()) && !(urlDecode(formData["boton"]).empty()) ) {
-        DeleteHandler   deleteHandler;
-        std::string     filepath(urlDecode(formData["archivo"]));
-        
-        if (locationconfig.root[locationconfig.root.length()-1] != '/' && filepath[0] != '/')
-            locationconfig.root += std::string("/");
-        else if (locationconfig.root[locationconfig.root.length()-1] == '/' && filepath[0] == '/')
-            locationconfig.root.resize(locationconfig.root.size() - 1);
-            
-        locationconfig.root += filepath;
-        deleteHandler.remove_file_or_dir(response, locationconfig);
-        return;
-    }
-    // Procesar datos específicos del formulario (ejemplo: almacenar en un archivo)
-    if (formData.find("name") != formData.end() && formData.find("email") != formData.end()) {
-        // Guardar los datos en una base de datos o archivo
-        appendUsertoDatabase(formData, *response, locationconfig);
+        response->setStatusCode(200);
+        response->setBody(body);
         return;
     }
 
-    // Respuesta genérica para datos no procesados
+    // Respuesta con los datos procesados
     std::string responseBody = "<html><body>";
     responseBody += "<h1>Formulario Recibido</h1>";
     for (std::map<std::string, std::string>::const_iterator it = formData.begin(); it != formData.end(); ++it) {
@@ -76,134 +62,52 @@ void PostHandler::handleUrlFormEncoded(const Request* request, Response* respons
     }
     responseBody += "</body></html>";
 
-    response->setStatusCode(200); // OK
+    response->setStatusCode(200);
     response->setBody(responseBody);
 }
 
-void        PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
-{   
-    std::cout << "Received POST request" << std::endl;
-    //request->print();
-    // Verificar si el cuerpo excede el tamaño máximo permitido
+void PostHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig)
+{
+    LOG_INFO("Received POST request");
+
     size_t maxBodySize = locationconfig.client_max_body_size;
-    
     if (request->getBody().size() > maxBodySize) {
         LOG("Request body exceeds maximum allowed size");
         response->setStatusCode(413);  // Payload Too Large
+        response->setBody("<html><body><h1>Payload Too Large</h1></body></html>");
         return;
     }
+
     std::string contentType = request->getHeader("Content-Type");
-    //std::cout << "Content type is " << contentType << std::endl;
-    if (contentType.empty())
-    {
-        //std::cout << "yooo2" << std::endl;
-        response->setStatusCode(201);
-        std::cout << request->getBody() << std::endl;
+
+    if (contentType.empty()) {
+        LOG_INFO("Processing request without Content-Type");
+        response->setStatusCode(201);  // Created
         response->setBody(request->getBody());
-        LOG_INFO("201 Created - Request processed successfully without Content-Type");
-        return ;
+        return;
     }
-    else if (contentType.find("multipart/form-data") != std::string::npos)
-    {
-        size_t boundaryPos = contentType.find("boundary=");
-        if (boundaryPos == std::string::npos)
-        {
-            response->setStatusCode(400);
-            return ;
-        }
-        std::string boundary = contentType.substr(boundaryPos + 9); // 9 is the length of "boundary="
-        //std::cout << "Content type boundary is " << boundary << std::endl;
 
-        if (request->getBody().empty())
-        {
-            LOG("EMPTY BODY POST REQUEST");
-            response->setStatusCode(204);
-            return;
-        }
-        std::string fileData;
-        std::string filename;
-        fileData = parseMultipartFormData(request->getBody(), boundary, locationconfig.upload_store, filename);
-        std::string responseBody;
-
-        // Check if fileData is empty
-        if (request->getBody().empty())
-        {
-            response->setStatusCode(400);
-            return;
-        }
-        struct stat fileStat;
-        if (stat((filename).c_str(), &fileStat) == 0) {
-            LOG_INFO("FILE ALLREADY EXIST");
-            std::string body = "<html><head><title>File Upload</title></head><body>";
-            body += "<h2>File already exists.</h2>";
-            body += "<p><a href='/upload'>Upload another file</a></p>";
-            body += "<p><a href='/'>Go back to home</a></p>";
-            body += "</body></html>";
-
-            // Establecemos la respuesta
-            response->setBody(body);
-            response->setStatusCode(201);  // Respuesta OK
-            return;
-        }
-
-
-        // Save the file and check for errors
-        if (!saveFile(filename, fileData))
-        {
-            response->setStatusCode(500);
-            response->setBody(readFile("/var/www/error-pages/500.html"));
-            return;
-        }
-            response->setHeader("Content-Type", "text/html; charset=UTF-8");
-            responseBody = "<html><body>";
-            responseBody += "<h1>File Uploaded Successfully!</h1>";
-            responseBody += "<p>Your file has been uploaded as: " + filename + "</p>";
-            responseBody += "<script>localStorage.setItem('uploadedFileName', '" + filename + "');</script>";
-            responseBody += "<p><a href='/upload'>Upload another file</a></p>";
-            responseBody += "<p><a href='/'>Go back to home</a></p>";
-            responseBody += "</body></html>";
-
-            response->setStatusCode(201);
-            response->setBody(responseBody);
-            LOG_INFO("201 Created - File uploaded successfully");
-        
+    if (contentType.find("multipart/form-data") != std::string::npos) {
+        handleMultipartFormData(request, response, locationconfig);
+        return;
     }
-    else if (contentType == "application/x-www-form-urlencoded") {
-        std::map<std::string, std::string> formData = parseUrlFormData(request->getBody());
-        
-        // Si c'est une demande de suppression via formulaire
-        if (request->getUri() == "/delete" && !(urlDecode(formData["archivo"]).empty()) && !(urlDecode(formData["boton"]).empty()) ) {
-            DeleteHandler   deleteHandler;
-            std::string     filepath(urlDecode(formData["archivo"]));
-            
-            if (locationconfig.root[locationconfig.root.length()-1] != '/' && filepath[0] != '/')
-                locationconfig.root += std::string("/");
-            else if (locationconfig.root[locationconfig.root.length()-1] == '/' && filepath[0] == '/')
-                locationconfig.root.resize(locationconfig.root.size() - 1);
-                
-            locationconfig.root += filepath;
-            deleteHandler.remove_file_or_dir(response, locationconfig);
-            return;
-            
-        }
-        else
-            appendUsertoDatabase(formData, *response, locationconfig);
+
+    if (contentType == "application/x-www-form-urlencoded") {
+        handleUrlFormEncoded(request, response, locationconfig);
+        return;
     }
-    else
-    {
-        response->setStatusCode(200);
-        //std::cout << request->getBody() << std::endl;
-        response->setBody(request->getBody());
-    }  
-    if ((!locationconfig.cgi_pass.empty()))
-    {
+
+    if (!locationconfig.cgi_pass.empty()) {
+        LOG_INFO("Handling CGI for POST request");
         CgiHandler cgi_handler_instance;
         cgi_handler_instance.handle(request, response, locationconfig, request->getClientFd());
-        return ;
+        return;
     }
+
+    response->setStatusCode(200);
+    response->setBody(request->getBody());
+    LOG_INFO("200 OK - Request processed successfully");
 }
-
-
 
 std::string     PostHandler::parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store, std::string& filename) {
     std::string fileData;
@@ -249,7 +153,7 @@ std::string     PostHandler::parseMultipartFormData(const std::string& data, con
         start = end;
     }
     return fileData;
-    // Return fileData through the reference parameter if needed
+    
 }
 
 std::map<std::string, std::string> PostHandler::parseUrlFormData(const std::string& body)
@@ -268,53 +172,6 @@ std::map<std::string, std::string> PostHandler::parseUrlFormData(const std::stri
     }
 
     return formData;
-}
-
-
-void    PostHandler::appendUsertoDatabase(std::map<std::string, std::string>& formData, Response& response, const LocationConfig& locationconfig)
-{
-    //Process the form data as needed
-        std::string name = urlDecode(formData["name"]);
-        std::string email = urlDecode(formData["email"]);
-        std::string age = urlDecode(formData["age"]);
-        std::string gender = urlDecode(formData["gender"]);
-        std::string comments = urlDecode(formData["comments"]);
-        
-        std::cout << "Decoded name: " << name << std::endl;
-
-        std::string upload_path = ((locationconfig.upload_store[locationconfig.upload_store.size() - 1] == '/') 
-                            ? locationconfig.upload_store + "form_inputs_database.csv" 
-                            : locationconfig.upload_store + "/form_inputs_database.csv");
-                            
-        std::ofstream csvFile(upload_path.c_str(), std::ios::app);
-        if (csvFile.is_open())
-        {
-            csvFile << "\"" << name << "\",\"" << email << "\",\"" << age << "\",\"" << gender << "\",\"" << comments << "\"" << std::endl;
-            csvFile.close();
-            std::cout << "Datos guardados en " << upload_path << std::endl;
-            response.setStatusCode(201);
-            response.setHeader("Content-Type", "text/html; charset=UTF-8");
-            response.setBody("<html><body><h1>Formulario guardado exitosamente</h1></body></html>");
-            LOG_INFO("201 Created - Form data saved successfully");
-            return;
-        }
-        else
-        {
-            std::cerr << "No se pudo abrir el archivo form_data.csv" << std::endl;
-            response.setStatusCode(500);
-            response.setBody("Failed to open form_data.csv");
-            return;
-        }
-
-        // Generate response HTML
-        std::string responseBody = "<html><body>";
-        responseBody += "<h1>Formulario Recibido</h1>";
-        responseBody += "<p>Nombre: " + escapeHtml(name) + "</p>";
-        responseBody += "<p>Email: " + escapeHtml(email) + "</p>";
-        responseBody += "<p>Edad: " + escapeHtml(age) + "</p>";
-        responseBody += "<p>G&eacute;nero: " + escapeHtml(gender) + "</p>";
-        responseBody += "<p>Comentarios: " + escapeHtml(comments) + "</p>";
-        responseBody += "</body></html>";
 }
 
 bool PostHandler::saveFile(const std::string& filename, const std::string& data)
