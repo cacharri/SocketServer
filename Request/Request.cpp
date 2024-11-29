@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 11:04:40 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 16:45:41 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,6 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
         return readChunkedBody(ClientFd);
     } else {
         size_t contentLength = parseContentLength();
-
         // Handle Content-Length
         if (contentLength > maxSize)
             return false;
@@ -175,13 +174,13 @@ bool    Request::readContentLengthBody(const size_t& ClientFd, size_t contentLen
     //std::cout << contentLength << std::endl;
     while (totalBodyRead < contentLength)
     {
-        std::cout << "Voy a leer " << contentLength - totalBodyRead << std::endl;
+        //std::cout << "Voy a leer " << contentLength - totalBodyRead << std::endl;
         if (contentLength - totalBodyRead < 2)
             break;
         ssize_t bytesRead = recv(ClientFd, &tempBody[totalBodyRead], contentLength - totalBodyRead, 0);
-        std::cout << "He leido " << bytesRead << " bytes" << std::endl;
+        //std::cout << "He leido " << bytesRead << " bytes" << std::endl;
         totalBodyRead += bytesRead;
-        std::cout << "En total llevo : " << totalBodyRead << "\n" <<std::endl;
+        //std::cout << "En total llevo : " << totalBodyRead << "\n" <<std::endl;
         if (bytesRead < 0) {
             LOG_INFO("Error reading body data");
             return false;

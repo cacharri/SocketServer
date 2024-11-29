@@ -4,8 +4,8 @@
 Server::Server(const ServerConfig& serverConfig)
     : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.ports, serverConfig.interface)
 {
-    ConfigParser::setDefaultErrorPages(config);
     ConfigParser::copyServerConfig(serverConfig, config);
+    ConfigParser::setDefaultErrorPages(config);
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
@@ -226,7 +226,6 @@ void Server::handleClient(ClientInfo* client) {
 }
 
 
-
 bool    Server::IsTimeout(ClientInfo* client)
 {
     time_t currentTime = time(NULL);
@@ -290,10 +289,14 @@ bool        Server::IsCgiRequest(Response* res)
 void        Server::setErrorPageFromStatusCode(Response*    response)
 {
     int errorCode = response->getStatusCode();
+    std::map<int, std::string>::iterator iter = this->config.error_pages.find(errorCode);
+    std::string filepath;
 
-    std::string filepath = this->config.error_pages[errorCode];
-    //std::cout << "From errorCode page is " << filepath << std::endl;
-
+    if (iter != this->config.error_pages.end()) {
+        filepath = iter->second; // Found: get the value associated with the key
+    } else {
+        LOG_INFO("No hay página de error");
+    }
     LOG_INFO(filepath);
     //std::cout << "filepath << std::endl;
     if (filepath.empty())

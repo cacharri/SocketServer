@@ -89,8 +89,6 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 void                        ConfigParser::setDefaultErrorPages(ServerConfig& destination)
 {
     destination.error_pages[103] = "var/www/error-pages/103.html";
-	destination.error_pages[201] = "var/www/error-pages/201.html";
-	destination.error_pages[204] = "var/www/error-pages/204.html";
 	destination.error_pages[400] = "var/www/error-pages/400.html";
 	destination.error_pages[403] = "var/www/error-pages/403.html";
 	destination.error_pages[404] = "var/www/error-pages/404.html";
@@ -104,6 +102,7 @@ void                        ConfigParser::setDefaultErrorPages(ServerConfig& des
 	destination.error_pages[503] = "var/www/error-pages/503.html";
 	destination.error_pages[504] = "var/www/error-pages/504.html";
 }
+
 bool ConfigParser::validateSyntax(const std::string& configFilePath) {
     std::ifstream file(configFilePath.c_str());
     if (!file.is_open()) {
