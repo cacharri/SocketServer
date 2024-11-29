@@ -64,11 +64,8 @@ void Server::acceptClient(int listenFd)
     int clientFd = accept(listenFd, (struct sockaddr*)&clientAddr, &clientAddrLen);
     if (clientFd < 0)
     {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
-        {
-            ServerError error("Accept incoming socket failed !");
-            LOG_EXCEPTION(error);
-        }
+        ServerError error("Accept incoming socket failed !");
+        LOG_EXCEPTION(error);
         return;
     }
 
@@ -83,7 +80,7 @@ void Server::acceptClient(int listenFd)
     clients.push_back(newClient);
 
     std::ostringstream info_message;
-    info_message << "New Client on Fd: " << clientFd;
+    info_message << "New Client on Fd: " << clientFd << "From " << listenFd;
     LOG_INFO(info_message.str());
 }
 
@@ -194,7 +191,7 @@ void Server::handleClient(ClientInfo* client) {
                 clientHandler.getResponse()->setHeader("Date", getFormattedDate());
                 sendResponse(client->pfd.fd, clientHandler.getResponse()->toString());
             }
-
+            //std::cout << clientHandler.getResponse()->getHeaders("Connection") << std::endl;
             if (!clientHandler.shouldKeepAlive())
                 removeClient(client);
             else
@@ -210,7 +207,6 @@ void Server::handleClient(ClientInfo* client) {
     }
 }
 
-
 bool    Server::IsTimeout(ClientInfo* client)
 {
     time_t currentTime = time(NULL);
@@ -223,7 +219,7 @@ bool    Server::IsTimeout(ClientInfo* client)
         }
     }
     
-    if (!client->keepAlive || diff > CONNECTION_TIMEOUT)
+    if (!client->keepAlive || diff >= CONNECTION_TIMEOUT)
     {
         std::string info_message("Client Timeouted: ");
         std::ostringstream      time_output;
@@ -241,7 +237,7 @@ bool    Server::IsTimeoutCGI(CgiProcess* cgi)
     time_t currentTime = time(NULL);
     time_t diff = currentTime - cgi->start_time;
     
-    if (diff > CGI_TIMEOUT)
+    if (diff >= CGI_TIMEOUT)
     {
         std::ostringstream info_message;
         info_message << "CGI Timeouted after " << diff << " seconds for client " << cgi->client_fd;
@@ -263,7 +259,7 @@ bool        Server::IsCgiRequest(Response* res)
     if (res->getStatusCode() == 103 && res->getCgiProcess() != NULL)
     {
         cgis.push_back(res->getCgiProcess()); 
-        std::cout << "New Cgi appended to server" << std::endl;
+        //std::cout << "New Cgi appended to server" << std::endl;
         return true;
     }
     return false;

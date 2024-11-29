@@ -175,14 +175,18 @@ void    Http::CheckUserConnected(size_t& previous_clients_size, std::vector<poll
 
 void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
 {
+    // std::cout << "First cgi index : " << cgi_index << std::endl;
+    // std::cout << "Master_fds size : " << master_fds.size() << std::endl;
+
     for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
     {
         std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin();
         while (cgi_it != (*srv_it)->cgis.end())
         {
+            //std::cout << "Hello " << std::endl;
             if (cgi_index >= master_fds.size())
             {
-                //LOG_INFO("CGI has not been polled: Index out of bounds");
+                LOG_INFO("CGI has not been polled: Index out of bounds");
                 break;
             }
 
@@ -352,6 +356,7 @@ void    Http::launch_all()
     while (42)
     {
         // repopular a partir de los socket pasivos
+        //std::cout << "loop" << std::endl;
         master_fds.resize(num_servers);
         size_t total_clients = 0;
         loadNewConnections(total_clients, master_fds);
@@ -369,8 +374,10 @@ void    Http::launch_all()
         size_t fd_index = 0;
         size_t cgi_index = num_servers + total_clients;
         CGI_events(cgi_index, master_fds);
-        Server_events(fd_index, master_fds);
+        fd_index += num_servers;
         Clients_events(fd_index, master_fds);
+        fd_index = 0;
+        Server_events(fd_index, master_fds);
     }
 }
 

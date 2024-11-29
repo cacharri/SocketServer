@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 18:05:29 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 19:01:14 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,20 +52,20 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
     buffer.reserve(HEADERS_SIZE);
 
     size_t totalRead = 0;
-    size_t chunkSize = 2; // leo 2 bytes por 2 bytes
+    size_t chunkSize = 1; // leo 2 bytes por 2 bytes
 
     // Primera lectura para leer stausline y headers
     while (true) {
         char tempBuffer[chunkSize]; // Buffer pequeno 4byes temporal
         ssize_t bytesRead = recv(ClientFd, tempBuffer, chunkSize, 0);
-    if (bytesRead == 0) {
-        LOG_INFO("Client closed connection.");
-        return false;
-    }
-    if (bytesRead < 0) {
-        LOG_INFO("No more data available right now.");
-        return false;
-    }
+        if (bytesRead == 0) {
+            LOG_INFO("Client closed connection.");
+            return false;
+        }
+        if (bytesRead < 0) {
+            LOG_INFO("No more data available right now.");
+            return false;
+        }
 
         // Anadir buffer pequeno al grande
         buffer.append(tempBuffer, bytesRead);
@@ -80,10 +80,6 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
             //std::cout << "Found CLRF at " << totalRead << " bytes read" << std::endl;
             break;
         }
-        else if (bytesRead && (tempBuffer[0] == '\r' || tempBuffer[0] == '\n'))
-            chunkSize = 1;
-        else if (bytesRead && (tempBuffer[0] != '\r' || tempBuffer[0] != '\n'))
-            chunkSize = 2;
         
 
         // Comprobar talla headers
@@ -207,7 +203,6 @@ size_t  Request::parseContentLength()
         //std::cout << "Content-length-value: " << header_iter->second << std::endl;
         contentLength = static_cast<size_t>(atoi(contentLength_Str.c_str()));
     }
-
     return contentLength;
 }
 

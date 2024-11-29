@@ -63,21 +63,24 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 
     destination.locations.clear();
 
-    for (std::map<std::string, LocationConfig>::const_iterator it = source.locations.begin(); it != source.locations.end(); ++it) {
+    for (std::map<std::string, LocationConfig>::const_iterator it = source.locations.begin(); it != source.locations.end(); it++) {
         const std::string& path = it->first;
         const LocationConfig& locConfig = it->second;
 
         LocationConfig newLocConfig;
-        newLocConfig.root =it->second.root;
-        newLocConfig.index =it->second.index;
-        newLocConfig.autoindex =it->second.autoindex;
-        newLocConfig.methods =it->second.methods; // shallow copy
-        newLocConfig.allow_upload =it->second.allow_upload;
-        newLocConfig.upload_store =it->second.upload_store;
-        newLocConfig.cgi_pass =it->second.cgi_pass;
-        newLocConfig.redirect =it->second.redirect;
-		newLocConfig.redirect_type =it->second.redirect_type;
-        newLocConfig.client_max_body_size =it->second.client_max_body_size;
+
+        newLocConfig.root = it->second.root;
+        std::cout << "new endpoint rooted to " << it->second.root << std::endl;
+        newLocConfig.index = it->second.index;
+        newLocConfig.autoindex = it->second.autoindex;
+        newLocConfig.methods = it->second.methods;
+        newLocConfig.allow_upload = it->second.allow_upload;
+        newLocConfig.upload_store = it->second.upload_store;
+        newLocConfig.cgi_pass = it->second.cgi_pass;
+        newLocConfig.redirect = it->second.redirect;
+        std::cout << "new endpoint redirect " << it->second.redirect << std::endl;
+		newLocConfig.redirect_type = it->second.redirect_type;
+        newLocConfig.client_max_body_size = it->second.client_max_body_size;
         //std::cout << "max body size en copy_server_config_es " << newLocConfig.client_max_body_size << std::endl;
         //std::cout << "New location" << path << " with SIZE " << newLocConfig.client_max_body_size << std::endl;
         destination.locations[path] = newLocConfig;
