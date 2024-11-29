@@ -44,6 +44,10 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
 			std::cout << "    Upload Store: on \n";
 		if (!(locConfig.cgi_pass.empty()))
 			std::cout << "    cgi_pass: " << locConfig.cgi_pass << "\n";
+        if (!(locConfig.redirect.empty()))
+            std::cout << "    Redirect: " << locConfig.redirect << "\n";
+        if (locConfig.redirect_type)
+            std::cout << "    Redirect_type: " << locConfig.redirect_type << "\n";
     }
 }
 
