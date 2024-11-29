@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/02 22:10:25 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 14:18:31 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/11/29 14:30:21 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ private:
     Http&   operator=(const Http& assign);
     void    loadServers(std::vector<pollfd>& master_fds, size_t& num_servers);
     void    loadNewConnections(size_t& total_clients, std::vector<pollfd>& master_fds);
-    void    CheckUserConnected(std::vector<pollfd>& master_fds);
+    void    CheckUserConnected(size_t& previous_clients_size, std::vector<pollfd>& master_fds);
     void    CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds);
     void    Clients_events(size_t& fd_index, std::vector<pollfd>& master_fds);
     void    Server_events(size_t& fd_index, std::vector<pollfd>& master_fds);

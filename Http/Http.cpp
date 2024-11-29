@@ -156,21 +156,20 @@ void    Http::loadNewConnections(size_t& total_clients, std::vector<pollfd>& mas
     }
 }
 
-void    Http::CheckUserConnected(std::vector<pollfd>& master_fds)
+void    Http::CheckUserConnected(size_t& previous_clients_size, std::vector<pollfd>& master_fds)
 {
     size_t tempflag_printing = 0;
-    size_t tempflag2_printing2 = 0;
 
     // Log FD count if changed
     tempflag_printing = master_fds.size();
-    if (tempflag_printing != tempflag2_printing2)
+    if (tempflag_printing != previous_clients_size)
     {
         std::ostringstream  printing;
         printing << master_fds.size();
         printing << " FD are used" << std::endl;
         LOG_INFO(printing.str());
     }
-    tempflag2_printing2 = tempflag_printing;
+    previous_clients_size = tempflag_printing;
 }
 
 
@@ -345,6 +344,7 @@ void    Http::launch_all()
     std::vector<pollfd> master_fds; // SOCKET_PASSIVO - FDCGI- FDcliente
     
     size_t num_servers = 0;
+    size_t previous_nb_client_connections = 0;
     loadServers(master_fds, num_servers);
 
     while (42)
@@ -353,7 +353,7 @@ void    Http::launch_all()
         master_fds.resize(num_servers);
         size_t total_clients = 0;
         loadNewConnections(total_clients, master_fds);
-        CheckUserConnected(master_fds);
+        CheckUserConnected(previous_nb_client_connections, master_fds);
         // Poll all FDs
         int poll_count = poll(&master_fds[0], master_fds.size(), 1000);
         if (poll_count < 0)
