@@ -51,7 +51,7 @@ const char * Http::ServerError::what() const throw()
 	return error_string.c_str();
 }
 
-// METHODOS
+// Carga los servidores del archivo de configuration
 bool    Http::configure(const std::string&  configfile)
 {
     std::vector<ServerConfig> serverConfigs = ConfigParser::parseServerConfigFile(configfile);
@@ -120,7 +120,7 @@ void    Http::loadNewConnections(size_t& total_clients, std::vector<pollfd>& mas
     // Iterar en nuestros vectores para repopular master_fds con socket_activos y fd de pipes.
     for (std::list<Server*>::iterator srv_it = servers.begin(); srv_it != servers.end(); srv_it++)
     {
-        // 1. Anadir Fd del pipe de un proceso CGI
+        // 1. Anadir Fd del cliente conectado, construir pollfd
         for (std::vector<ClientInfo*>::iterator cli_it = (*srv_it)->clients.begin(); 
             cli_it != (*srv_it)->clients.end(); cli_it++)
         {
@@ -131,6 +131,7 @@ void    Http::loadNewConnections(size_t& total_clients, std::vector<pollfd>& mas
             master_fds.push_back(active_fd);
             total_clients++;
         }
+        // 2. Anadir Fd del pipe de un proceso CGI
         for (std::vector<CgiProcess*>::iterator cgi_it = (*srv_it)->cgis.begin(); 
             cgi_it != (*srv_it)->cgis.end();)
         {
@@ -138,7 +139,6 @@ void    Http::loadNewConnections(size_t& total_clients, std::vector<pollfd>& mas
             if ((*srv_it)->IsTimeoutCGI(*cgi_it))
             {
                 kill((*cgi_it)->pid, SIGKILL);  // Force kill
-                // Clean up resources
                 close((*cgi_it)->output_pipe_fd.fd);
                 delete *cgi_it;
                 cgi_it = (*srv_it)->cgis.erase(cgi_it);
@@ -241,7 +241,7 @@ void    Http::CGI_events(size_t& cgi_index, std::vector<pollfd>& master_fds)
                 LOG_INFO("CGI pipe closed");
                 close((*cgi_it)->output_pipe_fd.fd);
                 
-                // COmprobar si el proceso sigue corriendo
+                // Comprobar si el proceso sigue corriendo
                 int status;
                 pid_t result = waitpid((*cgi_it)->pid, &status, WNOHANG);
                 if (result == 0)

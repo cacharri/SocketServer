@@ -47,8 +47,9 @@ void    Server::init()
     toPassiveSocket(10);
 
     std::ostringstream info_message;
-    info_message << "Server is listening on fd (each one corresponding to a port): ";
-    for (std::vector<int>::const_iterator it = socketFds.begin(); it != socketFds.end(); it++)
+    info_message << config.server_name;
+    info_message << " is listening on fd (each one corresponding to a port): ";
+    for (std::vector<int>::const_iterator it = config.ports.begin(); it != config.ports.end(); it++)
     {
         info_message << *it << " ";
     }
@@ -80,7 +81,7 @@ void Server::acceptClient(int listenFd)
     clients.push_back(newClient);
 
     std::ostringstream info_message;
-    info_message << "New Client on Fd: " << clientFd << "From " << listenFd;
+    info_message << "New Client on Fd: " << clientFd << " from " << f.sin_addr;
     LOG_INFO(info_message.str());
 }
 
@@ -116,7 +117,7 @@ void    Server::handleCGIresponse(CgiProcess* cgi)
     ssize_t bytesRead;
     bool hasData = false;
 
-    // Comprobar validez del FD
+    // Comprobar el status del fd
     if (fcntl(cgi->output_pipe_fd.fd, F_GETFL) == -1) {
         LOG_INFO("Pipe fd is invalid or closed");
         return;
@@ -139,7 +140,7 @@ void    Server::handleCGIresponse(CgiProcess* cgi)
         }
     }
 
-    // If we got any data, send it to the client
+    // Si
     if (hasData) {
         LOG_INFO("CGI output received " + result);
         Response response;

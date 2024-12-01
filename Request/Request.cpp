@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
+/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 19:01:14 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/01 19:49:03 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,33 +19,6 @@ Request::Request(ClientInfo& info_ref)
     : info(info_ref)
 {
 }
-
-// std::string Request::getErrorPagePath(int errorCode) {
-//     std::stringstream path;
-//     path << "var/www/error-pages/" << errorCode << ".html";
-//     return path.str();
-// }
-
-// void Request::sendErrorPage(const size_t& ClientFd, const std::string& errorPagePath) {
-//     std::ifstream errorFile(errorPagePath.c_str());
-//     if (!errorFile.is_open()) {
-//         LOG_INFO("Error page not found: " + errorPagePath);
-//         std::string response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-//         send(ClientFd, response.c_str(), response.size(), 0);
-//         return;
-//     }
-
-//     std::stringstream buffer;
-//     buffer << errorFile.rdbuf();
-//     errorFile.close();
-
-//     std::string response = buffer.str();
-//     ssize_t bytesSent = send(ClientFd, response.c_str(), response.size(), 0);
-
-//     if (bytesSent < 0) {
-//         LOG_INFO("Failed to send error page to client.");
-//     }
-// }
 bool Request::readData(const size_t& ClientFd, size_t maxSize)
 {
     std::string buffer;
@@ -56,7 +29,7 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
 
     // Primera lectura para leer stausline y headers
     while (true) {
-        char tempBuffer[chunkSize]; // Buffer pequeno 4byes temporal
+        char tempBuffer[chunkSize]; // Buffer pequeno 2 byes temporal
         ssize_t bytesRead = recv(ClientFd, tempBuffer, chunkSize, 0);
         if (bytesRead == 0) {
             LOG_INFO("Client closed connection.");
@@ -66,37 +39,24 @@ bool Request::readData(const size_t& ClientFd, size_t maxSize)
             LOG_INFO("No more data available right now.");
             return false;
         }
-
+        //std::cout << "read: " <<bytesRead<< std::endl;
         // Anadir buffer pequeno al grande
         buffer.append(tempBuffer, bytesRead);
         totalRead += bytesRead;
-
-        // std::string print;
-        // print += tempBuffer[0];
-        // print +=  tempBuffer[1];
-        // std::cout << print << "|" << std::endl;
         // hay un \r\n\r\n ? hemos llegado al final de los headers
         if (buffer.find("\r\n\r\n") != std::string::npos) {
             //std::cout << "Found CLRF at " << totalRead << " bytes read" << std::endl;
             break;
         }
         
-
-        // Comprobar talla headers
+        // Check header size limit
         if (totalRead >= HEADERS_SIZE) {
             LOG_INFO("Headers exceed maximum allowed size");
             return false;
         }
     }
-    //std::cout <<"Buffer \n" << std::endl;
-    //std::cout << buffer << std::endl;
-    //std::cout << "--------------" << std::endl;
-    // std::cout << "-------------------------\n\n--------------------\n" << std::endl;
-    // // Ponemos bien los headers por si
-    // size_t endHeadersPos = buffer.find("\r\n\r\n");
-    // std::string headers = buffer.substr(0, endHeadersPos + 4); // Include the CRLF
-    //std::cout << headers << std::endl;
 
+    LOG_INFO("Received headers:\n" + buffer);
 
     // Parse the headers
     parseRequest(buffer);

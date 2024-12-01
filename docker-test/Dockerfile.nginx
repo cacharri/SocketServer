@@ -1,0 +1,45 @@
+FROM nginx:alpine
+
+# Install required packages
+RUN apk add --no-cache \
+    python3 \
+    fcgiwrap \
+    spawn-fcgi \
+    supervisor \
+    nginx-mod-http-headers-more \
+    nginx-mod-http-dav-ext && \
+    ln -sf /usr/bin/fcgiwrap /usr/sbin/fcgiwrap  # Create symlink for fcgiwrap
+
+# Copy nginx configuration
+COPY docker-test/nginx-config/default.conf /etc/nginx/conf.d/default.conf
+
+# Create base directories and set permissions
+RUN mkdir -p /var/www && \
+    mkdir -p /var/run && \
+    mkdir -p /var/log/supervisor && \
+    chmod -R 755 /var/www && \
+    chown -R nginx:nginx /var/www && \
+    touch /var/run/fcgiwrap.sock && \
+    chown nginx:nginx /var/run/fcgiwrap.sock
+
+# Copy website content
+COPY var/www /var/www
+
+# Set permissions
+RUN chmod -R 755 /var/www/cgi-bin && \
+    chown -R nginx:nginx /var/www/uploads
+
+# Copy supervisor configuration
+COPY docker-test/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create required directories for supervisor
+RUN mkdir -p /etc/supervisor/conf.d && \
+    mkdir -p /var/log/supervisor
+
+# Verify fcgiwrap installation
+RUN which fcgiwrap && \
+    ls -l /usr/bin/fcgiwrap
+
+EXPOSE 8080 8081 8082
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 

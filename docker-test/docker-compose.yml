@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  nginx:
+    build:
+      context: ..
+      dockerfile: docker-test/Dockerfile.nginx
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+    volumes:
+      - ../var/www/uploads:/var/www/uploads
+    networks:
+      - webtest
+
+  webserver:
+    build:
+      context: ..
+      dockerfile: docker-test/Dockerfile.webserver
+    ports:
+      - "8083:8080"
+      - "8084:8081"
+      - "8085:8082"
+    volumes:
+      - ../var/www/uploads:/var/www/uploads
+    networks:
+      - webtest
+
+networks:
+  webtest:
+    driver: bridge 

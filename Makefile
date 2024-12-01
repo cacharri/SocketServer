@@ -1,6 +1,6 @@
 
 #COMP
-COMP = c++ -std=c++98 -fsanitize=address
+COMP = c++ -std=c++98 #-fsanitize=address
 
 RM = rm -f
 

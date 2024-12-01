@@ -6,7 +6,7 @@
 /*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 15:35:59 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/01 19:41:29 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,22 +30,13 @@ class Response;
 
 /*
 
-1. The MotherSocket class now uses exception handling for error management.
-2. The Server class inherits from MotherSocket and encapsulates server-specific functionality.
-3. Instead of a fixed large buffer, we now use a dynamic approach:
-    The receiveMessage method in the Server class handles varying message sizes by resizing the buffer as needed.
-    Start with a smaller initial buffer (4096 bytes).
-    Read data in chunks.
-    If the buffer is full, we resize it dynamically.
-    We've added proper resource management (ex: deleting the buffer in the destructor).
-    
-5. Copy constructors and assignment operators are disabled to prevent accidental copying.
+1. The Server class inherits from MotherSocket and encapsulates server-specific functionality.  
+2. It uses poll() to handle multiple client connections efficiently, allowing for non-blocking I/O.
+3. The launch() method now contains the main event loop, which continuously checks for incoming connections and client activity.
+4. The acceptClient() method handles new client connections, setting them to non-blocking mode and adding them to the fds vector.
+5. The handleClient() method processes incoming client requests and sends responses.
+6. The removeClient() method properly closes and removes disconnected clients from the fds vector.
 
-1. It uses poll() to handle multiple client connections efficiently, allowing for non-blocking I/O.
-2. The launch() method now contains the main event loop, which continuously checks for incoming connections and client activity.
-3. The acceptClient() method handles new client connections, setting them to non-blocking mode and adding them to the fds vector.
-4. The handleClient() method processes incoming client requests and sends responses.
-5. The removeClient() method properly closes and removes disconnected clients from the fds vector.
 */
 
 class Server : public MotherSocket

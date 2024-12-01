@@ -29,14 +29,13 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
         std::cout << "    Root: " << locConfig.root << "\n";
         std::cout << "    Index: " << locConfig.index << "\n";
 		if (locConfig.autoindex)
-			std::cout << "    Autoindex: on \n";
+			std::cout << "    Autoindex: on\n";
         std::cout << "    Allowed Methods: ";
         
         std::vector<std::string>::const_iterator methodIt;
         for (methodIt = locConfig.methods.begin(); methodIt != locConfig.methods.end(); ++methodIt) {
             std::cout << *methodIt << " ";
         }
-        
         std::cout << "\n";
 		if (locConfig.allow_upload)
 			std::cout << "    allow_upload: on \n";
@@ -74,7 +73,6 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         LocationConfig newLocConfig;
 
         newLocConfig.root = it->second.root;
-        std::cout << "new endpoint rooted to " << it->second.root << std::endl;
         newLocConfig.index = it->second.index;
         newLocConfig.autoindex = it->second.autoindex;
         newLocConfig.methods = it->second.methods;
@@ -82,7 +80,6 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
         newLocConfig.upload_store = it->second.upload_store;
         newLocConfig.cgi_pass = it->second.cgi_pass;
         newLocConfig.redirect = it->second.redirect;
-        std::cout << "new endpoint redirect " << it->second.redirect << std::endl;
 		newLocConfig.redirect_type = it->second.redirect_type;
         newLocConfig.client_max_body_size = it->second.client_max_body_size;
         //std::cout << "max body size en copy_server_config_es " << newLocConfig.client_max_body_size << std::endl;
@@ -278,7 +275,6 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
             } else if (token == "client_max_body_size") {
                 std::string sizeStr;
                 iss >> sizeStr;
-                std::cout <<"Server MAxSize: "<< sizeStr << std::endl;
                 if (!sizeStr.empty()) {
                     currentServer.client_max_body_size = parseSize(sizeStr);
                 }
@@ -318,7 +314,6 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
                 } else if (token == "client_max_body_size") {
                     std::string sizeStr;
                     iss >> sizeStr;
-                    std::cout << "Location Size:"<< sizeStr << std::endl;
                     if (!sizeStr.empty()) {
                         currentLocation.client_max_body_size = parseSize(sizeStr);
                     }
