@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/12/02 15:47:56 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 16:12:32 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
         LOG_INFO(" Delete autoindex page resource");
         return ;
     }
-    else if (fullpath[fullpath.size() - 1] == '/' || locationconfig.autoindex || (locationconfig.autoindex && locationconfig.index.empty()))
+    else if (fullpath[fullpath.size() - 1] == '/' || locationconfig.index.empty())
     {
         struct stat buffer;
         if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {

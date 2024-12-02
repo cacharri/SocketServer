@@ -62,11 +62,15 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 			destination.ports.push_back((*it));
 	}
     destination.server_name = source.server_name;
+    destination.root = source.root;
+    destination.autoindex = source.autoindex;
+    destination.index = source.index;
+
     std::map<int, std::string>::const_iterator iter = source.error_pages.begin();
     for (; iter != source.error_pages.end(); iter++)
     {
         destination.error_pages[iter->first] = iter->second;
-        std::cout << "Set error " << iter->first << " to " << iter->second << std::endl;
+        //std::cout << "Set error " << iter->first << " to " << iter->second << std::endl;
     }
 
     destination.client_max_body_size = source.client_max_body_size;
@@ -79,9 +83,21 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 
         LocationConfig newLocConfig;
 
-        newLocConfig.root = it->second.root;
-        newLocConfig.index = it->second.index;
-        newLocConfig.autoindex = it->second.autoindex;
+        if (!(it->second.root.empty()))
+            newLocConfig.root = it->second.root;
+        else
+            newLocConfig.root = destination.root;
+
+        if (!(it->second.index.empty()))
+            newLocConfig.index = it->second.index;
+        else
+            newLocConfig.index = destination.index;
+
+        if (it->second.autoindex)
+            newLocConfig.autoindex = it->second.autoindex;
+        else
+            newLocConfig.autoindex = destination.autoindex;
+
         newLocConfig.methods = it->second.methods;
         newLocConfig.allow_upload = it->second.allow_upload;
         newLocConfig.upload_store = it->second.upload_store;
@@ -282,7 +298,10 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
                     currentServer.autoindex = true;
                 else
                     currentServer.autoindex = false;
-            } else if (token == "error_page") {
+            } else if (token == "index") {
+                iss >> currentServer.index;
+            }
+            else if (token == "error_page") {
                 int errorCode;
                 std::string errorPage;
                 iss >> errorCode >> errorPage;
