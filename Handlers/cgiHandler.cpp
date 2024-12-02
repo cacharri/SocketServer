@@ -11,7 +11,10 @@ CgiHandler::~CgiHandler()
 void CgiHandler::handle(const Request* request, Response* response, LocationConfig& locationconfig, int client_fd) 
 {
     std::string scriptPath = locationconfig.root;
-    if (locationconfig.root.find(".py") == std::string::npos)
+    if (!(scriptPath.empty()) && scriptPath[0] == '/')
+        scriptPath.erase(0, 1);
+
+    if (locationconfig.root.find(".") == std::string::npos)
         scriptPath += locationconfig.index;
 
     std::cout << "ScriptPath: " << scriptPath << std::endl;
@@ -89,7 +92,7 @@ void    CgiHandler::executeCgi(CgiProcess* cgi_process,
 
         std::string scriptPath = env.at("SCRIPT_FILENAME");
         std::string workDir = scriptPath.substr(0, scriptPath.find_last_of("/"));
-        
+
         // CD al directorio del archivo
         if (chdir(workDir.c_str()) != 0) {
             perror("chdir failed");

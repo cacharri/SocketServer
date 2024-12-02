@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 23:59:59 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/12/01 19:49:03 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 16:27:05 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,7 +197,7 @@ bool Request::readChunkedBody(const size_t& ClientFd)
                 char c;
                 ssize_t bytesRead = recv(ClientFd, &c, 1, 0);
                 if (bytesRead <= 0)
-                    throw RequestError("Error leyendo tamaño del chunk");
+                    return false;
                 //std::cout << "readChar: " << c <<"|"<< std::endl;
 
                 chunkSizeStr += c;
@@ -224,6 +224,13 @@ bool Request::readChunkedBody(const size_t& ClientFd)
                 // Leer CRLF final
                 char crlf[2];
                 ssize_t bytesRead = recv(ClientFd, crlf, 2, 0);
+                if (bytesRead < 0) {
+                    LOG_INFO("Error reading body data");
+                    return false;
+                } else if (bytesRead == 0) {
+                    LOG_INFO("Connection closed by client before reading complete body");
+                    return false; 
+                }
                 if (bytesRead != 2 || crlf[0] != '\r' || crlf[1] != '\n')
                     throw RequestError("CRLF final inválido");
                 break;

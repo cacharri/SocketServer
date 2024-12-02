@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/12/02 14:40:02 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 16:32:08 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ public:
 private:
     Router                  router;
     ServerConfig            config;
-    static const time_t CONNECTION_TIMEOUT = 3;  
+    static const time_t CONNECTION_TIMEOUT = 1;
     static const time_t CGI_TIMEOUT = 2;      
 
     // Headers functions

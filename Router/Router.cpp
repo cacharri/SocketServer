@@ -149,6 +149,8 @@ void Router::route(const Request* request, Response* response)
 
     // Construir el path relativo
     std::string full_path = best_match_config->endpointdata.root;
+    if (!(full_path.empty()) && full_path[0] != '/')
+        full_path.insert(0, "/");
 
     if (!remaining_path.empty())
     {
