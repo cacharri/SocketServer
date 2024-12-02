@@ -5,7 +5,6 @@ Server::Server(const ServerConfig& serverConfig)
     : MotherSocket(AF_INET, SOCK_STREAM, 0, serverConfig.ports, serverConfig.interface)
 {
     ConfigParser::copyServerConfig(serverConfig, config);
-    ConfigParser::setDefaultErrorPages(config);
 }
 
 // -------------------------------- Destructor -------------------------------------------------------
@@ -81,7 +80,7 @@ void Server::acceptClient(int listenFd)
     clients.push_back(newClient);
 
     std::ostringstream info_message;
-    info_message << "New Client on Fd: " << clientFd << " from " << f.sin_addr;
+    info_message << "New Client on Fd: " << clientFd << " from " << inet_ntoa(clientAddr.sin_addr);
     LOG_INFO(info_message.str());
 }
 
@@ -281,10 +280,18 @@ void        Server::setErrorPageFromStatusCode(Response*    response)
     //LOG_INFO("No hay página de error");
     //std::cout << "filepath << std::endl;
     if (filepath.empty())
+    {
+        response->setStatusCode(404);
+        response->setBody("404 - not found. In addition Error page is empty");
         return ;
+    }
     std::ifstream file(filepath.c_str());
     if (!file.is_open())
+    {
+        response->setStatusCode(404);
+        response->setBody("404 - not found. In addition Error page could not be found");
         return ;
+    }
     std::stringstream buffer;
     buffer << file.rdbuf();
     //std::cout << buffer.str() << std::endl;

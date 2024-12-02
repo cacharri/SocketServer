@@ -54,6 +54,7 @@ void ConfigParser::printLocationConfig(const ServerConfig& serverConfig) {
 
 void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& destination)
 {
+    setDefaultErrorPages(destination);
     destination.interface = source.interface;
 	if (!(source.ports.empty()))
 	{
@@ -61,7 +62,13 @@ void ConfigParser::copyServerConfig(const ServerConfig& source, ServerConfig& de
 			destination.ports.push_back((*it));
 	}
     destination.server_name = source.server_name;
-    destination.error_pages = source.error_pages; 
+    std::map<int, std::string>::const_iterator iter = source.error_pages.begin();
+    for (; iter != source.error_pages.end(); iter++)
+    {
+        destination.error_pages[iter->first] = iter->second;
+        std::cout << "Set error " << iter->first << " to " << iter->second << std::endl;
+    }
+
     destination.client_max_body_size = source.client_max_body_size;
 
     destination.locations.clear();

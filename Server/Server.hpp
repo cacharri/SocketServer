@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/14 13:58:50 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/12/01 19:41:29 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 14:40:02 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,8 @@ class Response;
 #include "../Client/Client.hpp"
 #include <functional>
 #include <ctime>
-
+#include <arpa/inet.h>
+#include <netinet/in.h>
 /*
 
 1. The Server class inherits from MotherSocket and encapsulates server-specific functionality.  

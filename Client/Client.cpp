@@ -69,7 +69,7 @@ bool Client::HandleConnection() {
             throw ClientError("Invalid client session or file descriptor.");
         }
 
-        LOG_INFO("Creating Request object...");
+        //LOG_INFO("Creating Request object...");
         if (!request) {
             request = new Request(*session_info);
         }
@@ -79,7 +79,7 @@ bool Client::HandleConnection() {
             response->setStatusCode(400);
             return false; // Indicar fallo
         }
-        LOG_INFO("Request data read successfully.");
+        //LOG_INFO("Request data read successfully.");
         return true;
     } catch (const std::exception& e) {
         LOG("Exception caught during client handling: " + std::string(e.what()));
