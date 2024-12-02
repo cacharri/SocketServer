@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/15 00:30:32 by Smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 15:52:20 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 15:45:20 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,9 +146,9 @@ std::string Response::getMimeType(const std::string& filename)
 {
     // Comprobar la extension del archivo y meter en el contentType con el mapa de mimes types.
     size_t          position_extension = filename.rfind(".");
-
-    std::string     extension = filename.substr(position_extension, filename.size());
-    
+    std::string     extension;
+    if (position_extension != std::string::npos)
+        extension = filename.substr(position_extension, filename.size());
     return _mimeTypesMap[extension];
 }
 

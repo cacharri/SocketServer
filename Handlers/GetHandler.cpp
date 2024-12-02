@@ -6,7 +6,7 @@
 /*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/12 18:44:29 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/29 18:44:40 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 15:47:56 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
         LOG_INFO(" Delete autoindex page resource");
         return ;
     }
-    else if (fullpath[fullpath.size() - 1] == '/' )
+    else if (fullpath[fullpath.size() - 1] == '/' || locationconfig.autoindex || (locationconfig.autoindex && locationconfig.index.empty()))
     {
         struct stat buffer;
         if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode)) {
@@ -191,21 +191,26 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
     }
     else{
         // GET READ FILE
-        //std::cout << fullpath.c_str() << std::endl;
+        std::cout << fullpath.c_str() << std::endl;
         if (access(fullpath.c_str(), F_OK) != 0) {
             response->setStatusCode(404);
+            return ;
+        }
+        struct stat buffer;
+        if (stat(fullpath.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode))
+        {
+            response->setStatusCode(403);
             return ;
         }
         std::ifstream file(fullpath.c_str());
         if (!file.is_open())
         {
-            response->setStatusCode(404);
+            response->setStatusCode(403);
             return ;
         }
         
         std::stringstream bufferStream;
         bufferStream << file.rdbuf();
-        
         if (!(bufferStream.str().empty()))
         {
             response->setStatusCode(200);
@@ -213,6 +218,7 @@ void GetHandler::handle(const Request* request, Response* response, LocationConf
             response->setHeader("Content-Type", response->getMimeType(fullpath));
             LOG_INFO("Read Resource Succesfully");
         }
-        response->setStatusCode(200);
+        else
+            response->setStatusCode(204);
     }
 }

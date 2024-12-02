@@ -272,7 +272,16 @@ std::vector<ServerConfig> ConfigParser::parseServerConfigFile(const std::string&
 
             } else if (token == "server_name") {
                 iss >> currentServer.server_name;
-
+             
+            } else if (token == "root") {
+                iss >> currentServer.root;
+            } else if (token == "autoindex") {
+                std::string bool_str;
+                iss >> bool_str;
+                if (bool_str.compare("on") == 0)
+                    currentServer.autoindex = true;
+                else
+                    currentServer.autoindex = false;
             } else if (token == "error_page") {
                 int errorCode;
                 std::string errorPage;

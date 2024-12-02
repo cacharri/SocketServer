@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: smagniny <santi.mag777@student.42madrid    +#+  +:+       +#+        */
+/*   By: smagniny <smagniny@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:42:08 by smagniny          #+#    #+#             */
-/*   Updated: 2024/11/28 15:05:34 by smagniny         ###   ########.fr       */
+/*   Updated: 2024/12/02 15:21:17 by smagniny         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,8 @@ struct ServerConfig {
     std::string								interface; //direccion ip o del host donde el servidor escucha
     std::vector<int>						ports; 
     std::string								server_name;
+    std::string                             root;
+    bool                                    autoindex;
     std::map<int, std::string>				error_pages; //paginas personalizadas segun el codigo de error
     size_t									client_max_body_size; // 
     std::map<std::string, LocationConfig>	locations; // map de rutas a confi instead ofvector para asociar cada ruta 
