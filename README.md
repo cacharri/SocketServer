@@ -1,143 +1,119 @@
-## To Do
-- Control error codes (hagamos una lista de los qe controlamos)
-- Control de la entrega del body cuando hay un errorCode
-- Control Headers:
-   - listar los headers de Request que tenemos en cuenta.
-   - Escribir los headers de la respuesta.
-- Compare with nginx
+# SocketServer
 
-# WEBSERV DOCUMENTATION
+SocketServer es un servidor HTTP/1.1 desarrollado en C++98 que permite la creación de servidores personalizados mediante programación de sockets. Este proyecto está inspirado en la funcionalidad de Nginx y está diseñado para ser ligero y eficiente.
 
-## Table of Contents
-1. [Usage](#usage)
-2. [Server Object](#server-object)
-3. [Config Object](#config-object)
-4. [Router Object](#router-object)
-5. [Handlers](#handlers)
-   - [RequestHandler Class](#requesthandler-class)
-   - [GetHandler Class](#gethandler-class)
-   - [PostHandler Class](#posthandler-class)
-   - [CgiHandler Class](#cgihandler-class)
-6. [Request Object](#request-object)
-7. [Response Object](#response-object)
-8. [To Do](#to-do)
-9. [Sources](#sources)
+## Tabla de Contenidos
 
-## Usage
-1. Set the Nginx configuration through the `server.config` file.
-2. Compile the project using `Make` from the `Makefile`.
-3. Execute the server with `./Webserver server.config`.
+- [Características](#características)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Uso](#uso)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Módulos Principales](#módulos-principales)
+- [Comparación con Nginx](#comparación-con-nginx)
+- [Fuentes](#fuentes)
 
-## Server Object
-The main object for managing an HTTP 1.1 server. It inherits from the `MotherSocket` object, which instantiates non-blocking IPv4 sockets, both passive and active.
+## Características
 
-### Member Variables
-- **Config**: Stores a copy of the server configuration (inspired by Nginx).
-- **Router**: Maps endpoints to their associated data structures and functions.
-- **Vector<ClientsInfo>**: Data structure for session management (timeout, keepAlive) and `pollfd` struct for handling incoming socket (client FD).
-- **Buffer**: For receiving messages from the socket.
-- **Default Configuration Variables**: Timeout and buffer size.
+- **Compatibilidad con HTTP/1.1**: Soporte para métodos GET, POST y CGI.
+- **Manejo de Rutas**: Enrutamiento de solicitudes a controladores específicos.
+- **Soporte CGI**: Ejecución de scripts CGI para contenido dinámico.
+- **Configuración Personalizable**: Archivo de configuración similar a Nginx para definir parámetros del servidor.
+- **Gestión de Conexiones**: Manejo eficiente de múltiples conexiones con soporte para keep-alive y timeouts.
+- **Gestión de Headers y Códigos de Error**: Manejo y validación de cabeceras HTTP y respuestas adecuadas ante errores.
 
-### Functions
-- **Init()**: Adds the O_NONBLOCK flag to the server socket and creates the first passive client in the managed clients vector. Puts the passive socket in listening mode for up to 10 incoming connections.
-- **AcceptClient()**: Accepts new connections on the passive socket and registers each connection with a `ClientInfo` structure.
-- **RemoveClient()**: Closes the connection FD and removes the `ClientInfo` structure from the clients vector.
-- **ReceiveMessage()**: Returns a string with bytes from the associated connection FD up to `CLIENT_MAX_BODY_SIZE`.
-- **SendResponse()**: Writes and sends a response on the active connection socket.
-- **AnalyzeBasicHeaders()**: Logic for general headers: HOST, CONNECTION, KEEP-ALIVE.
-- **IsTimeout()**: Checks if the client has been inactive for a sufficient amount of time.
-- **Launch()**: Starts the main server loop, waiting for events on client sockets, accepting new connections, and managing client activity and timeouts.
-- **HandleClient()**: Manages communication with a specific client, receiving messages, analyzing headers, routing requests, and sending responses.
+## Instalación
 
-## Config Object
-- **parseConfigFile(const std::string& filename)**: Parses the `server.config` file and stores parameters in `LocationConfig` and `ServerConfig` structures.
+Para compilar y ejecutar SocketServer, sigue estos pasos:
 
-## Router Object
-Responsible for managing routes and handling HTTP requests. It associates routes with their respective handlers and processes incoming requests.
+1. **Clona el repositorio**:
 
-### Member Variables
-- **routes**: A map that associates routes with a vector of route configurations (`RouteConfig`).
+   ```bash
+   git clone https://github.com/cacharri/SocketServer.git
+   cd SocketServer
+   ```
 
-### Functions
-- **Router()**: Constructor that initializes the Router object.
-- **~Router()**: Destructor that frees memory for handlers and route configurations.
-- **loadEndpoints(const std::string& endpoint, const LocationConfig& locConfig)**: Loads allowed endpoints (GET, POST, CGI) and associates them with their handlers.
-- **addRoute(const std::string& path, const LocationConfig& locationconfig, RequestHandler *requesthandler, std::string HandledMethod)**: Adds a new route to the routes map with its configuration and corresponding handler.
-- **route(const Request& request, Response& response)**: Processes an incoming request, verifies the route and method, and calls the corresponding handler.
-- **isCgiRequest(const std::string& path)**: Checks if the requested path is a CGI request.
-- **HasValidMethod(std::vector<RouteConfig *>& ConfigsAllowed, const std::string& input_method)**: Checks if the request method is valid for the given route.
+2. **Compila el proyecto** utilizando el Makefile proporcionado:
 
-## Handlers
-Handlers are responsible for processing specific HTTP requests (GET, POST, CGI) and generating appropriate responses.
+   ```bash
+   make
+   ```
 
-### RequestHandler Class
-- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Pure virtual method to be implemented by derived classes for handling requests.
-- **~RequestHandler()**: Virtual destructor.
+   Esto generará un ejecutable llamado `Webserver`.
 
-### GetHandler Class (inherits from RequestHandler)
-- **GetHandler()**: Constructor that initializes the GET handler.
-- **~GetHandler()**: Destructor that cleans up resources.
-- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles GET requests, reads files, and generates responses.
+## Configuración
 
-### PostHandler Class (inherits from RequestHandler)
-- **PostHandler()**: Constructor that initializes the POST handler.
-- **~PostHandler()**: Destructor that cleans up resources.
-- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles POST requests, processes form data, and generates responses.
-- **saveFile(const std::string& filename, const std::string& data)**: Saves a file to the system.
-- **parseMultipartFormData(const std::string& data, const std::string& boundary, const std::string& post_upload_store)**: Parses multipart form data.
-- **parseUrlFormData(const std::string& body)**: Parses URL-encoded form data.
-- **urlDecode(const std::string &str)**: Decodes a URL-encoded string.
-- **escapeHtml(const std::string& data)**: Escapes special characters in HTML.
+Antes de ejecutar el servidor, es necesario configurar los parámetros en el archivo `server.config`. Este archivo define la configuración del servidor, incluyendo puertos, rutas y opciones específicas.
 
-### CgiHandler Class (inherits from RequestHandler)
-- **CgiHandler()**: Constructor that initializes the CGI handler.
-- **~CgiHandler()**: Destructor that cleans up resources.
-- **handle(const Request& request, Response& response, const LocationConfig& locationconfig)**: Handles CGI requests and executes scripts.
-- **executeCgi(const std::string& scriptPath, const std::map<std::string, std::string>& env, const std::string& inputData)**: Executes a CGI script and returns its output.
+Ejemplo de `server.config`:
 
-## Request Object
-Represents an HTTP request. It analyzes and stores request information, including method, URI, headers, and body.
+```
+server {
+    listen 8080;
+    server_name localhost;
 
-### Member Variables
-- **method**: Stores the HTTP method (GET, POST, etc.).
-- **uri**: Stores the requested URI.
-- **httpVersion**: Stores the HTTP protocol version.
-- **headers**: Map that stores request headers.
-- **body**: Stores the request body.
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
 
-### Functions
-- **Request(const std::string& rawRequest)**: Constructor that initializes the object from a raw request string.
-- **parse(const std::string& rawRequest)**: Parses the raw request and extracts method, URI, headers, and body.
-- **getMethod() const**: Returns the HTTP method of the request.
-- **getUri() const**: Returns the URI of the request.
-- **getHeader(const std::string& key) const**: Returns the value of a specific header.
-- **getBody() const**: Returns the body of the request.
-- **getHttpVersion() const**: Returns the HTTP protocol version.
-- **setBody(const std::string& requestBody)**: Sets the body of the request.
-- **print() const**: Prints request information to the console.
-- **getPath() const**: Returns the path of the URI, excluding any query string.
+    location /cgi-bin/ {
+        root /var/www/cgi-bin;
+        cgi on;
+    }
+}
+```
 
-## Response Object
-Represents an HTTP response. It constructs and stores response information, including status code, headers, and body.
+## Uso
 
-### Member Variables
-- **statusCode**: Stores the HTTP status code.
-- **statusMessage**: Stores the corresponding status message.
-- **headers**: Map that stores response headers.
-- **body**: Stores the response body.
+Una vez configurado, puedes iniciar el servidor con el siguiente comando:
 
-### Functions
-- **Response(int code)**: Constructor that initializes the object with a status code and sets the default status message.
-- **setStatus(int code, const std::string& message)**: Sets the status code and message.
-- **setHeader(const std::string& key, const std::string& value)**: Sets a header in the response.
-- **setBody(const std::string& content)**: Sets the response body and updates the content length.
-- **setContentType(const std::string& type)**: Sets the content type in the header.
-- **setContentLength()**: Sets the content length in the header.
-- **toString() const**: Converts the response to a string in HTTP format.
-- **getStatusCode() const**: Returns the status code of the response.
-- **getStatusMessage() const**: Returns the status message of the response.
-- **getBody() const**: Returns the body of the response.
+```bash
+./Webserver server.config
+```
+
+El servidor estará activo y escuchando en el puerto especificado en la configuración.
+
+## Estructura del Proyecto
+
+- **Client/**: Manejo de conexiones de clientes.
+- **Config/**: Análisis y gestión del archivo de configuración.
+- **Handlers/**: Controladores para diferentes tipos de solicitudes HTTP.
+- **Headers/**: Manejo de cabeceras HTTP.
+- **Http/**: Definiciones y utilidades relacionadas con el protocolo HTTP.
+- **Logger/**: Registro de eventos y errores del servidor.
+- **Request/**: Análisis y representación de solicitudes HTTP entrantes.
+- **Response/**: Construcción y envío de respuestas HTTP.
+- **Router/**: Enrutamiento de solicitudes a los controladores correspondientes.
+- **Server/**: Funcionalidad principal del servidor, incluyendo gestión de sockets.
+- **Sockets/**: Abstracciones para programación de sockets en C++98.
+
+## Módulos Principales
+
+### Server
+
+Gestiona la inicialización del servidor, acepta nuevas conexiones y maneja la comunicación con los clientes. Hereda de `MotherSocket` para manejar sockets IPv4 no bloqueantes.
+
+### Router
+
+Asocia rutas específicas con sus controladores correspondientes y procesa las solicitudes entrantes, determinando el controlador adecuado para cada una.
+
+### Handlers
+
+Incluye clases como `GetHandler`, `PostHandler` y `CgiHandler`, que manejan los métodos HTTP correspondientes y generan las respuestas apropiadas.
+
+## Comparación con Nginx
+
+Se ha tomado inspiración de Nginx para la estructura de configuración y gestión de rutas. Sin embargo, a diferencia de Nginx, este servidor está diseñado con un enfoque educativo y simplificado en C++98. Las principales diferencias incluyen:
+
+- Implementación de un sistema de configuración simplificado.
+- Gestión de conexiones no bloqueantes a través de `poll()`.
+- Soporte básico para CGI sin necesidad de módulos adicionales.
+
+## Fuentes
+
+- HTTP/1.1 RFC 2616
+- Documentación de Nginx
+- Material de referencia sobre programación de sockets en C++98
 
 
-## Sources
-- [HTTP Content Negotiation](https://http.dev/content-negotiation)
